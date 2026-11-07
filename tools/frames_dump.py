@@ -5,10 +5,15 @@ import hashlib
 import json
 from pathlib import Path
 from PIL import Image, ImageDraw
-import pieces
+import pieces_checked as pieces
 
 BASE_SHA = 'b47c8692ed9ab0c1ee598ae32126d30daef7f8bc8948c33d6919dd4c7505905e'
 LABELS = {'unknown':0,'skin':1,'cloth':2,'boots':3,'hair':4,'outline':5}
+
+def read_candidate(rom: bytes, command: int, base: int, bank: int, ptr: int) -> tuple[list, Image.Image]:
+    # 05 points inside the command bank; 04 selects a separate graphics bank.
+    pl = pieces.parse(rom, command >> 16, ptr)
+    return pl, pieces.render(rom, bank, base, pl)
 
 def proposal(frame: Image.Image) -> Image.Image:
     # Geometry/shade guesses only. Unknown includes canvas and shade zero: actual
@@ -39,8 +44,7 @@ def dump(rom_path: Path, out: Path, mapping_path: Path | None = None) -> dict:
     for command,base,bank,ptr in pieces.find_cmds(rom):
         key = f'{command:06x}'
         try:
-            pl = pieces.parse(rom,bank,ptr)
-            im = pieces.render(rom,bank,base,pl)
+            pl, im = read_candidate(rom,command,base,bank,ptr)
         except ValueError as e:
             rejected.append({'command':key,'reason':str(e)}); continue
         proposed = proposal(im)
@@ -60,7 +64,7 @@ def dump(rom_path: Path, out: Path, mapping_path: Path | None = None) -> dict:
                     labels.append(proposed.getpixel((x-x0+X,y-y0+Y)))
             tiles.append({'rom_offset':offset,'piece':index,'word':word,'x':x,'y':y,
                           'labels_unflipped':labels})
-        frames.append({'command':key,'base':base,'bank':bank,'piece_pointer':ptr,
+        frames.append({'command':key,'base':base,'bank':bank,'piece_pointer':ptr,'piece_bank':command >> 16,
                        'origin':[x0,y0],'size':list(im.size),'character':identity.get('character'),
                        'identity_evidence':identity.get('evidence'),'status':'proposal-needs-review',
                        'image':f'{stem}.png','mask':f'{stem}.mask.png','tiles':tiles})

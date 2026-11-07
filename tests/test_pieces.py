@@ -2,7 +2,8 @@ from pathlib import Path
 import sys
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
-import pieces
+import pieces_checked as pieces
+from frames_dump import read_candidate
 
 class PiecesTests(unittest.TestCase):
     def test_decode_and_flip(self):
@@ -16,6 +17,12 @@ class PiecesTests(unittest.TestCase):
         self.assertEqual(pieces.parse(rom,0,0),[(1,-1,-128)])
         with self.assertRaises(ValueError):pieces.parse(bytes(512),0,0)
         with self.assertRaises(ValueError):pieces.parse(bytes(65536),0,65534)
+    def test_distinct_piece_and_tile_banks(self):
+        rom=bytearray(0x20000)
+        rom[0x10020:0x10024]=bytes([1,0,0,0])
+        rom[0x40]=128
+        pl,image=read_candidate(rom,0x10000,0x40,0,0x20)
+        self.assertEqual(image.getpixel((0,0)),85)
     def test_tile_bounds(self):
         with self.assertRaises(ValueError):pieces.tile2(bytes(15),0)
         with self.assertRaises(ValueError):pieces.render(bytes(131072),0,65530,[(1,0,0)])
