@@ -1,6 +1,8 @@
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
-FD='/home/user/pocketfighter/fonts/'
+from pathlib import Path
+import os
+FD = str(Path(os.environ.get('PF_FONT_DIR', Path(__file__).resolve().parents[1] / 'fonts'))) + os.sep
 _cache={}
 def font(name='neodgm.ttf',size=16):
     k=(name,size)
