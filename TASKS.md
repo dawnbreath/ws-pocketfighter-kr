@@ -2,7 +2,7 @@
 
 | id | task | owner | status | branch / PR | blockers |
 |---|---|---|---|---|---|
-| T01 | Finish Korean image labels: continue screen (GAMEを再開/終了), composite label 127, fix clipped 통신대전 | Claude | open | – | needs emulator run |
+| T01 | Korean image labels: pause menu (GAMEを再開/終了) DONE, clipped 통신대전 fix DONE, composite label 127 + icons 15/17/18/20/142/172 still JP | Claude | in review | claude/T01-pause-menu | – |
 | T02 | Script QA: glossary consistency, line-width lint over `text/ko/*`, spelling/spacing pass (names: 장기에프, 춘리, 사쿠라…) | Codex | open | – | – |
 | T03 | Release packaging script (xdelta3 + IPS, CRC/SHA of base and patched, README) | Codex | open | – | final ROM |
 | T04 | 4bpp feasibility gate (see docs/4bpp-plan.md §Feasibility) | Claude | open | – | – |

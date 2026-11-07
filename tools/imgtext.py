@@ -36,7 +36,7 @@ def render_label(idx,text,style='dark',margin=0,fg=None,bg=None,align='center',s
     if bg is None: bg={'dark':0,'gray':1,'light':3,'big':0}[style]
     if fg is None: fg={'dark':3,'gray':3,'light':1,'big':3}[style]
     fonts=fonts or (FONTSBIG if style=='big' else FONTS16)
-    ft,tw,spec=fit(text,ix1-ix0,iy1-iy0,fonts)
+    ft,tw,spec=fit(text,ix1-ix0-(3 if style=="big" else 0),iy1-iy0,fonts)
     out[iy0:iy1,ix0:ix1]=np.where(mask[iy0:iy1,ix0:ix1],bg,out[iy0:iy1,ix0:ix1])
     # vertical placement: glyph box height ~ font size; centre in interior
     th=spec[1]; ty=iy0+(iy1-iy0-th)//2+ydelta
@@ -161,3 +161,33 @@ def title_button(lines,col0,rect=(4,1,36,22),fonts=(('Galmuri9.ttf',10),)):
 def apply_title(R,exp=0x200000):
     put_block(R,title_button(['카드','배틀'],0),0,0)
     put_block(R,title_button(['카드','갤러리'],10),10,0)
+
+# ---------------------------------------------------------------- pause menu "GAMEを再開 / GAMEを終了" (sprites, tile pool at ROM 0x10e330..)
+# Both lines are 14x3 tiles. Columns 0..8 point at the SAME tiles for both lines (shared prefix), columns 9.. are per line.
+P1=[[0x10e330+16*k for k in range(14)],[0x10e410+16*k for k in range(14)],[0x10e4f0+16*k for k in range(14)]]
+P2T=[[0x10e5d0+16*k for k in range(5)],[0x10e620+16*k for k in range(4)],[0x10e670+16*k for k in range(4)]]   # line-2 tail tiles (cols 9..)
+def _put_tile(R,addr,blk,exp=0x200000):
+    t=bytearray()
+    for y in range(8):
+        lo=hi=0
+        for b in range(8):
+            v=int(blk[y,b]); lo|=(v&1)<<(7-b); hi|=((v>>1)&1)<<(7-b)
+        t+=bytes([lo,hi])
+    R.b[addr+exp:addr+exp+16]=t
+def _stylise(m):
+    out=np.zeros(m.shape,np.int8)
+    sh=np.zeros_like(m); sh[1:,1:]=m[:-1,:-1]
+    sh2=np.zeros_like(m); sh2[2:,2:]=m[:-2,:-2]
+    out[sh2]=1; out[sh]=2; out[m]=3
+    return out
+def _mask(text,x,y,w=112,h=24,font=('Galmuri14.ttf',14)):
+    im=Image.new('1',(w,h),0); d=ImageDraw.Draw(im); d.fontmode='1'; d.text((x,y),text,font=ttf(*font),fill=1); return np.array(im,dtype=bool)
+def apply_pause(R,l1='계속',l2='종료',prefix='게임을 ····'):
+    ft=ttf('Galmuri14.ttf',14)
+    pre=_mask(prefix,2,3)
+    def tail(t): return _mask(t,100-int(ft.getlength(t)),3)
+    img1=_stylise(np.concatenate([pre[:,:72],tail(l1)[:,72:]],axis=1))
+    img2=_stylise(np.concatenate([pre[:,:72],tail(l2)[:,72:]],axis=1))
+    for r in range(3):
+        for c,a in enumerate(P1[r]): _put_tile(R,a,img1[r*8:r*8+8,c*8:c*8+8])      # line 1 (and the shared columns of line 2)
+        for k,a in enumerate(P2T[r]): _put_tile(R,a,img2[r*8:r*8+8,(9+k)*8:(9+k)*8+8])
