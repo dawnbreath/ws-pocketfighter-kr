@@ -23,3 +23,6 @@ Colour mode needs no save/state import. The build is deterministic.
 
 ## Saves
 No save/state was ever supplied. Builds keep the original SRAM layout (the header save-type byte is unchanged); `.sav` files produced by the owner's earlier runs are copied beside each build by `tools/handoff.py`. Save compatibility has not been tested beyond booting.
+
+## Reproduction check (Claude, branch claude/T01-pause-menu)
+A fresh `git worktree` of this branch with `orig/pf.ws` + OFL fonts, running `extract.py → gen_labels.py → design.py → ko_build_all.sh`, produced a ROM with SHA-256 `1493264631a1316cc8e0e4cb32abb5e9637f7bbce27cf06ef87cd01c2ec8a279` — identical to the v007 build above. (v006 is not rebuilt by this branch.)
