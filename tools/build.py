@@ -48,7 +48,8 @@ def apply_engine(R):
 # ------------------------------------------------------------------ colour
 import colorlib
 def apply_color(R,survey=False,spec_path=None):
-    code,_=asm.assemble('col',{'SURVEY':'1'} if survey else {})
+    import os
+    code,_=asm.assemble('col',({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4') else {}))
     assert len(code)<0x600
     spec=colorlib.load_spec(spec_path or colorlib.SPEC)
     bank,conf,n=colorlib.build_bank(code,spec)
@@ -218,7 +219,7 @@ def main():
     for f in a.ko: ko.update(json.load(open(f)))
     R=Rom(); apply_engine(R); apply_color(R,a.survey,a.spec); kr=KR(R)
     import imgtext; sys.path.insert(0,'/home/user/pocketfighter/text/ko'); import imgspec
-    if a.img: print('image tiles',imgtext.apply(R,imgspec.SPEC)); imgtext.apply_title(R)
+    if a.img: print('image tiles',imgtext.apply(R,imgspec.SPEC)); imgtext.apply_title(R); imgtext.apply_pause(R)
     end=build_story(R,kr,master,ko); build_fixed(R,kr,master,ko); build_wg(R,kr,master,ko)
     data=R.finish(); open(a.out,'wb').write(data)
     print('built',a.out,'halves',kr.n,'story_end',hex(end),'md5',hashlib.md5(data).hexdigest())

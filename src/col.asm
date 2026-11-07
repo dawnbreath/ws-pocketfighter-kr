@@ -42,7 +42,11 @@ org 0x0000
 %define T2B    0xFD57
 entry:
     cld
+%ifdef BPP4
+    mov al,0xC0
+%else
     mov al,0x80
+%endif
     out 0x60,al
     xor ax,ax
     mov es,ax
