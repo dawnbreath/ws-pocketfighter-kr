@@ -1,12 +1,12 @@
 """Korean replacement of the Japanese *image* labels (sprite-assembled): same pieces/tiles, new tile pixels."""
 import sys, json, struct
-sys.path.insert(0,'/home/user/pocketfighter/tools'); sys.path.insert(0,'/home/user/tools/py')
+import os; sys.path.insert(0,os.path.dirname(os.path.abspath(__file__))); from paths import ROOT
 import numpy as np, wsgfx
 from PIL import Image, ImageDraw, ImageFont
-FD='/home/user/pocketfighter/fonts/'
-ORIG='/home/user/pocketfighter/orig/pf.ws'
+FD=(os.environ.get('PF_FONT_DIR') or ROOT+'/fonts').rstrip('/')+'/'
+ORIG=ROOT+'/orig/pf.ws'
 rom0=open(ORIG,'rb').read()
-LABELS={x['idx']:x for x in json.load(open('/home/user/pocketfighter/text/labels_raw.json'))}
+LABELS={x['idx']:x for x in json.load(open(ROOT+'/text/labels_raw.json'))}
 def tile_addr(x,w): return ((x['bank']&0x1f)<<16)+x['base']+((w&0x1ffe)>>1)*16
 def canvas(x):
     pl=x['pieces']; xs=[p[2] for p in pl]; ys=[p[1] for p in pl]; x0,y0=min(xs),min(ys)
@@ -75,7 +75,7 @@ def apply(R,spec,exp=0x200000):
     import collections
     # who uses which original tile
     users=collections.defaultdict(set)
-    allp=json.load(open('/home/user/pocketfighter/text/labels_all.json'))
+    allp=json.load(open(ROOT+'/text/labels_all.json'))
     for lab in allp:
         for w,y,x in lab['pieces']: users[((lab['bank']&0x1f)<<16)+lab['base']+((w&0x1ffe)>>1)*16].add(lab['idx'])
     done=set(spec)

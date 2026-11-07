@@ -1,11 +1,11 @@
 """Pocket Fighter WS Korean+Color build.
 usage: python3 build.py OUT.ws [--ko file.json ...]
 """
-import sys, json, struct, hashlib, argparse
-sys.path.insert(0,'/home/user/pocketfighter/tools')
+import sys, os, json, struct, hashlib, argparse
+sys.path.insert(0,os.path.dirname(os.path.abspath(__file__))); from paths import ROOT
 import asm, krfont, pftext
 import numpy as np
-ORIG='/home/user/pocketfighter/orig/pf.ws'
+ORIG=ROOT+'/orig/pf.ws'
 EXP=0x200000                     # original 2MB placed at 4MB+0x200000
 KRFONT_IDX=0x00; STORY_IDX=0x0C; COL_IDX=0x0D  # new banks (font uses 0x00..0x0B)
 BANKREG=lambda idx: 0xC0|idx
@@ -213,11 +213,11 @@ def build_wg(R,kr,master,ko):
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument('out'); ap.add_argument('--ko',nargs='*',default=[]); ap.add_argument('--survey',action='store_true'); ap.add_argument('--spec',default=None); ap.add_argument('--img',action='store_true')
     a=ap.parse_args()
-    master=json.load(open('/home/user/pocketfighter/text/master.json'))
+    master=json.load(open(ROOT+'/text/master.json'))
     ko={}
     for f in a.ko: ko.update(json.load(open(f)))
     R=Rom(); apply_engine(R); apply_color(R,a.survey,a.spec); kr=KR(R)
-    import imgtext; sys.path.insert(0,'/home/user/pocketfighter/text/ko'); import imgspec
+    import imgtext; sys.path.insert(0,ROOT+'/text/ko'); import imgspec
     if a.img: print('image tiles',imgtext.apply(R,imgspec.SPEC)); imgtext.apply_title(R); imgtext.apply_pause(R)
     end=build_story(R,kr,master,ko); build_fixed(R,kr,master,ko); build_wg(R,kr,master,ko)
     data=R.finish(); open(a.out,'wb').write(data)

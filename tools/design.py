@@ -1,7 +1,7 @@
 """Colour design for Pocket Fighter WS. Regenerates text/color_spec.json.
 Scenes are registered with the live palette image of a savestate (via emulator) so (palette, word) keys are exact."""
 import json, sys
-sys.path.insert(0,'/home/user/tools/py'); sys.path.insert(0,'/home/user/pocketfighter/tools')
+import os; sys.path.insert(0,os.path.dirname(os.path.abspath(__file__))); from paths import ROOT
 RAMPS={
  'gray':['FFF','000'],
  'white_text':['FFF','DDD','888','000'],
@@ -65,6 +65,6 @@ def build():
     spec={'ramps':RAMPS,'shaderamps':SHADERAMPS,'band':{str(k):v for k,v in BAND.items()},'chars':CHARS,'default':{str(p):n for p,n in DEFAULT.items()},'scenes':[]}
     for name,(keys,use) in SCENES.items():
         spec['scenes'].append({'name':name,'keys':keys,'use':{str(k):v for k,v in use.items()}})
-    json.dump(spec,open('/home/user/pocketfighter/text/color_spec.json','w'),indent=1)
+    json.dump(spec,open(ROOT+'/text/color_spec.json','w'),indent=1)
     return spec
 if __name__=='__main__': build()
