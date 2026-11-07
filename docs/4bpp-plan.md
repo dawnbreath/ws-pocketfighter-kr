@@ -32,6 +32,14 @@ Additional measurement (this PR): with `PF_BPP4=1`, an FG-layer tile using **pal
 NOT proven (do not treat as safe): absence of reads/overlaps in 0x4000-0xBFFF after the mode switch; sprite (OAM) transparency in 4bpp; one fighter expanded with correct regions; BG paths; performance of the expanding copy hooks. The earlier "free VRAM" statement was a 2bpp measurement only.
 Next gate (decoupled from T05, per Codex review): apply an explicit diagnostic mask to ONE confirmed fighter tile, prove copy path + transparency + layout under 4bpp, then hand that tile mapping to T05.
 
+## Diagnostic prototype result (PF_BPP4DIAG=1, test-only build)
+`PF_BPP4DIAG=1 python tools/build.py ...` builds a ROM in which the OAM hook (a) mirrors all 512 2bpp tiles (VRAM 0x2000) to 4bpp (0x4000+n*32) every frame and (b) gives the tile of the first palette-field-4 sprite a second colour region (right half → palette indices 5..7, colours written to palette RAM). Measured on the emulator (full route title → player select → fight):
+- The whole game renders correctly from the mirrored tiles in 4bpp (title, menus, player select, fight HUD, backgrounds, both fighters); no overlap with game data was observed in 0x4000-0x7FFF in this route.
+- Fighter sprites show no opaque rectangles and a **sub-tile region** (dark-red patch inside one sprite tile) is rendered — per-pixel region colouring is possible in principle.
+- The build runs the game ≈3× slower (mirror ≈100k cycles/frame) and tiles lag one frame (some transition frames show torn tiles): this proves the format, NOT a shippable design. A shippable version must convert at the ~10 tile-copy sites (T10) instead of mirroring.
+- Still unproven: OAM transparency for palette fields 0-3 specifically (FG-layer test passed), BG tiles ≥ 512, reads of 0x4000+ by the game in other modes (cards, gallery, options), save/boot behaviour, final per-pixel masks (T05/T06).
+No game screenshots are committed. Verdict unchanged: PROTOTYPE shows feasibility of the *format*; engine integration remains a large task.
+
 ## VRAM reconciliation (user requirement vs current design)
 The user asked to verify the lower 2/3 of VRAM (0x4000-0xFDFF) and use it for Korean font storage. Actual design: Korean glyphs are **streamed from ROM at draw time** (hooked glyph emitters), so no resident Korean font lives in VRAM; this was reported to the user at the time. Measured ranges today: tile VRAM 0x2000-0x3FFF (game), 0x4000-0xFCFF unused by the game (2bpp watch), colour state 0xFD00-0xFDA7 + palette RAM 0xFE00-0xFFFF (ours). If 4bpp is adopted, 0x4000-0xBFFF becomes tile storage; Korean glyph tiles would then also need 4bpp expansion. This needs the owner's decision before any 4bpp commit.
 

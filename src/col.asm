@@ -259,6 +259,9 @@ oam:
     cld
     xor ax,ax
     mov ds,ax
+%ifdef BPP4DIAG
+    call mirror4
+%endif
     mov word [FLAG],0
     in al,4
     mov ah,al
@@ -436,3 +439,58 @@ pct:
     xor ah,ah
     pop bx
     ret
+
+%ifdef BPP4DIAG
+; ---- DIAGNOSTIC ONLY (T04): mirror all 512 2bpp tiles (VRAM 0x2000) to 4bpp (0x4000+n*32), then give the first P1 fighter
+; sprite tile a second colour region (right half uses palette indices 5..7) to prove sub-tile 4bpp colouring + transparency.
+; Costs ~100k cycles per frame: the game runs slowly in this build, which is acceptable for a diagnostic.
+mirror4:
+    push bp
+    xor ax,ax
+    mov es,ax
+    mov si,0x2000
+    mov di,0x4000
+    mov cx,512
+.t: mov dx,8
+.r: lodsw
+    stosw
+    xor ax,ax
+    stosw
+    dec dx
+    jnz .r
+    loop .t
+    pop bp
+    ; find the first palette-field-4 sprite
+    in al,4
+    mov ah,al
+    xor al,al
+    shl ax,1
+    mov si,ax
+    mov cx,128
+.f: mov ax,[si]
+    mov bx,ax
+    shr bx,9
+    and bl,7
+    cmp bl,4
+    je .got
+    add si,4
+    loop .f
+    ret
+.got:
+    and ax,0x1FF
+    shl ax,5
+    add ax,0x4000
+    mov di,ax
+    mov cx,8
+.rw:mov al,[di]
+    or al,[di+1]
+    and al,0x0F          ; pixels of the right half that are non-zero
+    mov [di+2],al        ; plane 2 -> index +4
+    add di,4
+    loop .rw
+    ; colours for palette 12 (sprite field 4) indices 5..7: orange / yellow / dark red
+    mov word [0xFE00+12*32+5*2],0x0F70
+    mov word [0xFE00+12*32+6*2],0x0FE0
+    mov word [0xFE00+12*32+7*2],0x0600
+    ret
+%endif
