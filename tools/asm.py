@@ -1,8 +1,10 @@
+import os
 import subprocess, re, os, tempfile
-SRC='/home/user/pocketfighter/src/'
+from paths import ROOT, TMP
+SRC=ROOT+'/src/'
 def assemble(name, defines=None):
     """assemble SRC/name.asm -> (bytes, symbols dict)"""
-    out=tempfile.mkdtemp(dir='/tmp/claude-0')
+    out=(os.makedirs(TMP,exist_ok=True), tempfile.mkdtemp(dir=TMP))[1]
     args=['nasm','-f','bin','-o',out+'/o.bin']
     for k,v in (defines or {}).items(): args.append('-D%s=%s'%(k,v))
     args.append(SRC+name+'.asm')

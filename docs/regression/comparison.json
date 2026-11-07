@@ -1,0 +1,79 @@
+{
+  "baseline_rom": "bb956d1f76eeff43d88f0b0e8520dd3d23ac6395f8df39a2bfe5596050d870d0",
+  "candidate_rom": "1493264631a1316cc8e0e4cb32abb5e9637f7bbce27cf06ef87cd01c2ec8a279",
+  "screens": [
+    {
+      "screen": "battle_select",
+      "status": "IDENTICAL",
+      "changed_pixels": 0,
+      "bbox": null
+    },
+    {
+      "screen": "boot",
+      "status": "IDENTICAL",
+      "changed_pixels": 0,
+      "bbox": null
+    },
+    {
+      "screen": "fight",
+      "status": "IDENTICAL",
+      "changed_pixels": 0,
+      "bbox": null
+    },
+    {
+      "screen": "fight_later",
+      "status": "IDENTICAL",
+      "changed_pixels": 0,
+      "bbox": null
+    },
+    {
+      "screen": "pause_closed",
+      "status": "IDENTICAL",
+      "changed_pixels": 0,
+      "bbox": null
+    },
+    {
+      "screen": "pause_open",
+      "status": "DIFFERENT",
+      "changed_pixels": 2803,
+      "bbox": [
+        57,
+        50,
+        168,
+        101
+      ]
+    },
+    {
+      "screen": "player_select",
+      "status": "IDENTICAL",
+      "changed_pixels": 0,
+      "bbox": null
+    },
+    {
+      "screen": "story1",
+      "status": "IDENTICAL",
+      "changed_pixels": 0,
+      "bbox": null
+    },
+    {
+      "screen": "story2",
+      "status": "IDENTICAL",
+      "changed_pixels": 0,
+      "bbox": null
+    },
+    {
+      "screen": "title_menu",
+      "status": "IDENTICAL",
+      "changed_pixels": 0,
+      "bbox": null
+    },
+    {
+      "screen": "title_press",
+      "status": "IDENTICAL",
+      "changed_pixels": 0,
+      "bbox": null
+    }
+  ],
+  "identical": false,
+  "scope": "captured screens only; labels require visual review; not full gameplay QA"
+}
