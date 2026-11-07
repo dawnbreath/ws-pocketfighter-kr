@@ -1,0 +1,15 @@
+# NEVER commit game data: ROMs, saves, savestates, extracted Japanese text, build outputs
+*.ws
+*.wsc
+*.sav
+*.sn1
+*.mcs
+orig/
+build/
+test/
+work/
+text/master.json
+text/jp_*.tsv
+text/labels_*.json
+__pycache__/
+*.pyc
