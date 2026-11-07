@@ -49,7 +49,7 @@ def apply_engine(R):
 import colorlib
 def apply_color(R,survey=False,spec_path=None):
     import os
-    code,_=asm.assemble('col',({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4') else {}))
+    code,_=asm.assemble('col',({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}))
     assert len(code)<0x600
     spec=colorlib.load_spec(spec_path or colorlib.SPEC)
     bank,conf,n=colorlib.build_bank(code,spec)
