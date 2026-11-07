@@ -1,5 +1,6 @@
 import json, struct, os, sys
-SPEC='/home/user/pocketfighter/text/color_spec.json'
+from paths import ROOT
+SPEC=ROOT+'/text/color_spec.json'
 NOM=[15,13,11,9,7,5,3,0]   # nominal luma per shade (shade0 lightest)
 def hexc(h): return tuple(int(c,16) for c in h)
 def rgbw(c): r,g,b=c; return (r<<8)|(g<<4)|b
@@ -52,7 +53,7 @@ def build_bank(code,spec):
     # per-character body rows (palette 12/13), keyed by the hash of the HUD name tiles
     chars=spec.get('chars',[]); rows=bytearray(); pl1=bytearray(); pl2=bytearray()
     import hashlib
-    base=0x151480; orig=open('/home/user/pocketfighter/orig/pf.ws','rb').read()
+    base=0x151480; orig=open(ROOT+'/orig/pf.ws','rb').read()
     def hsh(data):
         h=0
         for i in range(0,len(data),2):

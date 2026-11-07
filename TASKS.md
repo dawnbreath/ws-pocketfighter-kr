@@ -2,7 +2,7 @@
 
 | id | task | owner | status | branch / PR | blockers |
 |---|---|---|---|---|---|
-| T01 | Finish Korean image labels: continue screen (GAMEを再開/終了), composite label 127, fix clipped 통신대전 | Claude | open | – | needs emulator run |
+| T01 | Korean image labels: pause menu DONE (PR #6), clipped 통신대전 fix DONE, composite label 127 + icons 15/17/18/20/142/172 still JP, stage-art background signs not inventoried | Claude | review (regression v006→v007: 10/11 screens identical, pause_open differs as intended) | claude/T01-pause-menu | – |
 | T02 | Script QA: glossary consistency, line-width lint over `text/ko/*`, spelling/spacing pass (names: 장기에프, 춘리, 사쿠라…) | Codex | lint verified; editorial review pending | codex/T02-script-qa | full translation/context review remains |
 | T03 | Release packaging script (xdelta3 + IPS, CRC/SHA of base and patched, README) | Codex | tooling verified; merged (PR #5) | codex/T03-release | final canonical ROM/runtime approval pending |
 | T04 | 4bpp feasibility gate (see docs/4bpp-plan.md) | Claude | PROTOTYPE PENDING: 4bpp mode renders; FG-layer colour-0 transparency confirmed for all palettes; diagnostic mirror prototype renders whole game + one sub-tile region in 4bpp (slow, test-only); copy-site conversion, masks, other modes UNPROVEN | claude/T04-4bpp-gate | diagnostic tile mapping |
