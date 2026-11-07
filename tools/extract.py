@@ -1,7 +1,7 @@
 """Extract all JP text units of Pocket Fighter WS into text/master.json"""
 import json, struct, sys
-sys.path.insert(0,'/home/user/pocketfighter/tools'); import pftext
-rom=open('/home/user/pocketfighter/orig/pf.ws','rb').read()
+import os; sys.path.insert(0,os.path.dirname(os.path.abspath(__file__))); import pftext; from paths import ROOT
+rom=open(ROOT+'/orig/pf.ws','rb').read()
 units=[]
 # ---- story
 ps=pftext.story_ptrs(rom); order=sorted(set(ps)); bounds=order[1:]+[0x3c40]; end_of=dict(zip(order,bounds))
@@ -76,5 +76,5 @@ for m in re.finditer(re.escape(b'\x82\x85'),rom):
     # trailing non-terminated part ignored
 wg=[w for w in wg if any('\u3040'<=ch<='\u30ff' for ch in w['jp'])]
 wg.sort(key=lambda w:w['off'])
-json.dump({'story':story,'fixed':fixed,'wg':wg},open('/home/user/pocketfighter/text/master.json','w'),ensure_ascii=False,indent=1)
+json.dump({'story':story,'fixed':fixed,'wg':wg},open(ROOT+'/text/master.json','w'),ensure_ascii=False,indent=1)
 print('story pages',sum(len(s['pages']) for s in story),'fixed',len(fixed),'bad',sum(1 for f in fixed if 'bad' in f),'wg',len(wg))

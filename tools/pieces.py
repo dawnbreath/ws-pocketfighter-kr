@@ -1,5 +1,5 @@
 import re, sys
-sys.path.insert(0,'/home/user/tools/py'); import wsgfx
+import os; sys.path.insert(0,os.path.dirname(os.path.abspath(__file__))); import wsgfx
 from PIL import Image, ImageDraw
 def bankoff(bank): return (bank & 0x1f)<<16
 def parse(rom, bank, ptr, maxn=128):

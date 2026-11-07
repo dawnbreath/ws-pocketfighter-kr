@@ -1,6 +1,6 @@
 """Static renderer: draws text straight out of a built ROM (Korean cells + the game's own SJIS glyphs)."""
 import sys, struct, json
-sys.path.insert(0,'/home/user/pocketfighter/tools'); sys.path.insert(0,'/home/user/tools/py')
+import os; sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 import wsgfx, numpy as np
 from PIL import Image, ImageDraw
 EXP=0x200000
