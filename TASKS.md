@@ -13,3 +13,4 @@
 | T09 | Makai Mura WS: translation + colour | both | blocked | – | T08 |
 
 Update this table in the PR that changes a task’s state.
+| T12 | Region pipeline: runtime fighter-frame capture + outline segmentation + per-character rules + tile-hash mask table (see docs/4bpp-plan.md 'Revised region pipeline') | Codex (capture/segment/rules) + Claude (engine) | open | – | T10 copy-site catalogue |

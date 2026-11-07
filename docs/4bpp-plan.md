@@ -37,3 +37,14 @@ The user asked to verify the lower 2/3 of VRAM (0x4000-0xFDFF) and use it for Ko
 
 ## Coverage note
 Background Japanese signs inside stage art were set aside by Claude, not by the user. They are **not** excluded: inventory them (T11) before claiming image-text coverage.
+
+
+## Revised region pipeline (T12) — supersedes the "animation roots" idea in phase 1
+Finding (mock on captured frames, not committed): segmenting a fighter frame into connected components of the non-outline pixels (outline = 2bpp index 3) gives 25-45 regions per frame that follow the real art outlines. Classifying each component by simple per-character geometry (centroid height/offset from the sprite centre) and colouring per pixel already reproduces "bare skin + red trunks + red boots" (Zangief) and "blue dress + skin + white boots" (Chun-Li) — i.e. the Saturn-style separation the tile-band method cannot do.
+Pipeline (no animation-script reverse engineering needed):
+1. **Runtime capture** (emucap/Mednafen, scripted bot input per character, thousands of frames): per frame read OAM + VRAM, rebuild each fighter's pixel frame. Dedupe by *tile content hash* (16 bytes → hash).
+2. **Segment + classify** per frame (outline flood fill + per-character rules in `data/rules/<char>.json`, rules reviewed on contact sheets).
+3. **Mask table**: tile-content-hash → per-pixel class map (a pixel gets the class that wins over all frames where the tile appears; conflicts reported, fall back to the current band method for unmapped tiles).
+4. **Engine (Claude)**: convert at the ~10 tile-copy sites (T10): 2bpp tile → 4bpp, class → palette-index offset; per-character 16-colour palettes in `design.py`.
+5. **QA**: per-character contact sheets + pixel regression on non-fighter screens.
+Coverage risk: poses never captured fall back to bands; capture scripts must cover specials/throws/KO.
