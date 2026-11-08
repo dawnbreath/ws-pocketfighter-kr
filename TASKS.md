@@ -14,6 +14,7 @@
 
 | T13 | Saturn PAC reference inspector | Codex | tool verified on 35 local PACs; review pending | codex/T13-saturn-reference | sprite compression unconfirmed; no frame decoder |
 
-| T10 | Original-ROM tile-copy catalogue | Codex | requested sites catalogued; RAM relocation confirmed; review pending | codex/T10-copy-routines | full dynamic ownership/lifetimes and production conversion unproven |
+| T10 | Original-ROM tile-copy catalogue | Codex | requested sites catalogued; RAM relocation confirmed; reviewed+merged by Claude | codex/T10-copy-routines | full dynamic ownership/lifetimes and production conversion unproven |
+| T12 | Runtime fighter capture → region proposals → conflict masks | Codex | tools verified on Chun-Li/Zangief, 256 samples each; conflict evidence + exact ROM candidate mapping verified; semantic masks NOT engine-ready | codex/T12-runtime-regions | pose review and unresolved pixels; production engine integration remains |
 
 Update this table in the PR that changes a task’s state.
