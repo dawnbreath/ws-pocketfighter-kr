@@ -1,0 +1,102 @@
+{
+  "character": "sakura",
+  "status": "parts inventoried; no geometric rules or reviewed poses",
+  "max_component_height": 0.3,
+  "regions": [],
+  "parts_reference": {
+    "url": "https://segaretro.org/File:Pocket_Fighter,_Characters.png",
+    "verification": "Codex visual inspection of the published character montage; not a game palette dump",
+    "pac_character_order": "unverified; do not infer PLxx mapping"
+  },
+  "slot_plan": {
+    "status": "proposed capacity only; not engine allocation",
+    "transparent": [
+      0
+    ],
+    "skin": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "costume": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "secondary": [
+      9,
+      10,
+      11
+    ],
+    "accent": [
+      12,
+      13,
+      14
+    ],
+    "outline": [
+      15
+    ],
+    "constraint": "Parts sharing a role may need different colors. Resolve sharing/reallocation per fighter before export; these ranges do not prove all requested colors fit."
+  },
+  "parts": [
+    {
+      "id": "hair",
+      "label": "hair",
+      "color_intent": "brown",
+      "palette_role": "secondary",
+      "thin_feature_review": false
+    },
+    {
+      "id": "headband",
+      "label": "white_trim",
+      "color_intent": "white",
+      "palette_role": "accent",
+      "thin_feature_review": true
+    },
+    {
+      "id": "skin",
+      "label": "skin",
+      "color_intent": "skin",
+      "palette_role": "skin",
+      "thin_feature_review": false
+    },
+    {
+      "id": "shirt",
+      "label": "cloth",
+      "color_intent": "white",
+      "palette_role": "costume",
+      "thin_feature_review": false
+    },
+    {
+      "id": "collar_and_skirt",
+      "label": "trousers",
+      "color_intent": "blue",
+      "palette_role": "secondary",
+      "thin_feature_review": false
+    },
+    {
+      "id": "neckerchief",
+      "label": "accent",
+      "color_intent": "yellow",
+      "palette_role": "accent",
+      "thin_feature_review": true
+    },
+    {
+      "id": "gloves",
+      "label": "gloves",
+      "color_intent": "red",
+      "palette_role": "accent",
+      "thin_feature_review": true
+    },
+    {
+      "id": "shoes",
+      "label": "boots",
+      "color_intent": "red and white",
+      "palette_role": "accent",
+      "thin_feature_review": true
+    }
+  ],
+  "owner_target_provenance": "Reference proposal; owner review pending"
+}
