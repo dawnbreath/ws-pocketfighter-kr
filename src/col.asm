@@ -22,8 +22,8 @@ org 0x0000
 %define PL1    0x0D40            ; P1 name-hash list {hash, body row offset}, hash 0 ends
 %define PL2    0x0D80            ; P2 name-hash list
 %define OAMCNT 0xFD5A
-%define RSY    0xFDB0            ; HYBRID prototype: frames left of the rolling 2bpp->4bpp resync
-%define RSC    0xFDB2            ; HYBRID prototype: next tile index to resync
+%define RSY    0x8200            ; HYBRID prototype: frames left of the rolling 2bpp->4bpp resync
+%define RSC    0x8202            ; HYBRID prototype: next tile index to resync
 %define OAMBAK 0xFD4A
 %define GA     0xFD30
 %define GB     0xFD40
@@ -215,6 +215,10 @@ entry:
     inc word [V_K]
     cmp word [V_K],4
     jb .k
+%ifdef HYBRID
+    mov ax,[di-8]             ; 4bpp: opaque copy of entry 0 at index 4 (BG tiles whose shade 0 was opaque in 2bpp)
+    mov [di],ax
+%endif
     add di,24
     inc word [V_P]
     cmp word [V_P],16
@@ -449,31 +453,96 @@ pct:
     ret
 
 %ifdef HYBRID
-; ---- PROTOTYPE (T17): rolling resync of the 512 game tiles into 4bpp (class 0: index = 2bpp shade, so every screen should look as in 2bpp).
-; Runs from the VBlank colour hook while RSY>0 (set on every scene/palette change): 32 tiles per call, cursor wraps over 0..511.
-; Needs ds=es=0 and DF=0 (set by the entry code). Clobbers ax,bx,cx,dx,si,di.
+; ---- PROTOTYPE (T17): rolling resync of the 512 game tiles into 4bpp, map-aware for colour 0.
+; 4bpp makes colour index 0 transparent on every layer; in 2bpp only palettes 4-7 were transparent. A tile whose map references all
+; are opaque (SCR1 always; SCR2 only palette attr 0-3) expands shade 0 -> index 4 (palette entry 4 mirrors entry 0, see .p loop); others keep index 0.
+; Tile flags (1 byte/tile) live at 0000:8000..81FF (game never writes 0x4000-0xFCFF): bit0 = referenced opaque, bit1 = referenced transparent.
+; Runs from the VBlank colour hook while RSY>0 (set on every scene/palette change): 32 tiles per call, cursor wraps over 0..511;
+; the map scan runs on the call that starts a round. Needs ds=es=0, DF=0. Clobbers ax,bx,cx,dx,si,di.
 rsyn:
     cmp byte [RSY],0
     je .rd
     dec byte [RSY]
     mov bx,[RSC]
-    mov si,bx
+    or bx,bx
+    jnz .go
+    push bx
+    call scanop             ; scanop/scanmap clobber bx
+    pop bx
+.go:mov si,bx
     shl si,4
     add si,0x2000
     mov di,bx
     shl di,5
     add di,0x4000
     mov cx,32
-.t: mov dx,8
+.t: mov al,[bx+0x8000]
+    cmp al,1
+    je .opq
+    mov dx,8                ; transparent / conflict: index = shade
 .r: lodsw
     stosw
     xor ax,ax
     stosw
     dec dx
     jnz .r
+    jmp .nx
+.opq:
+    mov dx,8                ; opaque: shade 0 -> index 4 (plane 2 = NOT(p0|p1))
+.q: lodsw
+    stosw
+    or al,ah
+    not al
+    xor ah,ah
+    stosw
+    dec dx
+    jnz .q
+.nx:inc bx
     loop .t
-    add bx,32
     and bx,511
     mov [RSC],bx
 .rd:ret
+scanop:
+    push di
+    mov di,0x8000
+    mov cx,256
+    xor ax,ax
+    rep stosw
+    in al,7
+    xor ah,ah
+    mov bp,ax               ; port 7: SCR1 map base nibble | SCR2 map base nibble << 4
+    and al,15
+    mov ah,al
+    xor al,al
+    shl ax,3                ; nibble * 0x800
+    mov si,ax
+    xor dh,dh               ; SCR1: colour 0 is never transparent -> always an opaque reference
+    call scanmap
+    mov ax,bp
+    shr al,4
+    mov ah,al
+    xor al,al
+    shl ax,3
+    mov si,ax
+    mov dh,1                ; SCR2: transparent only for palette attr 4-7
+    call scanmap
+    pop di
+    ret
+scanmap:
+    mov cx,1024
+.s: lodsw
+    mov bx,ax
+    and bx,0x1FF
+    shr ax,9
+    and al,15
+    or dh,dh
+    jz .op
+    cmp al,4
+    jae .tr
+.op:mov al,1
+    jmp .o
+.tr:mov al,2
+.o: or [bx+0x8000],al
+    loop .s
+    ret
 %endif
