@@ -14,4 +14,6 @@
 
 | T13 | Saturn PAC reference inspector | Codex | tool verified on 35 local PACs; review pending | codex/T13-saturn-reference | sprite compression unconfirmed; no frame decoder |
 
+| T10 | Original-ROM tile-copy catalogue | Codex | requested sites catalogued; RAM relocation confirmed; review pending | codex/T10-copy-routines | full dynamic ownership/lifetimes and production conversion unproven |
+
 Update this table in the PR that changes a task’s state.
