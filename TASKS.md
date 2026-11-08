@@ -12,4 +12,6 @@
 | T08 | Makai Mura WS: structure analysis (text encoding, fonts, VRAM free areas) | Claude | open | – | ROM |
 | T09 | Makai Mura WS: translation + colour | both | blocked | – | T08 |
 
+| T13 | Saturn PAC reference inspector | Codex | tool verified on 35 local PACs; review pending | codex/T13-saturn-reference | sprite compression unconfirmed; no frame decoder |
+
 Update this table in the PR that changes a task’s state.
