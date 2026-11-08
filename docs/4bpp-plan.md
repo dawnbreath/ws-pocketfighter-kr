@@ -37,3 +37,13 @@ The user asked to verify the lower 2/3 of VRAM (0x4000-0xFDFF) and use it for Ko
 
 ## Coverage note
 Background Japanese signs inside stage art were set aside by Claude, not by the user. They are **not** excluded: inventory them (T11) before claiming image-text coverage.
+
+## T17 hybrid prototype result (Claude; branch claude/T17-hybrid-proto, `PF_HYBRID=1`, throw-away)
+Prototype: in the VBlank colour hook, a **rolling 2bpp→4bpp resync** (32 tiles per call, cursor over 0..511, class 0 = index equals the 2bpp shade, runs for 255 frames after every scene/palette change); no copier hook yet. Default build (no `PF_HYBRID`) is byte-identical to v007 (SHA-256 1493264631a1316cc8e0e4cb32abb5e9637f7bbce27cf06ef87cd01c2ec8a279, checked after the change).
+Route: T07 14-step route, base v007 vs prototype, cold boots (screens kept local):
+- Mechanism works: boot pixel-identical; title, battle select, player select, story text, HUD render in 4bpp; no crashes.
+- **Finding 1 — BG colour 0 becomes transparent in 4bpp.** Tiles whose 2bpp shade 0 was an *opaque* BG colour (story border tiles: blue in 2bpp) show the **backdrop colour** instead (brown) after expansion. Hence the expansion cannot map shade 0 → index 0 for BG tiles. Proposed fix: map-aware expansion — tiles referenced by the BG/FG maps (not OAM) expand shade 0 → an opaque index (e.g. 4) whose palette entry duplicates entry 0; sprite tiles keep 0. Needs a map scan at resync (1024 words ≈ 20k cycles, scene change only) and the colourizer to mirror entry 0 into index 4 for BG palettes. Tiles shared between BG and OAM remain a conflict to detect.
+- **Finding 2 — fight sprites glitch** (white outline pixels) because slots 0x180–0x1FF are refreshed only by the rolling cursor; the copier hook (every second frame) is required, as predicted.
+- **Finding 3 — the opponent/stage differed between the two cold boots** (stairs stage vs ghost-town stage), so fight screens cannot be pixel-compared unless the route pins the opponent.
+- Differences by screen (changed pixels): title_press 306, title_menu 224, battle_select 4247, player_select 1721, story 9.5-9.8k, fight/pause ~14-20k.
+Not done: copier hook, map-aware BG expansion, palette mirroring, per-frame cost calibration.

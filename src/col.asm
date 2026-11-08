@@ -22,6 +22,8 @@ org 0x0000
 %define PL1    0x0D40            ; P1 name-hash list {hash, body row offset}, hash 0 ends
 %define PL2    0x0D80            ; P2 name-hash list
 %define OAMCNT 0xFD5A
+%define RSY    0xFDB0            ; HYBRID prototype: frames left of the rolling 2bpp->4bpp resync
+%define RSC    0xFDB2            ; HYBRID prototype: next tile index to resync
 %define OAMBAK 0xFD4A
 %define GA     0xFD30
 %define GB     0xFD40
@@ -51,10 +53,16 @@ entry:
     xor ax,ax
     mov es,ax
     mov ds,ax
+%ifdef HYBRID
+    call rsyn
+%endif
     cmp word [V_M],0xA55A
     je .init
     mov word [V_M],0xA55A
     mov word [V_T],DEFT
+%ifdef HYBRID
+    mov byte [RSY],255
+%endif
 .init:
     mov di,IMG
     mov dx,0x1C
@@ -93,6 +101,9 @@ entry:
     jne .changed
     jmp done
 .changed:
+%ifdef HYBRID
+    mov byte [RSY],255
+%endif
     mov si,IMG
     mov di,CACHE
     mov cx,21
@@ -436,3 +447,33 @@ pct:
     xor ah,ah
     pop bx
     ret
+
+%ifdef HYBRID
+; ---- PROTOTYPE (T17): rolling resync of the 512 game tiles into 4bpp (class 0: index = 2bpp shade, so every screen should look as in 2bpp).
+; Runs from the VBlank colour hook while RSY>0 (set on every scene/palette change): 32 tiles per call, cursor wraps over 0..511.
+; Needs ds=es=0 and DF=0 (set by the entry code). Clobbers ax,bx,cx,dx,si,di.
+rsyn:
+    cmp byte [RSY],0
+    je .rd
+    dec byte [RSY]
+    mov bx,[RSC]
+    mov si,bx
+    shl si,4
+    add si,0x2000
+    mov di,bx
+    shl di,5
+    add di,0x4000
+    mov cx,32
+.t: mov dx,8
+.r: lodsw
+    stosw
+    xor ax,ax
+    stosw
+    dec dx
+    jnz .r
+    loop .t
+    add bx,32
+    and bx,511
+    mov [RSC],bx
+.rd:ret
+%endif
