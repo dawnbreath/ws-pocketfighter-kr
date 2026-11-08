@@ -106,3 +106,33 @@ No ROM hooks, VRAM allocation, production 4bpp palette, font changes or new
 save state are included. Source ROM remains unchanged; existing saves remain
 untouched. This completes the requested capture-to-proposal tooling bundle,
 not the final per-pixel colorization or the production 4bpp feasibility gate.
+
+## Link captured content to ROM source candidates
+
+```sh
+python tools/map_region_sources.py /local/pf.ws work/chunli/capture.json \
+  work/chunli-masks/masks.json work/chunli-sources.json
+```
+
+The capture hash, original ROM hash and character must match the mask report.
+The tool searches the entire original ROM at **every byte offset**, including
+unaligned and overlapping matches, for each selected-side tile's exact 16 bytes.
+Output is local-only and exclusive-create. No alignment, bank or writer is guessed.
+
+Verified on the existing 256-sample captures:
+
+| Character | One candidate | Multiple candidates | No exact match |
+|---|---:|---:|---:|
+| Chun-Li | 607 | 33 | 0 |
+| Zangief | 617 | 35 | 0 |
+
+These are per-character counts. A single candidate is still only a byte match,
+not proof of the runtime copy source; `copy_path_verified` and `engine_ready`
+remain false. Multiple candidates stay unresolved. This provides offsets for
+Claude's copy-site tracing without inserting unreviewed masks or picking an
+arbitrary address. Semantic conflicts are not resolved by finding ROM offsets.
+
+Two synthetic tests cover odd offsets, overlapping/repeated matches, no-match
+inputs, invalid tile lengths, capture/ROM provenance and exclusive output.
+All reported real candidates were re-read from the original ROM and checked
+against their tile SHA-256. No ROM or captured pixels are included in git.
