@@ -88,3 +88,14 @@ Method: v007, cold boot, same route into a fight (+300 frames), emucap non-pausi
 - Cost implication at the (unreliable) ~220 cycles/tile: converting all 128 tiles per call = ~28k cycles on the call frame (~70% of 40.7k), average ~14k/frame. Converting only changed tiles: ~15 x 220 = ~3.3k per call.
 - Design consequence (proposal, to be validated): hook the **copier entry (4000:02A4 far jump / RAM 0120)**; *before* the copier overwrites VRAM, compare staging SS:0500+16i with the still-old VRAM 0x3800+16i (no shadow buffer needed); for changed tiles only, look up the class mask (bounded lookup keyed by (character, tile-content hash), computed offline) and write the 4bpp expansion to 0x4000 + (0x180+i)*32. Estimated cost per call: 128 compares (~40 cycles each ≈ 5k) + ~15 conversions incl. lookup (~500 cycles each ≈ 8k) ≈ 13k cycles every other frame. Still estimates; the cycle numbers must be calibrated.
 - Not covered: stage-load writers (8BB1, 05BE, 8F40, 8FC4 ...) fire at scene init, not per frame; other modes (story, card battle, gallery, ending) unmeasured; BG scrolling updates unmeasured.
+
+## Tile-writer census across the regression route (Claude; lower bound — events were dropped)
+Method: v007, cold boot, the 14-step T07 route, emucap non-pausing write breakpoint on 0x2000-0x3FFF, `poll_events` after every ≤25-frame step; **234,500 events were dropped** by the event queue in bulk phases, so counts are lower bounds; writer *identity* per phase is what this establishes. PCs are CS=None in the backend (RAM copier) or 4000/5000-relative as listed in `docs/copy-routines.md`.
+| phase | main writers (by observed events) |
+|---|---|
+| boot | 5000:AE20-AE2E (staging flush, 127 tiles) ≫ 4000:05D0 (descriptor copy) > 4000:8F60 |
+| title press / menu | 4000:8F60 (banked rect copy), 4000:8FE0 (rect copy), 05D0, a 9090-9099 bucket (inside the 8FC4 family; not an independent writer claim) |
+| battle select / player select | 5000:AEA0-AEAF (partial staging flush), 8F60, 05D0 |
+| story page | 4000:8F60 (few) |
+| story→fight, fight, pause open/closed | **RAM copier only (0000:0130-015F)**, every other frame, as measured above |
+Consequences: (1) steady-state per-frame tile traffic exists only in the fight/story-battle copier; every other mode writes tiles in bursts at scene initialisation. (2) A **hybrid** is therefore the realistic shape: hook the RAM copier for the steady state, and handle all scene-init writers by a **full 512-tile resync when the scene changes / tiles finished loading** instead of patching each of the ~10 writers. (3) Open: how to detect "tiles finished loading" reliably (the colourizer already detects scene changes by palette words; load may continue after that), and cost of a full resync (~100k+ cycles, several frames) at scene changes where the screen is usually faded.
