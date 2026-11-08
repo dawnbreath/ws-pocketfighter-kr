@@ -51,7 +51,7 @@ The action loop samples idle, attacks, crouch, jump and movement. These are
 **samples, not 256 unique poses and not all moves**. No percentage of total
 animation coverage can be claimed from this route.
 
-Eight synthetic tests pass: stale/empty OAM, active-table wrapping, coordinate
+Nine synthetic tests pass (including conflict-source provenance): stale/empty OAM, active-table wrapping, coordinate
 wrapping, priority across fighter sides, inverse horizontal/vertical flips,
 outline components, conflict consensus, end-to-end output/character guard and
 truncated memory (some tests cover multiple assertions).
@@ -71,6 +71,15 @@ including when a different fighter side occludes the selected fighter. Pixel
 coordinates wrap modulo 256 and are clipped to the 224×144 LCD. Hidden source
 pixels do not receive semantic votes. Multiple labels for one tile pixel are
 recorded in `conflicts` and emitted as -1, never silently majority-voted.
+Each conflicted pixel also has `conflict_evidence`: for every competing label,
+`first_frame` identifies the first contributing capture frame and `sample_count`
+counts sampled frames supporting that label. Repeated appearances of a tile in
+one frame count once per label. Counts are diagnostic evidence, not confidence
+or majority-vote permission. Resolve the frame index through `capture.json`;
+the capture and rule hashes identify the exact inputs. Source-label references
+were replayed against both real captures, and all existing masks/conflict lists
+remained identical after adding this metadata.
+
 `unobserved` means no label observation (including rejected geometry), not
 necessarily that the source pixel never appeared onscreen.
 

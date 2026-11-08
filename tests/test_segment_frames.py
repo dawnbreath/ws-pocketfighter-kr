@@ -118,6 +118,26 @@ class SegmentTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 process(cap, rules, root / "out2")
 
+    def test_conflict_evidence_keeps_both_sources(self) -> None:
+        votes, evidence = {}, {}
+        first = [set() for _ in range(64)]
+        second = [set() for _ in range(64)]
+        first[3] = {2}
+        second[3] = {3}
+        merge_votes(votes, {"tile": first}, evidence, 17)
+        merge_votes(votes, {"tile": first}, evidence, 19)
+        merge_votes(votes, {"tile": second}, evidence, 25)
+        self.assertEqual(consensus(votes["tile"])[3], -1)
+        self.assertEqual(
+            evidence["tile"][3],
+            {
+                2: {"first_frame": 17, "sample_count": 2},
+                3: {"first_frame": 25, "sample_count": 1},
+            },
+        )
+        with self.assertRaises(ValueError):
+            merge_votes({}, {"tile": first}, {})
+
     def test_truncated_memory_rejected(self) -> None:
         frame = fixture([])
         frame["vram"] = "00"

@@ -173,12 +173,24 @@ def observations(
     return votes, labels, n, sum(s["side"] == side for s in sprites)
 
 
-def merge_votes(target: dict, source: dict) -> None:
+def merge_votes(
+    target: dict, source: dict, evidence: dict | None = None, frame: int | None = None
+) -> None:
+    if evidence is not None and frame is None:
+        raise ValueError("evidence requires a frame index")
     for key, cells in source.items():
         if key not in target:
             target[key] = [set() for _ in range(64)]
-        for dst, src in zip(target[key], cells):
+        if evidence is not None and key not in evidence:
+            evidence[key] = [{} for _ in range(64)]
+        for pixel, (dst, src) in enumerate(zip(target[key], cells)):
             dst.update(src)
+            if evidence is not None:
+                for label in sorted(src):
+                    record = evidence[key][pixel].setdefault(
+                        label, {"first_frame": frame, "sample_count": 0}
+                    )
+                    record["sample_count"] += 1
 
 
 def consensus(cells: list[set[int]]) -> list[int]:
@@ -201,11 +213,12 @@ def process(capture: Path, rule_path: Path, out: Path) -> dict:
         raise ValueError("character/rules mismatch")
     out.mkdir(parents=True, exist_ok=False)
     votes = {}
+    evidence = {}
     counts = []
     thumbnails = []
     for index, frame in enumerate(cap["frames"]):
         local, labels, n, sprites = observations(frame, cap["side"], rules)
-        merge_votes(votes, local)
+        merge_votes(votes, local, evidence, frame["index"])
         counts.append(
             {
                 "frame": frame["index"],
@@ -231,6 +244,11 @@ def process(capture: Path, rule_path: Path, out: Path) -> dict:
             "mask": consensus(cells),
             "conflicts": [i for i, v in enumerate(cells) if len(v) > 1],
             "unobserved": [i for i, v in enumerate(cells) if not v],
+            "conflict_evidence": {
+                str(i): evidence[key][i]
+                for i, values in enumerate(cells)
+                if len(values) > 1
+            },
         }
         for key, cells in sorted(votes.items())
     }
