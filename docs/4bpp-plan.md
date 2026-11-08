@@ -48,3 +48,8 @@ Pipeline (no animation-script reverse engineering needed):
 4. **Engine (Claude)**: convert at the ~10 tile-copy sites (T10): 2bpp tile → 4bpp, class → palette-index offset; per-character 16-colour palettes in `design.py`.
 5. **QA**: per-character contact sheets + pixel regression on non-fighter screens.
 Coverage risk: poses never captured fall back to bands; capture scripts must cover specials/throws/KO.
+
+## Reference material finding: Saturn disc structure (owner-supplied, local only, not committed)
+- Saturn `PLxx.PAC` (one per fighter; PL00 Ryu … PL0B) = big-endian chunk table: `u32 count, u32 total, count × (u32 id, u32 size)`, chunks start at 0x800 and are 0x800-aligned in order. Ids 0x100 (piece tables), 0x101 (compressed sprite data), 0x102 (main palettes, 16 × RGB555 BE per palette, 80-100 palettes), 0x103 (4bpp-like tile data), 0x104, 0x105 (12 player-variant palettes).
+- Every Saturn palette is split 1-7 = skin ramp, 8-15 = costume ramp(s). So the Saturn art encodes skin/cloth per pixel in the colour *index*; a WS 4bpp mapping of "region base + 2bpp shade" fits one 16-colour palette per fighter (skin ramp + one costume ramp + accent), matching the Saturn layout.
+- Open: decode 0x101 (compression unknown) to obtain ground-truth region labels; not required for the T12 pipeline (outline segmentation + rules) but useful for validation. Palette values stay local (derived game data).
