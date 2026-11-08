@@ -37,3 +37,8 @@ The user asked to verify the lower 2/3 of VRAM (0x4000-0xFDFF) and use it for Ko
 
 ## Coverage note
 Background Japanese signs inside stage art were set aside by Claude, not by the user. They are **not** excluded: inventory them (T11) before claiming image-text coverage.
+
+## T04b result: sprite colour-0 transparency in 4bpp (Claude, diagnostic build, local only)
+Test: diagnostic ROM (whole-game 4bpp via per-frame tile mirror) plus `OAMTEST`: every P1/P2 fighter sprite's palette field rewritten to 0/1 (palettes 8/9; in 2bpp mode these are *opaque* for colour 0). Cold boot in Mednafen via emucap, scripted navigation to a fight, screenshot at 4x.
+Result: both fighters render as shape-accurate silhouettes with **no rectangular opaque boxes**; stage background stays visible inside each sprite's 8x8 cells. => in 4bpp, sprite colour 0 is transparent for palette fields 0/1 as well as field 4 (previous test). Fields 2/3 are not individually tested (same mechanism assumed, to be covered by the production regression).
+Not covered: other game modes and screens (the diagnostic mirror breaks non-fight screens by design), real per-pixel masks, VRAM budget with Korean glyph tiles. Decision recorded by the owner: proceed with 4bpp; keep Korean glyphs streamed from ROM (expand glyph tiles to 4bpp at the copy sites, no resident font in lower VRAM).
