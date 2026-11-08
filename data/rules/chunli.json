@@ -1,0 +1,166 @@
+{
+  "character": "chunli",
+  "status": "unreviewed geometry proposals; not engine data",
+  "max_component_height": 0.3,
+  "regions": [
+    {
+      "label": "hair",
+      "center_box": [
+        0.2,
+        0,
+        0.8,
+        0.2
+      ]
+    },
+    {
+      "label": "skin",
+      "center_box": [
+        0.2,
+        0.2,
+        0.8,
+        0.4
+      ]
+    },
+    {
+      "label": "cloth",
+      "center_box": [
+        0.25,
+        0.4,
+        0.75,
+        0.64
+      ]
+    },
+    {
+      "label": "skin",
+      "center_box": [
+        0,
+        0.35,
+        0.25,
+        0.6
+      ]
+    },
+    {
+      "label": "skin",
+      "center_box": [
+        0.75,
+        0.35,
+        1,
+        0.6
+      ]
+    },
+    {
+      "label": "trousers",
+      "center_box": [
+        0,
+        0.65,
+        1,
+        0.82
+      ]
+    },
+    {
+      "label": "boots",
+      "center_box": [
+        0,
+        0.84,
+        1,
+        1
+      ]
+    }
+  ],
+  "parts_reference": {
+    "url": "https://segaretro.org/File:Pocket_Fighter,_Characters.png",
+    "verification": "Codex visual inspection of the published character montage; not a game palette dump",
+    "pac_character_order": "unverified; do not infer PLxx mapping"
+  },
+  "slot_plan": {
+    "status": "proposed capacity only; not engine allocation",
+    "transparent": [
+      0
+    ],
+    "skin": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "costume": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "secondary": [
+      9,
+      10,
+      11
+    ],
+    "accent": [
+      12,
+      13,
+      14
+    ],
+    "outline": [
+      15
+    ],
+    "constraint": "Parts sharing a role may need different colors. Resolve sharing/reallocation per fighter before export; these ranges do not prove all requested colors fit."
+  },
+  "parts": [
+    {
+      "id": "hair",
+      "label": "hair",
+      "color_intent": "brown",
+      "palette_role": "secondary",
+      "thin_feature_review": false
+    },
+    {
+      "id": "buns_and_ribbons",
+      "label": "white_trim",
+      "color_intent": "white",
+      "palette_role": "accent",
+      "thin_feature_review": true
+    },
+    {
+      "id": "face_arms_hands",
+      "label": "skin",
+      "color_intent": "skin; no glove",
+      "palette_role": "skin",
+      "thin_feature_review": false
+    },
+    {
+      "id": "top_and_sleeve_puff",
+      "label": "cloth",
+      "color_intent": "blue",
+      "palette_role": "costume",
+      "thin_feature_review": false
+    },
+    {
+      "id": "skirt_panel",
+      "label": "cloth",
+      "color_intent": "blue",
+      "palette_role": "costume",
+      "thin_feature_review": true
+    },
+    {
+      "id": "skirt_outline",
+      "label": "cloth_outline",
+      "color_intent": "blue outline",
+      "palette_role": "costume",
+      "thin_feature_review": true
+    },
+    {
+      "id": "trousers",
+      "label": "trousers",
+      "color_intent": "brown",
+      "palette_role": "secondary",
+      "thin_feature_review": false
+    },
+    {
+      "id": "boots",
+      "label": "boots",
+      "color_intent": "white",
+      "palette_role": "accent",
+      "thin_feature_review": false
+    }
+  ],
+  "owner_target_provenance": "Reported by Claude in issue #20; not independently owner-approved in this tool"
+}
