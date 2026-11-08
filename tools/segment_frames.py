@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 from wsgfx import tile2
+from component_marks import apply_marks, load_marks
 
 LABELS = {
     "unknown": -1,
@@ -20,6 +21,12 @@ LABELS = {
     "hair": 5,
     "accent": 6,
     "trousers": 7,
+    "white_trim": 8,
+    "gloves": 9,
+    "belt": 10,
+    "cloth_outline": 11,
+    "trunks": 12,
+    "wristband": 13,
 }
 COLORS = [
     (210, 210, 210),
@@ -30,6 +37,12 @@ COLORS = [
     (90, 55, 30),
     (220, 45, 45),
     (135, 90, 55),
+    (255, 255, 255),
+    (240, 150, 40),
+    (45, 35, 30),
+    (30, 55, 160),
+    (215, 35, 45),
+    (225, 75, 55),
 ]
 
 
@@ -117,18 +130,25 @@ def components(pixels: np.ndarray) -> tuple[np.ndarray, int]:
     return labels, count
 
 
-def classify(pixels: np.ndarray, rules: dict) -> tuple[np.ndarray, int]:
+def classify(
+    pixels: np.ndarray, rules: dict, marks: dict | None = None
+) -> tuple[np.ndarray, int]:
     result = np.full(pixels.shape, -1, dtype=np.int8)
     result[pixels == 0] = 0
     result[pixels == 3] = 1
     yy, xx = np.nonzero(pixels)
     if not len(xx):
-        return result, 0
+        return (
+            apply_marks(
+                pixels, result, np.zeros(pixels.shape, dtype=int), marks, LABELS
+            ),
+            0,
+        )
     x0, x1, y0, y1 = xx.min(), xx.max() + 1, yy.min(), yy.max() + 1
     labs, count = components(pixels)
     # A clipped silhouette cannot use whole-body proportions safely.
     if x0 == 0 or x1 == 224 or y0 == 0 or y1 == 144:
-        return result, count
+        return apply_marks(pixels, result, labs, marks, LABELS), count
     for number in range(1, count + 1):
         ys, xs = np.nonzero(labs == number)
         cx = (float(xs.mean()) - x0) / (x1 - x0)
@@ -143,14 +163,14 @@ def classify(pixels: np.ndarray, rules: dict) -> tuple[np.ndarray, int]:
                 choices.add(LABELS[rule["label"]])
         if len(choices) == 1:
             result[labs == number] = choices.pop()
-    return result, count
+    return apply_marks(pixels, result, labs, marks, LABELS), count
 
 
 def observations(
-    frame: dict, side: int, rules: dict
+    frame: dict, side: int, rules: dict, marks: dict | None = None
 ) -> tuple[dict, np.ndarray, int, int]:
     pixels, owner, sprites = compose(frame, side)
-    labels, n = classify(pixels, rules)
+    labels, n = classify(pixels, rules, marks)
     votes = defaultdict(lambda: [set() for _ in range(64)])
     for sprite in sprites:
         if sprite["side"] != side:
@@ -204,20 +224,25 @@ def preview(labels: np.ndarray) -> Image.Image:
     return Image.fromarray(rgb)
 
 
-def process(capture: Path, rule_path: Path, out: Path) -> dict:
+def process(
+    capture: Path, rule_path: Path, out: Path, marks_path: Path | None = None
+) -> dict:
     cap = json.loads(capture.read_text())
     rules = json.loads(rule_path.read_text())
     if cap.get("status") != "CAPTURED" or cap.get("schema") != 1:
         raise ValueError("need complete schema-1 capture")
     if cap["character"] != rules["character"]:
         raise ValueError("character/rules mismatch")
+    marks = load_marks(marks_path, capture, cap)
     out.mkdir(parents=True, exist_ok=False)
     votes = {}
     evidence = {}
     counts = []
     thumbnails = []
     for index, frame in enumerate(cap["frames"]):
-        local, labels, n, sprites = observations(frame, cap["side"], rules)
+        local, labels, n, sprites = observations(
+            frame, cap["side"], rules, marks.get("frames", {}).get(str(frame["index"]))
+        )
         merge_votes(votes, local, evidence, frame["index"])
         counts.append(
             {
@@ -258,6 +283,13 @@ def process(capture: Path, rule_path: Path, out: Path) -> dict:
         "rom_sha256": cap["rom_sha256"],
         "capture_sha256": hashlib.sha256(capture.read_bytes()).hexdigest(),
         "rules_sha256": hashlib.sha256(rule_path.read_bytes()).hexdigest(),
+        "marks_sha256": (
+            hashlib.sha256(marks_path.read_bytes()).hexdigest() if marks_path else None
+        ),
+        "reviewer": marks.get("reviewer"),
+        "marked_frames": sum(
+            bool(r["marks"]) for r in marks.get("frames", {}).values()
+        ),
         "engine_ready": False,
         "status": "UNREVIEWED_GEOMETRIC_PROPOSALS",
         "limitations": [
@@ -288,8 +320,9 @@ def main() -> None:
     parser.add_argument("capture", type=Path)
     parser.add_argument("rules", type=Path)
     parser.add_argument("out", type=Path)
+    parser.add_argument("--marks", type=Path)
     args = parser.parse_args()
-    r = process(args.capture, args.rules, args.out)
+    r = process(args.capture, args.rules, args.out, args.marks)
     print(
         json.dumps(
             {
