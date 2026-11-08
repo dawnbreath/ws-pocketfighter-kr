@@ -1,0 +1,43 @@
+{
+  "character": "zangief",
+  "status": "unreviewed geometry proposals; not engine data",
+  "max_component_height": 0.32,
+  "regions": [
+    {
+      "label": "hair",
+      "center_box": [
+        0.25,
+        0,
+        0.75,
+        0.17
+      ]
+    },
+    {
+      "label": "skin",
+      "center_box": [
+        0,
+        0.17,
+        1,
+        0.52
+      ]
+    },
+    {
+      "label": "accent",
+      "center_box": [
+        0.25,
+        0.55,
+        0.75,
+        0.73
+      ]
+    },
+    {
+      "label": "boots",
+      "center_box": [
+        0,
+        0.84,
+        1,
+        1
+      ]
+    }
+  ]
+}
