@@ -15,3 +15,4 @@
 | T13 | Saturn PAC reference inspector | Codex | tool verified on 35 local PACs; review pending | codex/T13-saturn-reference | sprite compression unconfirmed; no frame decoder |
 
 Update this table in the PR that changes a task’s state.
+| T14 | Stage backgrounds + HUD Saturn-style colour (tile-hash class tables baked at 4bpp copy sites; see docs/4bpp-plan.md T14) | Codex (stage/HUD tile capture + classes) + Claude (engine) | open | – | T10 copy sites, T12 mask machinery |
