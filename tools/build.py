@@ -49,13 +49,15 @@ def apply_engine(R):
 # ------------------------------------------------------------------ colour
 import colorlib
 def apply_color(R,survey=False,spec_path=None):
-    code,_=asm.assemble('col',({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} if os.environ.get('PF_HYBRID')=='1' else {}))
+    code,_=asm.assemble('col',({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} | ({'CTAB':'1'} if os.environ.get('PF_CLASS_TABLE') else {}) if os.environ.get('PF_HYBRID')=='1' else {}))
     assert len(code)<0x600
     spec=colorlib.load_spec(spec_path or colorlib.SPEC)
     bank,conf,n=colorlib.build_bank(code,spec)
     for c in conf: print('colour conflict',c)
     print('colour scenes',n)
     b=COL_IDX<<16; R.b[b:b+0x10000]=bank
+    if os.environ.get('PF_HYBRID')=='1' and os.environ.get('PF_CLASS_TABLE'):
+        tb=open(os.environ['PF_CLASS_TABLE'],'rb').read(); R.b[b+0x8000:b+0x8000+len(tb)]=tb; print('class table',len(tb),'bytes at bank+0x8000')
 # ------------------------------------------------------------------ font / encoding
 # Korean text is pre-rendered per line (proportional, Galmuri11 12px) and sliced into 8x16 cells.
 # Each unique cell bitmap gets a 2-byte code: lead 0xA0..0xFE (page), trail 1..254 (index).

@@ -22,6 +22,7 @@ org 0x0000
 %define PL1    0x0D40            ; P1 name-hash list {hash, body row offset}, hash 0 ends
 %define PL2    0x0D80            ; P2 name-hash list
 %define OAMCNT 0xFD5A
+%define CTABA  0x8000            ; class table inside the colour bank (CS=0x2000); distinct from the VRAM flag array at DS:0x8000
 %define RSY    0x8200            ; HYBRID prototype: frames left of the rolling 2bpp->4bpp resync
 %define RSC    0x8202            ; HYBRID prototype: next tile index to resync
 %define OAMBAK 0xFD4A
@@ -272,6 +273,9 @@ times 0x240-($-$$) db 0xFF
 ; P1 sprites (palette field 4) / P2 (5): top part -> palette 8 / 10, bottom part -> 9 / 11, middle unchanged.
 ; cx = ch:start index, cl:count (from the caller). Preserves nothing (caller saves).
 oam:
+%ifdef CTAB
+    retf                    ; HYBRID+CTAB: fighters use per-pixel 4bpp classes, no band hack
+%endif
     cld
     xor ax,ax
     mov ds,ax
@@ -570,9 +574,27 @@ cphook:
     repe cmpsw              ; ds:si (new) vs es:di (old 2bpp tile)
     pop si
     je .same
+    push si                 ; changed tile: 16-bit content hash (rol 3 / xor over 8 words)
+    xor dx,dx
+    mov cx,8
+.h: lodsw
+    rol dx,3
+    xor dx,ax
+    loop .h
+    pop si
     mov di,bx
     shl di,5
     add di,0x7000
+%ifdef CTAB
+    mov bp,CTABA+2           ; class table in this bank: count, then {hash16, 16 mask bytes (m2,m3 per row)}
+    mov cx,[cs:CTABA]
+    jcxz .plain
+.s: cmp dx,[cs:bp]
+    je .found
+    add bp,18
+    loop .s
+%endif
+.plain:
     mov cx,8
 .r: lodsw
     stosw
@@ -580,11 +602,39 @@ cphook:
     stosw
     loop .r
     jmp .n
+%ifdef CTAB
+.found:
+    add bp,2
+    mov cx,8
+.m: lodsw
+    stosw                   ; p0,p1 unchanged
+    or al,ah
+    mov ah,al               ; non-zero pixel mask
+    and al,[cs:bp]          ; plane 2 = group bit 0
+    and ah,[cs:bp+1]        ; plane 3 = group bit 1
+    add bp,2
+    stosw
+    loop .m
+    jmp .n
+%endif
 .same:
     add si,16
 .n: inc bx
     cmp bx,128
     jb .t
+%ifdef CTAB
+    mov ax,[cs:CTABA]        ; fighter palettes 12 and 13 (16 colours each) follow the entries
+    mov bx,18
+    mul bx
+    add ax,CTABA+2
+    mov si,ax
+    mov di,0xFE00+12*32
+    mov cx,32
+.pw:mov ax,[cs:si]
+    stosw
+    add si,2
+    loop .pw
+%endif
     pop es
     pop ds
     retf
