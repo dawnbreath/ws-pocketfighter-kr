@@ -75,3 +75,47 @@ Exact coordinates, pose fingerprints, before/after arrays, errors and marks
 remain in ignored `work/{chunli,zangief}-qa/reference-*.json` locally.
 The Saturn idle savestate and capture receipts remain with the local reference
 runtime; they are not interchangeable with WonderSwan saves.
+
+## T19 round 1: approved seed reproduction and pose-disjoint boot checks
+
+Claude's `seed_recipe.py` now reproduces the supplied seed contract locally:
+Chun-Li pose 1 (677 pixels), Zangief pose 5 (1269 pixels). The recipe is reported
+by Claude as within two pixels of the owner-approved Chun-Li mock; this round
+uses the recipe as the baseline, not an independently verified exact original.
+Its outline-majority tie used set iteration order: Python hash seeds 1 vs 2
+changed five Chun-Li boundary labels. Sorting tied labels makes regeneration
+stable (three hash seeds now give the same pickle SHA-256
+`d1edca631cb77cf9c0d465ef053d5827392b1a299b3becf8d6406b746f145b2f`).
+Alphabetical tie-breaking is reproducibility policy, not a semantic correction.
+
+`tools/mock/review_round.py` runs the approved baseline and corrected forest,
+exports all-pose local predictions, and produces shaded before/after sheets for
+the top 20 poses. Shading is a diagnostic preview, not hardware palette output.
+The built-in source-only `reference` recipe binds boot-interior annotations to
+exact normalized pose hashes. No game graphics, arrays or masks are in git.
+
+| Fighter | Added training points | Evaluation pose (capture frame) | Held-out points | Wrong before → after |
+|---|---:|---|---:|---:|
+| Chun-Li | 66, high-kick boot (frame 39) | airborne pose (frame 61) | 23 | 12 → 10 |
+| Zangief | 18, inverted boot (frame 209) | horizontal pose (frame 214) | 31 | 16 → 15 |
+
+Annotations were inspected against the original WS pose and Saturn default
+costume reference. Only non-outline boot interiors were marked; uncertain
+boundaries remain unlabelled. Evaluation poses and translation-equivalent
+copies cannot appear in training. Metrics describe these 54 reviewed points,
+not all pixels or all poses. Small improvements do not justify engine export;
+remaining boot errors, clothing boundaries and effects still need review.
+
+Reproduce against the existing local captures (each output directory must be new):
+
+```sh
+python tools/mock/review_round.py CHUNLI_CAPTURE.json chunli reference work/chunli-round
+python tools/mock/review_round.py ZANGIEF_CAPTURE.json zangief reference work/zangief-round
+python -m unittest discover -s tests -p test_review_round.py
+```
+
+Each output contains marks/provenance, a per-point expected/actual/vote report,
+round-0/1 predictions and both top-20 sheets. The three focused tests cover
+training/evaluation pose leakage and deterministic tie behaviour. Original
+ROM and Saturn idle savestate remain untouched. No CTB2 table is promoted and
+T19/#31 acceptance, PR #27 engine review and full runtime regression remain open.

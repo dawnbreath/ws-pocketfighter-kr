@@ -63,7 +63,7 @@ def classify(crop, recipe):
                       if crop[yy, xx] in (1, 2) and (yy, xx) in cls]
                 if nb:
                     pri = [q for q in nb if q != 'skin']
-                    out[(y, x)] = max(set(pri), key=pri.count) if pri else 'skin'
+                    out[(y, x)] = max(sorted(set(pri)), key=pri.count) if pri else 'skin'
     return out
 
 
