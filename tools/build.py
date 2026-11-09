@@ -51,9 +51,10 @@ import colorlib
 from class_table import validate_table
 def apply_color(R,survey=False,spec_path=None):
     code,_=asm.assemble('col',({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} | ({'CTAB':'1'} if os.environ.get('PF_CLASS_TABLE') else {}) if os.environ.get('PF_HYBRID')=='1' else {}))
-    assert len(code)<0x600
+    slist=0x800 if os.environ.get('PF_HYBRID')=='1' else 0x600
+    assert len(code)<slist
     spec=colorlib.load_spec(spec_path or colorlib.SPEC)
-    bank,conf,n=colorlib.build_bank(code,spec)
+    bank,conf,n=colorlib.build_bank(code,spec,slist)
     for c in conf: print('colour conflict',c)
     print('colour scenes',n)
     b=COL_IDX<<16; R.b[b:b+0x10000]=bank

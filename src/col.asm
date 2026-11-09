@@ -4,7 +4,12 @@
 bits 16
 cpu 186
 org 0x0000
-%define SLIST  0x0600            ; scene list: 8-byte entries {2 words key (p0,p1), word table offset}; key0=0xFFFF ends
+%ifdef HYBRID
+%define SLIST  0x0800            ; HYBRID: scene list moved up for code room (build.py passes slist=0x800)
+%else
+%define SLIST  0x0600
+%endif
+; scene list: 8-byte entries {2 words key (p0,p1), word table offset}; key0=0xFFFF ends
 %define DEFT   0x0C00            ; default ramp table: 16 palettes x 8 shades x RGB444
 %define IMG    0xFD00            ; LUT(4)+palette(32) of ports 0x1C..0x3F
 %define CACHE  0xFD80
@@ -24,6 +29,8 @@ org 0x0000
 %define OAMCNT 0xFD5A
 %define CTABA  0x8000            ; class table inside the colour bank (CS=0x2000); distinct from the VRAM flag array at DS:0x8000
 %define RSY    0x8200            ; HYBRID prototype: frames left of the rolling 2bpp->4bpp resync
+%define FIGHT  0x8204            ; HYBRID: >0 while the fighter-tile copier hook is active (slots 0x180-0x1FF are owned by cphook)
+%define FORCE  0x8205            ; HYBRID: 1 = cphook converts every staging tile on this call (first call after it did not own the slots)
 %define RSC    0x8202            ; HYBRID prototype: next tile index to resync
 %define OAMBAK 0xFD4A
 %define GA     0xFD30
@@ -466,7 +473,10 @@ pct:
 ; Runs from the VBlank colour hook while RSY>0 (set on every scene/palette change): 32 tiles per call, cursor wraps over 0..511;
 ; the map scan runs on the call that starts a round. Needs ds=es=0, DF=0. Clobbers ax,bx,cx,dx,si,di,bp.
 rsyn:
-    cmp byte [RSY],0
+    cmp byte [FIGHT],0
+    je .nf
+    dec byte [FIGHT]
+.nf:cmp byte [RSY],0
     je .rd
     dec byte [RSY]
     mov bx,[RSC]
@@ -475,7 +485,11 @@ rsyn:
     push bx
     call scanop             ; scanop/scanmap clobber bx
     pop bx
-.go:mov si,bx
+.go:cmp bx,0x180
+    jb .cv
+    cmp byte [FIGHT],0
+    jne .skip               ; fighter slots 0x180-0x1FF belong to cphook while a fight copier is active
+.cv:mov si,bx
     shl si,4
     add si,0x2000
     mov di,bx
@@ -508,6 +522,10 @@ rsyn:
     and bx,511
     mov [RSC],bx
 .rd:ret
+.skip:add bx,32
+    and bx,511
+    mov [RSC],bx
+    ret
 scanop:
     push di
     mov di,0x8000
@@ -560,16 +578,24 @@ cphook:
     mov ds,ax               ; staging lives at SS:0500 (SS=0 observed)
     xor ax,ax
     mov es,ax
+    mov byte [es:FORCE],0
+    cmp byte [es:FIGHT],0
+    jne .own
+    mov byte [es:FORCE],1   ; first call after cphook did not own the slots: do not trust the equal-source skip
+.own:mov byte [es:FIGHT],90
     xor bx,bx               ; tile index 0..127
     mov si,0x0500
 .t: mov di,bx
     shl di,4
     add di,0x3800
+    cmp byte [es:FORCE],0
+    jne .chg
     push si
     mov cx,8
     repe cmpsw              ; ds:si (new) vs es:di (old 2bpp tile)
     pop si
     je .same
+.chg:
 %ifdef CTAB
     push si                 ; changed tile: 16-bit content hash (rol 3 / xor over 8 words)
     xor dx,dx

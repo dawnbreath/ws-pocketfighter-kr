@@ -44,7 +44,7 @@ def expand(spec):
                 continue
             seen[k]=(sc['name'],t); scenes.append((k,t))
     return default,scenes,conf
-def build_bank(code,spec):
+def build_bank(code,spec,slist=0x600):
     default,scenes,conf=expand(spec)
     bank=bytearray(b'\xff'*0x10000); bank[:len(code)]=code
     enc=lambda t: b''.join(struct.pack('<H',rgbw(c)) for p in range(16) for c in t[p])
@@ -76,6 +76,6 @@ def build_bank(code,spec):
         if e not in cache: cache[e]=off+len(tabs); tabs+=e
         lst+=struct.pack('<2HH',*k,cache[e])
     lst+=struct.pack('<H',0xFFFF)
-    assert len(lst)<=0x600 and 0x1000+len(tabs)<=0x10000
-    bank[0x600:0x600+len(lst)]=lst; bank[0x1000:0x1000+len(tabs)]=tabs
+    assert slist+len(lst)<=0xC00 and 0x1000+len(tabs)<=0x10000
+    bank[slist:slist+len(lst)]=lst; bank[0x1000:0x1000+len(tabs)]=tabs
     return bytes(bank),conf,len(scenes)
