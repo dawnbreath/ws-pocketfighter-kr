@@ -29,10 +29,10 @@ class Rom:
         b[-9]=0x01            # color flag
         c=sum(b[:-2])&0xffff; b[-2]=c&0xff; b[-1]=c>>8
         return bytes(b)
-def far(seg,off): return bytes([0x9a,off&0xff,off>>8,seg&0xff,seg>>8])
+def far(seg,off,*,opcode=0x9a): return bytes([opcode,off&0xff,off>>8,seg&0xff,seg>>8])
 # ------------------------------------------------------------------ engine hooks
 def apply_engine(R):
-    code,sym=asm.assemble('kr_stubs',{'KRFONT_BANK':hex(BANKREG(KRFONT_IDX)),'STORY_BANK':hex(BANKREG(STORY_IDX)),'COL_BANK':hex(BANKREG(COL_IDX))})
+    code,sym=asm.assemble('kr_stubs',{'KRFONT_BANK':hex(BANKREG(KRFONT_IDX)),'STORY_BANK':hex(BANKREG(STORY_IDX)),'COL_BANK':hex(BANKREG(COL_IDX))}|({'HYBRID':'1'} if os.environ.get('PF_HYBRID')=='1' else {}))
     R.put_free(0x150000+0xFF34,code,'kr stubs')
     S=lambda n: sym[n]
     R.patch(0x15AFBA,'b800c08ed8',far(0x5000,S('krchk')),'afb6 korean code check')
@@ -44,17 +44,20 @@ def apply_engine(R):
     R.patch(0x19C80F,'b800209a60970090',far(0x5000,S('storyseg'))+b'\x90'*3,'story bank seg')
     R.patch(0x19CA0A,'b800209a4c970090',far(0x5000,S('storymap'))+b'\x90'*3,'story bank map')
     R.patch(0x1403C4,'b800108ed8',far(0x5000,S('colstub')),'vblank colour hook')
+    if os.environ.get('PF_HYBRID')=='1': R.patch(0x1402A4,'ea20010000',far(0x5000,S('cpstub'),opcode=0xEA),'copier tail-jump trampoline')
     R.patch(0x14028D,'8a2e3c108a0e3d10',far(0x5000,S('oamstub'))+b'\x90\x90\x90','OAM builder: character bands')
 # ------------------------------------------------------------------ colour
 import colorlib
 def apply_color(R,survey=False,spec_path=None):
-    code,_=asm.assemble('col',({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}))
+    code,_=asm.assemble('col',({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} | ({'CTAB':'1'} if os.environ.get('PF_CLASS_TABLE') else {}) if os.environ.get('PF_HYBRID')=='1' else {}))
     assert len(code)<0x600
     spec=colorlib.load_spec(spec_path or colorlib.SPEC)
     bank,conf,n=colorlib.build_bank(code,spec)
     for c in conf: print('colour conflict',c)
     print('colour scenes',n)
     b=COL_IDX<<16; R.b[b:b+0x10000]=bank
+    if os.environ.get('PF_HYBRID')=='1' and os.environ.get('PF_CLASS_TABLE'):
+        tb=open(os.environ['PF_CLASS_TABLE'],'rb').read(); R.b[b+0x8000:b+0x8000+len(tb)]=tb; print('class table',len(tb),'bytes at bank+0x8000')
 # ------------------------------------------------------------------ font / encoding
 # Korean text is pre-rendered per line (proportional, Galmuri11 12px) and sliced into 8x16 cells.
 # Each unique cell bitmap gets a 2-byte code: lead 0xA0..0xFE (page), trail 1..254 (index).

@@ -22,6 +22,9 @@ org 0x0000
 %define PL1    0x0D40            ; P1 name-hash list {hash, body row offset}, hash 0 ends
 %define PL2    0x0D80            ; P2 name-hash list
 %define OAMCNT 0xFD5A
+%define CTABA  0x8000            ; class table inside the colour bank (CS=0x2000); distinct from the VRAM flag array at DS:0x8000
+%define RSY    0x8200            ; HYBRID prototype: frames left of the rolling 2bpp->4bpp resync
+%define RSC    0x8202            ; HYBRID prototype: next tile index to resync
 %define OAMBAK 0xFD4A
 %define GA     0xFD30
 %define GB     0xFD40
@@ -55,7 +58,14 @@ entry:
     je .init
     mov word [V_M],0xA55A
     mov word [V_T],DEFT
+%ifdef HYBRID
+    mov byte [RSY],255         ; first use: establish the prototype's state (RAM is not assumed zeroed)
+    mov word [RSC],0
+%endif
 .init:
+%ifdef HYBRID
+    call rsyn                  ; after the state is initialised
+%endif
     mov di,IMG
     mov dx,0x1C
     mov cx,18
@@ -93,6 +103,9 @@ entry:
     jne .changed
     jmp done
 .changed:
+%ifdef HYBRID
+    mov byte [RSY],255
+%endif
     mov si,IMG
     mov di,CACHE
     mov cx,21
@@ -204,6 +217,10 @@ entry:
     inc word [V_K]
     cmp word [V_K],4
     jb .k
+%ifdef HYBRID
+    mov ax,[di-8]             ; 4bpp: opaque copy of entry 0 at index 4 (BG tiles whose shade 0 was opaque in 2bpp)
+    mov [di],ax
+%endif
     add di,24
     inc word [V_P]
     cmp word [V_P],16
@@ -256,6 +273,9 @@ times 0x240-($-$$) db 0xFF
 ; P1 sprites (palette field 4) / P2 (5): top part -> palette 8 / 10, bottom part -> 9 / 11, middle unchanged.
 ; cx = ch:start index, cl:count (from the caller). Preserves nothing (caller saves).
 oam:
+%ifdef CTAB
+    retf                    ; HYBRID+CTAB: fighters use per-pixel 4bpp classes, no band hack
+%endif
     cld
     xor ax,ax
     mov ds,ax
@@ -436,3 +456,191 @@ pct:
     xor ah,ah
     pop bx
     ret
+
+%ifdef HYBRID
+; ---- PROTOTYPE (T17): rolling resync of the 512 game tiles into 4bpp, map-aware for colour 0.
+; In 2bpp, BOTH screens use palette bit 2: 0-3/8-11 opaque, 4-7/12-15 transparent at shade 0.
+; In 4bpp zero is transparent for all palettes. Tiles with opaque-only map references expand zero -> 4; others keep zero.
+; OAM uses are not scanned here: map-only classification is not a complete ownership/conflict proof.
+; Tile flags (1 byte/tile) live at 0000:8000..81FF (prototype reservation; all-mode lifetime safety unproven): bit0 = referenced opaque, bit1 = referenced transparent.
+; Runs from the VBlank colour hook while RSY>0 (set on every scene/palette change): 32 tiles per call, cursor wraps over 0..511;
+; the map scan runs on the call that starts a round. Needs ds=es=0, DF=0. Clobbers ax,bx,cx,dx,si,di,bp.
+rsyn:
+    cmp byte [RSY],0
+    je .rd
+    dec byte [RSY]
+    mov bx,[RSC]
+    and bx,0x1E0            ; invariant: cursor is a multiple of 32 in 0..480, so a batch never leaves tiles 0..511
+    jnz .go
+    push bx
+    call scanop             ; scanop/scanmap clobber bx
+    pop bx
+.go:mov si,bx
+    shl si,4
+    add si,0x2000
+    mov di,bx
+    shl di,5
+    add di,0x4000
+    mov cx,32
+.t: mov al,[bx+0x8000]
+    cmp al,1
+    je .opq
+    mov dx,8                ; transparent / conflict: index = shade
+.r: lodsw
+    stosw
+    xor ax,ax
+    stosw
+    dec dx
+    jnz .r
+    jmp .nx
+.opq:
+    mov dx,8                ; opaque: shade 0 -> index 4 (plane 2 = NOT(p0|p1))
+.q: lodsw
+    stosw
+    or al,ah
+    not al
+    xor ah,ah
+    stosw
+    dec dx
+    jnz .q
+.nx:inc bx
+    loop .t
+    and bx,511
+    mov [RSC],bx
+.rd:ret
+scanop:
+    push di
+    mov di,0x8000
+    mov cx,256
+    xor ax,ax
+    rep stosw
+    in al,7
+    xor ah,ah
+    mov bp,ax               ; port 7: SCR1 map base nibble | SCR2 map base nibble << 4
+    and al,15
+    mov ah,al
+    xor al,al
+    shl ax,3                ; nibble * 0x800
+    mov si,ax
+    call scanmap
+    mov ax,bp
+    shr al,4
+    mov ah,al
+    xor al,al
+    shl ax,3
+    mov si,ax
+    call scanmap
+    pop di
+    ret
+scanmap:
+    mov cx,1024
+.s: lodsw
+    mov bx,ax
+    and bx,0x1FF
+    shr ax,9
+    test al,4               ; palette bit 2, identical for SCR1/SCR2; palette 8/9 are opaque
+    jnz .tr
+.op:mov al,1
+    jmp .o
+.tr:mov al,2
+.o: or [bx+0x8000],al
+    loop .s
+    ret
+
+; ---- PROTOTYPE (T17): copier hook. Entered (far call from the stub in bank 0x15) right before the RAM-resident copier at 0000:0120
+; overwrites VRAM 0x3800-0x3FFF (tile slots 0x180-0x1FF = fighter tiles) with the staging buffer SS:0500-0CFF (128 tiles).
+; Per tile: compare staging with the still-old VRAM tile; only changed tiles are expanded (class 0: index = 2bpp shade) to the
+; 4bpp mirror at 0x4000 + (0x180 + i)*32 = 0x7000 + i*32. Saves ds/es; the stub saves the general registers. Fixed address 0x0500.
+times 0x500-($-$$) db 0xFF
+cphook:
+    push ds
+    push es
+    cld
+    mov ax,ss
+    mov ds,ax               ; staging lives at SS:0500 (SS=0 observed)
+    xor ax,ax
+    mov es,ax
+    xor bx,bx               ; tile index 0..127
+    mov si,0x0500
+.t: mov di,bx
+    shl di,4
+    add di,0x3800
+    push si
+    mov cx,8
+    repe cmpsw              ; ds:si (new) vs es:di (old 2bpp tile)
+    pop si
+    je .same
+    push si                 ; changed tile: 16-bit content hash (rol 3 / xor over 8 words)
+    xor dx,dx
+    mov cx,8
+.h: lodsw
+    rol dx,3
+    xor dx,ax
+    loop .h
+    pop si
+    mov di,bx
+    shl di,5
+    add di,0x7000
+%ifdef CTAB
+    xor ax,ax               ; binary search over the class table: entries are 32 bytes {hash16, 16 mask bytes, 14 pad}, sorted by hash16
+    mov cx,[cs:CTABA]       ; ax = lo, cx = hi (byte offsets relative to the first entry)
+    shl cx,5
+.bs:cmp ax,cx
+    jae .plain
+    mov bp,ax
+    add bp,cx
+    shr bp,1
+    and bp,0xFFE0           ; mid, entry aligned
+    cmp dx,[cs:bp+CTABA+2]
+    je .found
+    jb .lo
+    lea ax,[bp+32]
+    jmp .bs
+.lo:mov cx,bp
+    jmp .bs
+%endif
+.plain:
+    mov cx,8
+.r: lodsw
+    stosw
+    xor ax,ax
+    stosw
+    loop .r
+    jmp .n
+%ifdef CTAB
+.found:
+    add bp,CTABA+4          ; -> 16 mask bytes of the matching entry
+    mov cx,8
+.m: lodsw
+    stosw                   ; p0,p1 unchanged
+    or al,ah
+    mov ah,al               ; non-zero pixel mask
+    and al,[cs:bp]          ; plane 2 = group bit 0
+    and ah,[cs:bp+1]        ; plane 3 = group bit 1
+    add bp,2
+    stosw
+    loop .m
+    jmp .n
+%endif
+.same:
+    add si,16
+.n: inc bx
+    cmp bx,128
+    jb .t
+%ifdef CTAB
+    mov ax,[cs:CTABA]        ; fighter palettes 12 and 13 (16 colours each) follow the entries
+    mov cl,5
+    shl ax,cl
+    add ax,CTABA+2
+    mov si,ax
+    mov di,0xFE00+12*32
+    mov cx,32
+.pw:mov ax,[cs:si]
+    stosw
+    add si,2
+    loop .pw
+%endif
+    pop es
+    pop ds
+    retf
+%endif
