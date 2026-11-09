@@ -46,12 +46,19 @@ def train(pose_list, seeds):
     return RandomForestClassifier(n_estimators=200, random_state=0).fit(np.array(X), np.array(y))
 
 
+def predict_pose(
+    clf: RandomForestClassifier, pixels: np.ndarray
+) -> tuple[list[tuple[int, int]], np.ndarray, np.ndarray]:
+    """Return semantic class IDs, not probability-column indices."""
+    rows, positions = features(pixels)
+    probabilities = clf.predict_proba(rows)
+    return positions, clf.classes_[probabilities.argmax(1)], probabilities.max(1)
+
+
 if __name__ == '__main__':
     cap, seeds_path, out = sys.argv[1:4]
     os.makedirs(out, exist_ok=False)
     P = poses(cap); clf = train(P, pickle.load(open(seeds_path, 'rb')))
-    probs = {}
-    for n, i, px in P:
-        Xf, pf = features(px); pr = clf.predict_proba(Xf); probs[n] = (pf, pr)
-    pickle.dump({n: (pf, pr.argmax(1), pr.max(1)) for n, (pf, pr) in probs.items()}, open(os.path.join(out, 'predictions.pkl'), 'wb'))
+    predictions = {n: predict_pose(clf, px) for n, i, px in P}
+    pickle.dump(predictions, open(os.path.join(out, 'predictions.pkl'), 'wb'))
     print(len(P), 'poses; predictions (class + confidence) written, local only')
