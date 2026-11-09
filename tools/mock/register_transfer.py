@@ -4,7 +4,7 @@ For every non-transparent pixel of a target pose, find the pixel of an already-l
 whose (2*pr+1)^2 shade patch differs least (ties: smaller shift); accept when at most `maxbad` patch pixels differ. Works well between
 animation neighbours (e.g. the 4 idle "breathing" variants of Chun-Li: 80-96 % strict coverage, visually exact), and fails between
 different drawings (walk/jump/attack: median coverage < 1 %) — those need their own reviewed seed. A chain (BFS) adds the pose with the
-best strict coverage if >= TH; second pass (rad 4, maxbad 8) plus nearest-labelled fill (<= 3 px) completes the pose.
+best strict coverage if >= TH; second pass (rad 4, maxbad 8) proposes additional matches. Equal-score part disagreements abstain; unmatched pixels remain unlabelled.
 
 usage: python tools/mock/register_transfer.py CAPTURE.json SEEDS.pkl OUT.pkl [TH]
   SEEDS.pkl: {pose_number: {(y, x): class_name}} (see tools/mock/seed_recipe.py); OUT.pkl: (labels, depth, parent, coverage) — local, game-derived.
@@ -22,15 +22,21 @@ def transfer(src, labels, tgt, rad=3, pr=2, maxbad=3):
     for y in range(Ht):
         for x in range(Wt):
             if tgt[y, x] <= 0: continue
-            tp = T[y:y + 2 * pr + 1, x:x + 2 * pr + 1]; best = None
+            tp = T[y:y + 2 * pr + 1, x:x + 2 * pr + 1]; best = None; choices = set()
             for dy in range(-rad, rad + 1):
                 for dx in range(-rad, rad + 1):
                     sy, sx = y + dy, x + dx
                     if not (0 <= sy < Hs and 0 <= sx < Ws) or src[sy, sx] != tgt[y, x] or (sy, sx) not in labels: continue
                     sp = P[sy + rad:sy + rad + 2 * pr + 1, sx + rad:sx + rad + 2 * pr + 1]
                     key = (int((sp != tp).sum()), abs(dy) + abs(dx))
-                    if best is None or key < best[0]: best = (key, labels[(sy, sx)])
-            if best and best[0][0] <= maxbad: out[(y, x)] = best[1]
+                    if best is None or key < best:
+                        best = key
+                        choices = {labels[(sy, sx)]}
+                    elif key == best:
+                        choices.add(labels[(sy, sx)])
+            # Equal geometric evidence is not authority to choose a semantic part.
+            if best is not None and best[0] <= maxbad and len(choices) == 1:
+                out[(y, x)] = next(iter(choices))
     return out
 
 
@@ -39,16 +45,6 @@ def complete(src, lab, tgt):
     for k, v in transfer(src, lab, tgt, 4, 2, 8).items(): out.setdefault(k, v)
     return out
 
-
-def fill(tgt, out):
-    if not out: return out
-    lab = np.array(list(out.keys()))
-    for y in range(tgt.shape[0]):
-        for x in range(tgt.shape[1]):
-            if tgt[y, x] > 0 and (y, x) not in out:
-                d = (lab[:, 0] - y) ** 2 + (lab[:, 1] - x) ** 2; j = int(d.argmin())
-                if d[j] <= 9: out[(y, x)] = out[tuple(lab[j])]
-    return out
 
 
 if __name__ == '__main__':
@@ -67,6 +63,6 @@ if __name__ == '__main__':
                 if best is None or c > best[0]: best = (c, n, m)
         if best is None or best[0] < TH: break
         c, n, m = best; tgt = poses[n - 1][2]
-        labels[n] = fill(tgt, complete(poses[m - 1][2], labels[m], tgt)); depth[n] = depth[m] + 1; parent[n] = m; cov[n] = c
+        labels[n] = complete(poses[m - 1][2], labels[m], tgt); depth[n] = depth[m] + 1; parent[n] = m; cov[n] = c
         print('pose', n, 'from', m, 'strict coverage %.2f' % c, 'depth', depth[n], flush=True)
-    pickle.dump((labels, depth, parent, cov), open(dest, 'wb')); print('labelled', len(labels), 'of', N, 'poses')
+    pickle.dump((labels, depth, parent, cov), open(dest, 'wb')); print('partial proposals for', len(labels), 'of', N, 'poses')

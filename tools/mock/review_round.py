@@ -45,11 +45,24 @@ REFERENCE_SPOTS = {
 }
 
 
-def reference_spots(pose_list: list, character: str) -> dict:
+JUMP_SPOTS = {
+    "chunli": [
+        ("722274d012c84a6cf1d22cf3b1637a47", "train", "white", (4, 43, 18, 51)),
+        ("e9120a9dc9c057e94016e0fd43b5d755", "eval", "skin", (14, 10, 18, 14)),
+    ],
+    "zangief": [
+        ("47d719c550b7527e5c26f204a2a03350", "train", "red", (25, 39, 39, 47)),
+        ("d1539bf006207f456e951bd13ea41084", "eval", "skin", (7, 10, 12, 14)),
+    ],
+}
+
+
+def reference_spots(pose_list: list, character: str, jump: bool = False) -> dict:
     """Recreate reviewed non-outline boot-interior marks; not full-pose labels."""
     crops = {crop_md5(px)[0]: px for _, _, px in pose_list}
     rows = []
-    for key, split, label, rect in REFERENCE_SPOTS[character]:
+    rules = REFERENCE_SPOTS[character] + (JUMP_SPOTS[character] if jump else [])
+    for key, split, label, rect in rules:
         px = crops[key]
         x0, y0, x1, y1 = rect
         points = [
@@ -109,8 +122,8 @@ def run(capture: Path, character: str, marks: Path, out: Path) -> dict:
     cap = json.loads(capture.read_text())
     pose_list = poses(capture)
     annotations = (
-        reference_spots(pose_list, character)
-        if str(marks) == "reference"
+        reference_spots(pose_list, character, jump=str(marks) == "reference-jump")
+        if str(marks) in ("reference", "reference-jump")
         else json.loads(marks.read_text())
     )
     baseline, corrected, evaluation = prepare(pose_list, character, annotations)
@@ -129,6 +142,11 @@ def run(capture: Path, character: str, marks: Path, out: Path) -> dict:
             json.dumps(annotations, sort_keys=True).encode()
         ).hexdigest(),
         "scope": "reviewed spot errors on pose-disjoint evaluation; not full-pose accuracy",
+        "evaluation_history": (
+            "boot validation reused after model comparison; skin controls newly reviewed"
+            if str(marks) == "reference-jump"
+            else "original pose-disjoint spot round"
+        ),
         "rounds": [],
         "top20_frames": [f for _, f, _ in ranked],
         "engine_ready": False,
@@ -199,7 +217,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "marks",
         type=Path,
-        help="local annotation JSON or reference for the built-in spot recipe",
+        help="local annotation JSON, reference, or reference-jump for source-bound spot recipes",
     )
     parser.add_argument("out", type=Path)
     args = parser.parse_args()

@@ -119,3 +119,45 @@ round-0/1 predictions and both top-20 sheets. The three focused tests cover
 training/evaluation pose leakage and deterministic tie behaviour. Original
 ROM and Saturn idle savestate remain untouched. No CTB2 table is promoted and
 T19/#31 acceptance, PR #27 engine review and full runtime regression remain open.
+
+## T19 round 2: actual jump poses, rejected augmentation, skin controls
+
+A bounded rotation/reflection experiment on the existing training marks made
+the reused boot validation worse: Chun-Li 15/23 wrong and Zangief 17/31 wrong,
+versus round-1 10/23 and 15/31. It was rejected; no augmentation code enters
+the training path. These reused boot checks are now model-selection validation,
+not an untouched held-out estimate.
+
+The `reference-jump` source-only recipe instead adds actual visible boot
+interiors from Chun-Li frame54 (36 points) and Zangief frame187 (28 points).
+Exact normalized-pose hashes bind all coordinates. It preserves the original
+`reference` recipe and the same forest algorithm. Two new distinct evaluation
+poses (frame4 for each fighter) check 13 Chun-Li face and 20 Zangief shoulder
+skin points; neither pose is used for training.
+
+| Checks | Approved-seed baseline | Round 1 | With actual jump marks |
+|---|---:|---:|---:|
+| Chun-Li boot, 23 validation points | 12 wrong | 10 wrong | 4 wrong |
+| Zangief boot, 31 validation points | 16 wrong | 15 wrong | 15 wrong |
+| New skin controls, 33 points | 0 wrong | not measured | 0 wrong |
+
+Within the original boot checks, six additional Chun-Li errors were fixed and
+no formerly correct checks regressed. Zangief did not improve further. These
+87 checked points do not certify the full top-20 sheets, whole-pose masks, new
+actions or game runtime. No CTB2 table was promoted. The saved Saturn reference
+state and source ROM are unchanged.
+
+```sh
+python tools/mock/review_round.py CHUNLI_CAPTURE.json chunli reference-jump work/chunli-jump-round
+python tools/mock/review_round.py ZANGIEF_CAPTURE.json zangief reference-jump work/zangief-jump-round
+```
+
+Both connected runs produced before/after top-20 sheets and per-point reports.
+Training sizes are 779 Chun-Li and 1315 Zangief pixels (three poses each).
+Three split/tie tests pass; the six existing CTB2 format/assembly tests also
+pass on the engine branch. The engine review separately found first-call
+ownership dependent on uninitialized FIGHT: with equal staging/old 2bpp but
+an invalid 4bpp mirror, nonzero FIGHT skips conversion. This was reproduced
+using actual assembled cphook, reported on PR #27, and is not a claim of an
+observed retail-game failure. Engine initialization and lifetime proof remain
+Claude's open work; this PR changes only offline review data/metadata.

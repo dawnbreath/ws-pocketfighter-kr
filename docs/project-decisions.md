@@ -2,8 +2,9 @@
 
 This answers the six consultation questions and the two follow-up comments in
 issue #20. It does not certify production 4bpp conversion or all-character
-semantic accuracy. Engine changes remain Claude's work; capture, annotation,
-export and regression tooling remain Codex's work.
+semantic accuracy. Following the owner's 2026-11-09 handover instruction, Codex owns engine changes,
+capture, annotation, export, integration and verification. Historical split notes
+below describe the earlier two-agent workflow.
 
 ## 1. Lookup architecture
 
