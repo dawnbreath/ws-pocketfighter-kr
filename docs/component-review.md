@@ -60,3 +60,6 @@ No new ROM or saves are produced. Capture files remain unchanged and retain
 their provenance; existing elapsed_frames metadata has the release-frame
 qualification recorded in PR #18 and must not be used as a precise timing
 benchmark.
+
+New Ryu/Ken captures use `requested_frames` to make this limitation explicit.
+See [route evidence and remaining label coverage](ryu-ken-captures.md).
