@@ -75,6 +75,22 @@ glyphcopy:
     pop bx
     jmp 0x4000:0x8F4B
 
+%ifdef HYBRID
+; compact variant (saves 3 bytes of the bank-0x15 tail for the copier trampoline); same behaviour as the original pair below
+stmap:
+    push bx
+    mov bx,0xC300|STORY_BANK
+    call 0x9000:0x96DB
+    pop bx
+    ret
+storyseg:
+    call stmap
+    call 0x9000:0x976B
+    retf
+storymap:
+    call stmap
+    retf
+%else
 ; --- story script bank (replaces mov ax,0x2000 / lcall 9000:9760 at 9000:C80F)
 storyseg:
     push bx
@@ -90,6 +106,7 @@ storymap:
     call 0x9000:0x96DB
     pop bx
     retf
+%endif
 end_stubs:
 ; --- VBlank colour hook (replaces mov ax,0x1000 / mov ds,ax at 4000:03C4). returns with ds=0x1000.
 %ifndef COL_BANK
@@ -125,3 +142,18 @@ oamstub:
     popa
     retf
 end_col:
+%ifdef HYBRID
+; --- T17 prototype: trampoline for the RAM copier entry (4000:02A4 originally `jmp far 0000:0120`, 5 bytes -> `jmp far 5000:cpstub`).
+; Runs the colour-bank hook (convert changed fighter tiles to 4bpp) and then continues into the original copier unchanged.
+cpstub:
+    pusha
+    in al,0xC2
+    push ax
+    mov al,COL_BANK
+    out 0xC2,al
+    call 0x2000:0x0500      ; saves/restores ds/es itself
+    pop ax
+    out 0xC2,al
+    popa
+    jmp 0x0000:0x0120
+%endif

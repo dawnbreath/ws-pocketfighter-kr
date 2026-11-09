@@ -546,4 +546,46 @@ scanmap:
 .o: or [bx+0x8000],al
     loop .s
     ret
+
+; ---- PROTOTYPE (T17): copier hook. Entered (far call from the stub in bank 0x15) right before the RAM-resident copier at 0000:0120
+; overwrites VRAM 0x3800-0x3FFF (tile slots 0x180-0x1FF = fighter tiles) with the staging buffer SS:0500-0CFF (128 tiles).
+; Per tile: compare staging with the still-old VRAM tile; only changed tiles are expanded (class 0: index = 2bpp shade) to the
+; 4bpp mirror at 0x4000 + (0x180 + i)*32 = 0x7000 + i*32. Saves ds/es; the stub saves the general registers. Fixed address 0x0500.
+times 0x500-($-$$) db 0xFF
+cphook:
+    push ds
+    push es
+    cld
+    mov ax,ss
+    mov ds,ax               ; staging lives at SS:0500 (SS=0 observed)
+    xor ax,ax
+    mov es,ax
+    xor bx,bx               ; tile index 0..127
+    mov si,0x0500
+.t: mov di,bx
+    shl di,4
+    add di,0x3800
+    push si
+    mov cx,8
+    repe cmpsw              ; ds:si (new) vs es:di (old 2bpp tile)
+    pop si
+    je .same
+    mov di,bx
+    shl di,5
+    add di,0x7000
+    mov cx,8
+.r: lodsw
+    stosw
+    xor ax,ax
+    stosw
+    loop .r
+    jmp .n
+.same:
+    add si,16
+.n: inc bx
+    cmp bx,128
+    jb .t
+    pop es
+    pop ds
+    retf
 %endif

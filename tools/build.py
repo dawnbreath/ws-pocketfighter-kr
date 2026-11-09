@@ -32,7 +32,7 @@ class Rom:
 def far(seg,off): return bytes([0x9a,off&0xff,off>>8,seg&0xff,seg>>8])
 # ------------------------------------------------------------------ engine hooks
 def apply_engine(R):
-    code,sym=asm.assemble('kr_stubs',{'KRFONT_BANK':hex(BANKREG(KRFONT_IDX)),'STORY_BANK':hex(BANKREG(STORY_IDX)),'COL_BANK':hex(BANKREG(COL_IDX))})
+    code,sym=asm.assemble('kr_stubs',{'KRFONT_BANK':hex(BANKREG(KRFONT_IDX)),'STORY_BANK':hex(BANKREG(STORY_IDX)),'COL_BANK':hex(BANKREG(COL_IDX))}|({'HYBRID':'1'} if os.environ.get('PF_HYBRID')=='1' else {}))
     R.put_free(0x150000+0xFF34,code,'kr stubs')
     S=lambda n: sym[n]
     R.patch(0x15AFBA,'b800c08ed8',far(0x5000,S('krchk')),'afb6 korean code check')
@@ -44,6 +44,7 @@ def apply_engine(R):
     R.patch(0x19C80F,'b800209a60970090',far(0x5000,S('storyseg'))+b'\x90'*3,'story bank seg')
     R.patch(0x19CA0A,'b800209a4c970090',far(0x5000,S('storymap'))+b'\x90'*3,'story bank map')
     R.patch(0x1403C4,'b800108ed8',far(0x5000,S('colstub')),'vblank colour hook')
+    if os.environ.get('PF_HYBRID')=='1': R.patch(0x1402A4,'ea20010000',far(0x5000,S('cpstub')),'copier trampoline')
     R.patch(0x14028D,'8a2e3c108a0e3d10',far(0x5000,S('oamstub'))+b'\x90\x90\x90','OAM builder: character bands')
 # ------------------------------------------------------------------ colour
 import colorlib
