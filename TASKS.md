@@ -15,7 +15,7 @@
 | T13 | Saturn PAC reference inspector | Codex | tool verified on 35 local PACs; review pending | codex/T13-saturn-reference | sprite compression unconfirmed; no frame decoder |
 
 | T10 | Original-ROM tile-copy catalogue | Codex | requested sites catalogued; RAM relocation confirmed; reviewed+merged by Claude | codex/T10-copy-routines | full dynamic ownership/lifetimes and production conversion unproven |
-| T12 | Runtime fighter capture → region proposals → conflict masks | Codex | tools verified on Chun-Li/Zangief, 256 samples each; conflict evidence + exact ROM candidate mapping verified; semantic masks NOT engine-ready | codex/T12-runtime-regions | pose review and unresolved pixels; production engine integration remains |
+| T12 | Runtime fighter capture → region proposals → conflict masks | Codex | four fighter routes captured (Chun-Li/Zangief/Ryu/Ken), 256 samples each; review sheets and ROM candidates generated; semantic masks NOT engine-ready | codex/T12-runtime-regions | pose review and unresolved pixels; production engine integration remains |
 
 | T15 | Architecture consultation + component/pixel review workflow | Codex | consultation/marks merged (#22); 12 reference part lists; captured slot reuse measured for Chun-Li/Zangief | codex/T12-component-marks | all-pose/stage coverage, final palettes and VRAM lifetime proof pending |
 

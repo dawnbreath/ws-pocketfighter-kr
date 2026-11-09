@@ -6,7 +6,12 @@ import json
 from pathlib import Path
 from regress import MCP, digest
 
-CHARACTERS = {"chunli": ["down", "left"], "zangief": ["down", "down", "right"]}
+CHARACTERS = {
+    "ryu": [],
+    "ken": ["right"],
+    "chunli": ["down", "left"],
+    "zangief": ["down", "down", "right"],
+}
 BASE_SHA = "b47c8692ed9ab0c1ee598ae32126d30daef7f8bc8948c33d6919dd4c7505905e"
 
 
@@ -38,7 +43,7 @@ def capture(
         "start": "cold boot; fresh runtime; no imported save",
         "status": "INCOMPLETE",
         "identity": "scripted selection; inspect selection.png and fight.png before accepting",
-        "timing": "frozen frame boundary RAM; screenshots may show preceding latched frame",
+        "timing": "frozen RAM; requested_frames sums requested press/after durations, excludes backend release frames, and is not an exact emulator frame counter; screenshots may show preceding latched frame",
         "events": [],
         "frames": [],
     }
@@ -128,7 +133,7 @@ def capture(
             report["frames"].append(
                 {
                     "index": index,
-                    "elapsed_frames": elapsed,
+                    "requested_frames": elapsed,
                     "gfx": gfx,
                     "oam": oam,
                     "vram": vram,
