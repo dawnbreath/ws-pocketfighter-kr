@@ -5,7 +5,7 @@
 | T01 | Korean image labels: pause menu DONE (PR #6), clipped 통신대전 fix DONE, composite label 127 + icons 15/17/18/20/142/172 still JP, stage-art background signs not inventoried | Claude | review (regression v006→v007: 10/11 screens identical, pause_open differs as intended) | claude/T01-pause-menu | – |
 | T02 | Script QA: glossary consistency, line-width lint over `text/ko/*`, spelling/spacing pass (names: 장기에프, 춘리, 사쿠라…) | Codex | lint verified; editorial review pending | codex/T02-script-qa | full translation/context review remains |
 | T03 | Release packaging script (xdelta3 + IPS, CRC/SHA of base and patched, README) | Codex | tooling verified; merged (PR #5) | codex/T03-release | final canonical ROM/runtime approval pending |
-| T04 | 4bpp feasibility gate (see docs/4bpp-plan.md) | Claude | PROTOTYPE PENDING: 4bpp mode renders; FG palette-1 colour-0 transparency reported; VRAM safety, SPRITE transparency and one-fighter expansion UNPROVEN | claude/T04-4bpp-gate | diagnostic tile mapping |
+| T04 | 4bpp feasibility gate (see docs/4bpp-plan.md) | Claude | PARTIAL: 4bpp renders; FG measured; sprite rerun reported but published-source mismatch found; diagnostic fixed in synthetic execution, hardware rerun pending; VRAM budget with real copy-site conversion + other modes UNPROVEN. Owner decided: go 4bpp, keep streamed Korean font | claude/T04b-sprite-transparency | T10 copy-site catalogue |
 | T05 | Fighter frame dump + region-mask generator (phase 1) | Codex | open | – | user ROM at orig/pf.ws |
 | T06 | Per-character palette design sheets for 12 fighters | Codex | open | – | T05 sample |
 | T07 | Full-screen regression harness (emucap scripted playthrough → screenshot diff) | Codex | harness verified on original; patched regression blocked | codex/T07-regression | needs reproducible v006/candidate and save provenance |
@@ -21,3 +21,4 @@
 | T15 | Architecture consultation + component/pixel review workflow | Codex | consultation/marks merged (#22); 12 reference part lists; captured slot reuse measured for Chun-Li/Zangief | codex/T12-component-marks | all-pose/stage coverage, final palettes and VRAM lifetime proof pending |
 
 Update this table in the PR that changes a task’s state.
+| T14 | Stage backgrounds + HUD Saturn-style colour (tile-hash class tables baked at 4bpp copy sites; see docs/4bpp-plan.md T14) | Codex (stage/HUD tile capture + classes) + Claude (engine) | open | – | T10 copy sites, T12 mask machinery |
