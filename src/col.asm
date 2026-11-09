@@ -455,11 +455,12 @@ pct:
 
 %ifdef HYBRID
 ; ---- PROTOTYPE (T17): rolling resync of the 512 game tiles into 4bpp, map-aware for colour 0.
-; 4bpp makes colour index 0 transparent on every layer; in 2bpp only palettes 4-7 were transparent. A tile whose map references all
-; are opaque (SCR1 always; SCR2 only palette attr 0-3) expands shade 0 -> index 4 (palette entry 4 mirrors entry 0, see .p loop); others keep index 0.
-; Tile flags (1 byte/tile) live at 0000:8000..81FF (game never writes 0x4000-0xFCFF): bit0 = referenced opaque, bit1 = referenced transparent.
+; In 2bpp, BOTH screens use palette bit 2: 0-3/8-11 opaque, 4-7/12-15 transparent at shade 0.
+; In 4bpp zero is transparent for all palettes. Tiles with opaque-only map references expand zero -> 4; others keep zero.
+; OAM uses are not scanned here: map-only classification is not a complete ownership/conflict proof.
+; Tile flags (1 byte/tile) live at 0000:8000..81FF (prototype reservation; all-mode lifetime safety unproven): bit0 = referenced opaque, bit1 = referenced transparent.
 ; Runs from the VBlank colour hook while RSY>0 (set on every scene/palette change): 32 tiles per call, cursor wraps over 0..511;
-; the map scan runs on the call that starts a round. Needs ds=es=0, DF=0. Clobbers ax,bx,cx,dx,si,di.
+; the map scan runs on the call that starts a round. Needs ds=es=0, DF=0. Clobbers ax,bx,cx,dx,si,di,bp.
 rsyn:
     cmp byte [RSY],0
     je .rd
@@ -517,7 +518,6 @@ scanop:
     xor al,al
     shl ax,3                ; nibble * 0x800
     mov si,ax
-    xor dh,dh               ; SCR1: colour 0 is never transparent -> always an opaque reference
     call scanmap
     mov ax,bp
     shr al,4
@@ -525,7 +525,6 @@ scanop:
     xor al,al
     shl ax,3
     mov si,ax
-    mov dh,1                ; SCR2: transparent only for palette attr 4-7
     call scanmap
     pop di
     ret
@@ -535,11 +534,8 @@ scanmap:
     mov bx,ax
     and bx,0x1FF
     shr ax,9
-    and al,15
-    or dh,dh
-    jz .op
-    cmp al,4
-    jae .tr
+    test al,4               ; palette bit 2, identical for SCR1/SCR2; palette 8/9 are opaque
+    jnz .tr
 .op:mov al,1
     jmp .o
 .tr:mov al,2

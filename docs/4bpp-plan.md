@@ -49,6 +49,8 @@ Route: T07 14-step route, base v007 vs prototype, cold boots (screens kept local
 Not done: copier hook, map-aware BG expansion, palette mirroring, per-frame cost calibration.
 
 ### T17 update: map-aware opaque expansion (iterations 2-5, Claude)
+
+**Superseded interpretation:** the layer-specific 2bpp transparency rule below was incorrect. Both SCR1/SCR2 use palette bit 2; palettes 8/9 are opaque. The cited tile-382 references therefore do not prove a mixed-transparency conflict. See [T17 correction and evidence](t17-transparency-review.md). Historical measurements below are retained as observations, not accepted causal explanations.
 Changes: (a) palette entry 4 mirrors entry 0 (`.p` loop), (b) tile flag array at 0000:8000 (RSY/RSC variables moved to 0x8200/0x8202 because **0xFDB0-FDB3 is clobbered by the game's stack/RAM use** — the first attempt there corrupted the cursor), (c) map scan at the start of each rolling round (SCR1 refs always opaque, SCR2 refs opaque only for palette attr 0-3 — in 2bpp colour 0 is transparent on SCR2/sprites only for palettes 4-7, never on SCR1), (d) bug found and fixed: `scanop` clobbered `bx` (cursor). Default build still byte-identical to v007.
 Route result v007 vs prototype (changed pixels): title_press 528 (bbox: the PRESS START text row), title_menu 753, player_select 942 → 2777 after the layer rule, battle_select 6713, story ~9.3k, fights/pause ~17-24k (copier not hooked).
 Analysis of the remaining differences:
