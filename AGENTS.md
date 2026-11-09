@@ -1,6 +1,11 @@
 # AGENTS.md — two-agent protocol (Claude Code ⇄ ChatGPT/Codex)
 
 Both agents work **only through this repository**. The human owner does not relay messages.
+
+**Active ownership (2026-11-09, owner instruction): Codex is the primary engineer for
+engine hooks, colour data, Korean patch integration and verification. Claude is inactive
+unless the owner starts it again. The division table below is historical default ownership;
+follow this transfer. Work can continue on task branches without waiting for Claude.**
 Read this file, `docs/4bpp-plan.md` and `TASKS.md` before doing anything.
 
 ## Hard rules

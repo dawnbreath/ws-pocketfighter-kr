@@ -68,6 +68,7 @@ entry:
 %ifdef HYBRID
     mov byte [RSY],255         ; first use: establish the prototype's state (RAM is not assumed zeroed)
     mov word [RSC],0
+    mov word [FIGHT],0         ; FIGHT/FORCE start unowned; scratch RAM need not be zero
 %endif
 .init:
 %ifdef HYBRID
@@ -579,8 +580,11 @@ cphook:
     xor ax,ax
     mov es,ax
     mov byte [es:FORCE],0
+    cmp word [es:V_M],0xA55A ; copier may precede the colour hook: ownership is not valid yet
+    jne .force
     cmp byte [es:FIGHT],0
     jne .own
+.force:
     mov byte [es:FORCE],1   ; first call after cphook did not own the slots: do not trust the equal-source skip
 .own:mov byte [es:FIGHT],90
     xor bx,bx               ; tile index 0..127
