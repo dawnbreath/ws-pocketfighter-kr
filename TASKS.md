@@ -21,3 +21,5 @@
 | T15 | Architecture consultation + component/pixel review workflow | Codex | consultation/marks merged (#22); 12 reference part lists; captured slot reuse measured for Chun-Li/Zangief | codex/T12-component-marks | all-pose/stage coverage, final palettes and VRAM lifetime proof pending |
 
 Update this table in the PR that changes a task’s state.
+
+| T18 | Few-shot pose labels and uncertainty review (#31) | Codex | proposal pipeline connected; Chun-Li/Zangief inventories + partial-seed diagnostic runs; 16 tests pass | codex/T18-propagation | owner-approved seed masks unavailable; held-out visual quality and usable full-part coverage unverified |
