@@ -570,6 +570,7 @@ cphook:
     repe cmpsw              ; ds:si (new) vs es:di (old 2bpp tile)
     pop si
     je .same
+%ifdef CTAB
     push si                 ; changed tile: 16-bit content hash (rol 3 / xor over 8 words)
     xor dx,dx
     mov cx,8
@@ -578,16 +579,34 @@ cphook:
     xor dx,ax
     loop .h
     pop si
+%endif
     mov di,bx
     shl di,5
     add di,0x7000
 %ifdef CTAB
-    mov bp,CTABA+2           ; class table in this bank: count, then {hash16, 16 mask bytes (m2,m3 per row)}
-    mov cx,[cs:CTABA]
+    mov bp,CTABA+6           ; CTB2: magic[4], count[2], records {hash16, source[16], mask[16]}
+    mov cx,[cs:CTABA+4]
     jcxz .plain
 .s: cmp dx,[cs:bp]
+    jne .nextrec
+    ; A hash match is only a candidate. Compare source bytes without changing
+    ; staging position, output position, search count or destination segment.
+    push es
+    push si
+    push di
+    push cx
+    push cs
+    pop es
+    lea di,[bp+2]
+    mov cx,8
+    repe cmpsw
+    pop cx
+    pop di
+    pop si
+    pop es
     je .found
-    add bp,18
+.nextrec:
+    add bp,34
     loop .s
 %endif
 .plain:
@@ -600,7 +619,7 @@ cphook:
     jmp .n
 %ifdef CTAB
 .found:
-    add bp,2
+    add bp,18
     mov cx,8
 .m: lodsw
     stosw                   ; p0,p1 unchanged
@@ -619,10 +638,10 @@ cphook:
     cmp bx,128
     jb .t
 %ifdef CTAB
-    mov ax,[cs:CTABA]        ; fighter palettes 12 and 13 (16 colours each) follow the entries
-    mov bx,18
+    mov ax,[cs:CTABA+4]      ; fighter palettes 12 and 13 (16 colours each) follow the entries
+    mov bx,34
     mul bx
-    add ax,CTABA+2
+    add ax,CTABA+6
     mov si,ax
     mov di,0xFE00+12*32
     mov cx,32

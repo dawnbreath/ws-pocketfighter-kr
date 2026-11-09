@@ -48,6 +48,7 @@ def apply_engine(R):
     R.patch(0x14028D,'8a2e3c108a0e3d10',far(0x5000,S('oamstub'))+b'\x90\x90\x90','OAM builder: character bands')
 # ------------------------------------------------------------------ colour
 import colorlib
+from class_table import validate_table
 def apply_color(R,survey=False,spec_path=None):
     code,_=asm.assemble('col',({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} | ({'CTAB':'1'} if os.environ.get('PF_CLASS_TABLE') else {}) if os.environ.get('PF_HYBRID')=='1' else {}))
     assert len(code)<0x600
@@ -57,7 +58,7 @@ def apply_color(R,survey=False,spec_path=None):
     print('colour scenes',n)
     b=COL_IDX<<16; R.b[b:b+0x10000]=bank
     if os.environ.get('PF_HYBRID')=='1' and os.environ.get('PF_CLASS_TABLE'):
-        tb=open(os.environ['PF_CLASS_TABLE'],'rb').read(); R.b[b+0x8000:b+0x8000+len(tb)]=tb; print('class table',len(tb),'bytes at bank+0x8000')
+        tb=open(os.environ['PF_CLASS_TABLE'],'rb').read(); validate_table(tb); R.b[b+0x8000:b+0x8000+len(tb)]=tb; print('class table',len(tb),'bytes at bank+0x8000')
 # ------------------------------------------------------------------ font / encoding
 # Korean text is pre-rendered per line (proportional, Galmuri11 12px) and sliced into 8x16 cells.
 # Each unique cell bitmap gets a 2-byte code: lead 0xA0..0xFE (page), trail 1..254 (index).

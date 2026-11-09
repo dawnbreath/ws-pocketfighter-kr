@@ -1,0 +1,109 @@
+"""CTB2 diagnostic table: hash16 candidates always retain exact source bytes."""
+
+from __future__ import annotations
+import argparse
+from pathlib import Path
+import struct
+import zlib
+
+HEADER = struct.Struct("<4sH")
+RECORD = struct.Struct("<H16s16s")
+MAX_SIZE = 0x8000
+
+
+def hash16(raw: bytes) -> int:
+    if len(raw) != 16:
+        raise ValueError("one source tile must be 16 bytes")
+    value = 0
+    for (word,) in struct.iter_unpack("<H", raw):
+        value = ((value << 3) | (value >> 13)) & 0xFFFF
+        value ^= word
+    return value
+
+
+def validate_table(blob: bytes) -> None:
+    if len(blob) < HEADER.size + 64 or len(blob) > MAX_SIZE:
+        raise ValueError(
+            "CTB2 must fit color-bank 8000..FFFF and include 64 palette bytes"
+        )
+    magic, count = HEADER.unpack_from(blob)
+    if magic != b"CTB2" or len(blob) != HEADER.size + count * RECORD.size + 64:
+        raise ValueError(
+            "invalid CTB2 version/count/length; legacy and PGMD tables need conversion"
+        )
+    seen = set()
+    for index in range(count):
+        digest, raw, mask = RECORD.unpack_from(blob, HEADER.size + index * RECORD.size)
+        if hash16(raw) != digest:
+            raise ValueError("incorrect source hash")
+        if raw in seen:
+            raise ValueError(
+                "duplicate source tile: unresolved context/semantic ambiguity"
+            )
+        seen.add(raw)
+    if any(color > 0xFFF for (color,) in struct.iter_unpack("<H", blob[-64:])):
+        raise ValueError("palette entries must be RGB444")
+
+
+def pack_table(records: list[tuple[bytes, bytes]], palettes: bytes) -> bytes:
+    if (
+        len(palettes) != 64
+        or len(records) > (MAX_SIZE - HEADER.size - 64) // RECORD.size
+    ):
+        raise ValueError("invalid palette length or table exceeds reserved bank half")
+    rows = []
+    for raw, mask in records:
+        if len(raw) != 16 or len(mask) != 16:
+            raise ValueError("source and mask must each be 16 bytes")
+        rows.append((hash16(raw), raw, mask))
+    rows.sort()
+    blob = (
+        HEADER.pack(b"CTB2", len(rows))
+        + b"".join(RECORD.pack(*row) for row in rows)
+        + palettes
+    )
+    validate_table(blob)
+    return blob
+
+
+def convert_pgmd(blob: bytes, palettes: bytes) -> bytes:
+    # PGMD is diagnostic, not production approval. Preserve its exact source/mask;
+    # CTB2's runtime ignores the uniform optimization and verifies every hash hit.
+    header = struct.Struct("<4sHHI")
+    record = struct.Struct("<I16sB16s")
+    if len(blob) < header.size:
+        raise ValueError("short PGMD header")
+    magic, version, size, count = header.unpack_from(blob)
+    if (magic, version, size) != (b"PGMD", 1, record.size) or len(
+        blob
+    ) != header.size + count * size:
+        raise ValueError("invalid PGMD version/length")
+    rows = []
+    for index in range(count):
+        checksum, raw, uniform, mask = record.unpack_from(
+            blob, header.size + index * size
+        )
+        if zlib.crc32(raw) != checksum or uniform not in (0, 1, 2, 3, 255):
+            raise ValueError("invalid PGMD record")
+        rows.append((raw, mask))
+    return pack_table(rows, palettes)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("pgmd", type=Path)
+    parser.add_argument(
+        "palettes", type=Path, help="exactly 32 little-endian RGB444 words: P1 then P2"
+    )
+    parser.add_argument("output", type=Path)
+    args = parser.parse_args()
+    blob = convert_pgmd(args.pgmd.read_bytes(), args.palettes.read_bytes())
+    with args.output.open("xb") as output:
+        output.write(blob)
+    print(
+        f"DIAGNOSTIC ONLY: {HEADER.unpack_from(blob)[1]} records, {len(blob)} bytes; no palette or owner approval implied"
+    )
+
+
+if __name__ == "__main__":
+    main()
