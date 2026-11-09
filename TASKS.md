@@ -21,3 +21,5 @@
 
 Update this table in the PR that changes a task’s state.
 | T17 | 4bpp hybrid prototype: rolling resync + map-aware opaque expansion + copier hook + class table (PF_HYBRID=1 [PF_CLASS_TABLE], default build unchanged) | Claude | prototype; Codex fixes merged (#29 palette-bit-2 transparency predicate, #30 copier JMP FAR); first real-ROM per-pixel Chun-Li pose; blank-tile/late-text/timing/all-poses OPEN; no gate pass | claude/T17-hybrid-proto (PR #27) | class tables for all poses (T18), layer isolation, calibrated cost |
+
+| T19 | Saturn-reference proposal QA | Codex | in progress: sparse class-ID fix tested; direct Saturn capture with user BIOS connected | codex/T19-proposal-qa | full top-20 correction/retraining and held-out validation pending; not ROM acceptance |
