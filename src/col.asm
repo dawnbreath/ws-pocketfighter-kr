@@ -570,6 +570,7 @@ cphook:
     repe cmpsw              ; ds:si (new) vs es:di (old 2bpp tile)
     pop si
     je .same
+%ifdef CTAB
     push si                 ; changed tile: 16-bit content hash (rol 3 / xor over 8 words)
     xor dx,dx
     mov cx,8
@@ -578,26 +579,58 @@ cphook:
     xor dx,ax
     loop .h
     pop si
+%endif
     mov di,bx
     shl di,5
     add di,0x7000
 %ifdef CTAB
-    xor ax,ax               ; binary search over the class table: entries are 32 bytes {hash16, 16 mask bytes, 14 pad}, sorted by hash16
-    mov cx,[cs:CTABA]       ; ax = lo, cx = hi (byte offsets relative to the first entry)
-    shl cx,5
-.bs:cmp ax,cx
-    jae .plain
+    push bx                  ; CTB2 (Codex #32): magic[4], count[2], records {hash16, source[16], mask[16]} (34 bytes), SORTED by hash16.
+    xor ax,ax                ; lower-bound binary search on the hash: ax = lo, cx = hi (record indices)
+    mov cx,[cs:CTABA+4]
+.lb:cmp ax,cx
+    jae .lbd
     mov bp,ax
     add bp,cx
-    shr bp,1
-    and bp,0xFFE0           ; mid, entry aligned
-    cmp dx,[cs:bp+CTABA+2]
+    shr bp,1                 ; mid index
+    mov bx,bp
+    shl bx,5
+    add bx,bp
+    add bx,bp                ; bx = mid*34
+    cmp [cs:bx+CTABA+6],dx
+    jb .lbl
+    mov cx,bp                ; record.hash >= dx -> hi = mid
+    jmp .lb
+.lbl:lea ax,[bp+1]           ; record.hash < dx -> lo = mid+1
+    jmp .lb
+.lbd:mov bp,ax               ; first record with hash >= dx; verify the equal-hash run against the exact source bytes
+    mov bx,bp
+    shl bx,5
+    add bx,bp
+    add bx,bp
+    lea bp,[bx+CTABA+6]      ; absolute pointer of that record
+    mov bx,[cs:CTABA+4]      ; bx = remaining records (count - index)
+    sub bx,ax
+    mov cx,bx
+    pop bx                   ; restore tile index (bx was only a temporary above)
+    jcxz .plain
+.s: cmp dx,[cs:bp]
+    jne .plain               ; sorted: the first non-equal hash ends the run
+    push es
+    push si
+    push di
+    push cx
+    push cs
+    pop es
+    lea di,[bp+2]
+    mov cx,8
+    repe cmpsw
+    pop cx
+    pop di
+    pop si
+    pop es
     je .found
-    jb .lo
-    lea ax,[bp+32]
-    jmp .bs
-.lo:mov cx,bp
-    jmp .bs
+    add bp,34
+    loop .s
 %endif
 .plain:
     mov cx,8
@@ -609,7 +642,7 @@ cphook:
     jmp .n
 %ifdef CTAB
 .found:
-    add bp,CTABA+4          ; -> 16 mask bytes of the matching entry
+    add bp,18
     mov cx,8
 .m: lodsw
     stosw                   ; p0,p1 unchanged
@@ -628,10 +661,10 @@ cphook:
     cmp bx,128
     jb .t
 %ifdef CTAB
-    mov ax,[cs:CTABA]        ; fighter palettes 12 and 13 (16 colours each) follow the entries
-    mov cl,5
-    shl ax,cl
-    add ax,CTABA+2
+    mov ax,[cs:CTABA+4]      ; fighter palettes 12 and 13 (16 colours each) follow the entries
+    mov bx,34
+    mul bx
+    add ax,CTABA+6
     mov si,ax
     mov di,0xFE00+12*32
     mov cx,32
