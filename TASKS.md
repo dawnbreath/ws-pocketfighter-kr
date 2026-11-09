@@ -21,3 +21,4 @@
 | T15 | Architecture consultation + component/pixel review workflow | Codex | consultation/marks merged (#22); 12 reference part lists; captured slot reuse measured for Chun-Li/Zangief | codex/T12-component-marks | all-pose/stage coverage, final palettes and VRAM lifetime proof pending |
 
 Update this table in the PR that changes a task’s state.
+| T12 | Region pipeline: runtime fighter-frame capture + outline segmentation + per-character rules + tile-hash mask table (see docs/4bpp-plan.md 'Revised region pipeline') | Codex (capture/segment/rules) + Claude (engine) | open | – | T10 copy-site catalogue |
