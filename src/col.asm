@@ -53,17 +53,18 @@ entry:
     xor ax,ax
     mov es,ax
     mov ds,ax
-%ifdef HYBRID
-    call rsyn
-%endif
     cmp word [V_M],0xA55A
     je .init
     mov word [V_M],0xA55A
     mov word [V_T],DEFT
 %ifdef HYBRID
-    mov byte [RSY],255
+    mov byte [RSY],255         ; first use: establish the prototype's state (RAM is not assumed zeroed)
+    mov word [RSC],0
 %endif
 .init:
+%ifdef HYBRID
+    call rsyn                  ; after the state is initialised
+%endif
     mov di,IMG
     mov dx,0x1C
     mov cx,18
@@ -464,7 +465,7 @@ rsyn:
     je .rd
     dec byte [RSY]
     mov bx,[RSC]
-    or bx,bx
+    and bx,0x1E0            ; invariant: cursor is a multiple of 32 in 0..480, so a batch never leaves tiles 0..511
     jnz .go
     push bx
     call scanop             ; scanop/scanmap clobber bx
