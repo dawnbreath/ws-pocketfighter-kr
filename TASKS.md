@@ -20,4 +20,4 @@
 | T15 | Architecture consultation + component/pixel review workflow | Codex | six questions answered; marks connected and verified; 12 reference part lists | codex/T12-component-marks | all-pose/stage coverage, final palettes and VRAM lifetime proof pending |
 
 Update this table in the PR that changes a task’s state.
-| T17 | 4bpp hybrid prototype: rolling resync + map-aware opaque expansion (PF_HYBRID=1, default build unchanged) | Claude | prototype; init/bounds fixed after Codex review; shared blank-tile conflict + late-drawn tiles + copier hook return corrected (Codex PR); no gate pass | claude/T17-hybrid-proto (PR #27) | layer isolation, aliasing design, copier hook |
+| T17 | 4bpp hybrid prototype: rolling resync + map-aware opaque expansion + copier hook + class table (PF_HYBRID=1 [PF_CLASS_TABLE], default build unchanged) | Claude | prototype; Codex fixes merged (#29 palette-bit-2 transparency predicate, #30 copier JMP FAR); first real-ROM per-pixel Chun-Li pose; blank-tile/late-text/timing/all-poses OPEN; no gate pass | claude/T17-hybrid-proto (PR #27) | class tables for all poses (T18), layer isolation, calibrated cost |
