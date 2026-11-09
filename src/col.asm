@@ -582,13 +582,22 @@ cphook:
     shl di,5
     add di,0x7000
 %ifdef CTAB
-    mov bp,CTABA+2           ; class table in this bank: count, then {hash16, 16 mask bytes (m2,m3 per row)}
-    mov cx,[cs:CTABA]
-    jcxz .plain
-.s: cmp dx,[cs:bp]
+    xor ax,ax               ; binary search over the class table: entries are 32 bytes {hash16, 16 mask bytes, 14 pad}, sorted by hash16
+    mov cx,[cs:CTABA]       ; ax = lo, cx = hi (byte offsets relative to the first entry)
+    shl cx,5
+.bs:cmp ax,cx
+    jae .plain
+    mov bp,ax
+    add bp,cx
+    shr bp,1
+    and bp,0xFFE0           ; mid, entry aligned
+    cmp dx,[cs:bp+CTABA+2]
     je .found
-    add bp,18
-    loop .s
+    jb .lo
+    lea ax,[bp+32]
+    jmp .bs
+.lo:mov cx,bp
+    jmp .bs
 %endif
 .plain:
     mov cx,8
@@ -600,7 +609,7 @@ cphook:
     jmp .n
 %ifdef CTAB
 .found:
-    add bp,2
+    add bp,CTABA+4          ; -> 16 mask bytes of the matching entry
     mov cx,8
 .m: lodsw
     stosw                   ; p0,p1 unchanged
@@ -620,8 +629,8 @@ cphook:
     jb .t
 %ifdef CTAB
     mov ax,[cs:CTABA]        ; fighter palettes 12 and 13 (16 colours each) follow the entries
-    mov bx,18
-    mul bx
+    mov cl,5
+    shl ax,cl
     add ax,CTABA+2
     mov si,ax
     mov di,0xFE00+12*32
