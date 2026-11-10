@@ -44,7 +44,7 @@ def expand(spec):
                 continue
             seen[k]=(sc['name'],t); scenes.append((k,t))
     return default,scenes,conf
-def build_bank(code,spec,slist=0x600):
+def build_bank(code,spec,slist=0x600,fighter_palettes=None):
     default,scenes,conf=expand(spec)
     bank=bytearray(b'\xff'*0x10000); bank[:len(code)]=code
     enc=lambda t: b''.join(struct.pack('<H',rgbw(c)) for p in range(16) for c in t[p])
@@ -65,6 +65,11 @@ def build_bank(code,spec,slist=0x600):
         p2=(b'\x00'*16*7+b''.join(tiles))[-16*7:]
         ro=0xE00+len(rows); rows+=b''.join(struct.pack('<H',rgbw(shade_ramp(spec,c['body'],s))) for s in range(8))+bytes([c.get('c1',45),c.get('c2',100),c.get('c3',100),c.get('flags',6),c.get('xr',0),0,0,0])
         pl1+=struct.pack('<HH',hsh(p1),ro); pl2+=struct.pack('<HH',hsh(p2),ro)
+    if fighter_palettes is not None:
+        for lookup in (pl1,pl2):
+            hashes=[h for h,_ in struct.iter_unpack("<HH",lookup)]
+            if len(set(hashes)) != len(hashes):
+                raise ValueError("ambiguous HUD name hashes in fighter palette catalogue")
     assert len(pl1)<0x40 and len(pl2)<0x80 and len(rows)<=0x200,len(rows)
     bank[0xD40:0xD40+len(pl1)]=pl1; bank[0xD40+len(pl1):0xD40+len(pl1)+2]=b'\x00\x00'
     bank[0xD80:0xD80+len(pl2)]=pl2; bank[0xD80+len(pl2):0xD80+len(pl2)+2]=b'\x00\x00'
@@ -78,4 +83,7 @@ def build_bank(code,spec,slist=0x600):
     lst+=struct.pack('<H',0xFFFF)
     assert slist+len(lst)<=0xC00 and 0x1000+len(tabs)<=0x10000
     bank[slist:slist+len(lst)]=lst; bank[0x1000:0x1000+len(tabs)]=tabs
+    if fighter_palettes is not None:
+        from fighter_palettes import install
+        install(bank,chars,fighter_palettes,off+len(tabs))
     return bytes(bank),conf,len(scenes)

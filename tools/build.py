@@ -50,11 +50,15 @@ def apply_engine(R):
 import colorlib
 from class_table import validate_table
 def apply_color(R,survey=False,spec_path=None):
-    code,_=asm.assemble('col',({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} | ({'CTAB':'1'} if os.environ.get('PF_CLASS_TABLE') else {}) if os.environ.get('PF_HYBRID')=='1' else {}))
+    fp_path=os.environ.get("PF_FIGHTER_PALETTES")
+    if fp_path and not (os.environ.get("PF_HYBRID")=="1" and os.environ.get("PF_CLASS_TABLE")):
+        raise ValueError("PF_FIGHTER_PALETTES requires HYBRID and CTB2")
+    fp=json.load(open(fp_path)) if fp_path else None
+    code,_=asm.assemble('col',({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} | ({'CTAB':'1'} | ({'FPAL':'1'} if fp_path else {}) if os.environ.get('PF_CLASS_TABLE') else {}) if os.environ.get('PF_HYBRID')=='1' else {}))
     slist=0x800 if os.environ.get('PF_HYBRID')=='1' else 0x600
     assert len(code)<slist
     spec=colorlib.load_spec(spec_path or colorlib.SPEC)
-    bank,conf,n=colorlib.build_bank(code,spec,slist)
+    bank,conf,n=colorlib.build_bank(code,spec,slist,fighter_palettes=fp)
     for c in conf: print('colour conflict',c)
     print('colour scenes',n)
     b=COL_IDX<<16; R.b[b:b+0x10000]=bank
