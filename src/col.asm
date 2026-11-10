@@ -81,7 +81,13 @@ entry:
     stosw
     add dx,2
     loop .rd
+%ifdef FPAL
+    cmp byte [FIGHT],1
+    sbb ax,ax
+    inc ax                    ; normalized 0/1: counter decay must not invalidate the name cache
+%else
     mov ax,[FLAG]
+%endif
     mov [IMG+36],ax
     or ax,ax
     jz .nh
@@ -119,9 +125,19 @@ entry:
     mov cx,21
     rep movsw
 
+%ifdef FPAL
+    xor ax,ax
+    mov [V_B1],ax
+    mov [V_B2],ax
+%else
     mov word [V_B1],0
     mov word [V_B2],0
+%endif
+%ifdef FPAL
+    cmp word [IMG+36],0
+%else
     cmp word [FLAG],0
+%endif
     je .nb0
     mov si,PL1
 .l1h:mov ax,[cs:si]
@@ -233,6 +249,9 @@ entry:
     inc word [V_P]
     cmp word [V_P],16
     jb .p
+%ifdef FPAL
+    call fighter_palettes       ; only after a colour/name cache change, not per tile
+%endif
 done:
     mov ax,0x1000
     mov ds,ax
@@ -691,6 +710,7 @@ cphook:
     cmp bx,128
     jb .t
 %ifdef CTAB
+%ifndef FPAL
     mov ax,[cs:CTABA+4]      ; fighter palettes 12 and 13 (16 colours each) follow the entries
     mov bx,34
     mul bx
@@ -703,7 +723,41 @@ cphook:
     add si,2
     loop .pw
 %endif
+%endif
     pop es
     pop ds
     retf
+%ifdef FPAL
+; V_B1/V_B2 reuse the existing cached HUD-name lookup; row+22 is a ROM palette pointer.
+fighter_palettes:
+    cmp word [IMG+36],0
+    jne .active
+    ret
+.active:
+    mov ax,[V_B1]
+    or ax,[V_B2]
+    jnz .known
+    ret                        ; no recognized HUD: leave non-fight scene palettes alone
+.known:
+    mov bx,[V_B1]
+    mov di,0xFF80
+    call .side
+    mov bx,[V_B2]
+.side:
+    mov si,0x7000             ; neutral palette for unknown/unregistered character
+    or bx,bx
+    jz .copy
+    mov ax,[cs:bx+22]
+    or ax,ax
+    jz .copy
+    mov si,ax
+.copy:
+    mov cx,16
+.word:
+    mov ax,[cs:si]
+    stosw
+    add si,2
+    loop .word
+    ret
+%endif
 %endif

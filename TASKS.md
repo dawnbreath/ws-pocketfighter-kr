@@ -20,7 +20,7 @@
 | T15 | Architecture consultation + component/pixel review workflow | Codex | six questions answered; marks connected and verified; 12 reference part lists | codex/T12-component-marks | all-pose/stage coverage, final palettes and VRAM lifetime proof pending |
 
 Update this table in the PR that changes a task’s state.
-| T17 | 4bpp hybrid prototype: rolling resync + map-aware opaque expansion + copier hook + class table (PF_HYBRID=1 [PF_CLASS_TABLE], default build unchanged) | Codex | Codex takeover: startup ownership fix verified; 6/6 hybrid screenshots identical; class-table tests pass; all-mode safety still open | codex/T17-takeover (based on PR #27) | class tables for all poses (T18), layer isolation, calibrated cost |
+| T17 | 4bpp hybrid prototype: rolling resync + map-aware opaque expansion + copier hook + class table (PF_HYBRID=1 [PF_CLASS_TABLE], default build unchanged) | Codex | Codex: optional per-fighter CTB2 palette selection connected; startup fix verified; all-mode safety still open | codex/T17-fighter-palettes | class tables for all poses (T18), layer isolation, calibrated cost |
 
 | T19 | Saturn-reference proposal QA | Codex | in progress: actual jump seeds integrated (#36): boot validation 28→19; skin controls 0/33 | codex/T17-takeover | full semantic review/table export and runtime validation pending; spot metrics are not full-pose accuracy |
 | HANDOVER | Claude → Codex: Codex is primary engineer (see docs/codex-takeover.md) | Codex | handed over | codex/T17-takeover (based on PR #27) | no branch-work blocker; main merge policy unchanged |
