@@ -171,6 +171,14 @@ def observations(
 ) -> tuple[dict, np.ndarray, int, int]:
     pixels, owner, sprites = compose(frame, side)
     labels, n = classify(pixels, rules, marks)
+    votes = project_labels(owner, sprites, labels, side)
+    return votes, labels, n, sum(s["side"] == side for s in sprites)
+
+
+def project_labels(
+    owner: np.ndarray, sprites: list[dict], labels: np.ndarray, side: int
+) -> dict:
+    """Project explicit labels back to source pixels, preserving gaps/occlusion/flips."""
     votes = defaultdict(lambda: [set() for _ in range(64)])
     for sprite in sprites:
         if sprite["side"] != side:
@@ -190,7 +198,7 @@ def observations(
                     and labels[y, x] >= 0
                 ):
                     cells[sy * 8 + sx].add(int(labels[y, x]))
-    return votes, labels, n, sum(s["side"] == side for s in sprites)
+    return votes
 
 
 def merge_votes(
