@@ -22,5 +22,5 @@
 Update this table in the PR that changes a task’s state.
 | T17 | 4bpp hybrid prototype: rolling resync + map-aware opaque expansion + copier hook + class table (PF_HYBRID=1 [PF_CLASS_TABLE], default build unchanged) | Codex | Codex: optional per-fighter CTB2 palette selection connected; startup fix verified; all-mode safety still open | codex/T17-fighter-palettes | class tables for all poses (T18), layer isolation, calibrated cost |
 
-| T19 | Saturn-reference proposal QA | Codex | in progress: actual jump seeds integrated (#36): boot validation 28→19; skin controls 0/33 | codex/T17-takeover | full semantic review/table export and runtime validation pending; spot metrics are not full-pose accuracy |
+| T19 | Saturn-reference proposal QA | Codex | bounded seed table connected: 46 tiles; actual game mirrors Chun-Li18/18 and Zangief28/28 match; optional idle proposals not promoted | codex/T19-seed-table | full semantic review/table export and runtime validation pending; spot metrics are not full-pose accuracy |
 | HANDOVER | Claude → Codex: Codex is primary engineer (see docs/codex-takeover.md) | Codex | handed over | codex/T17-takeover (based on PR #27) | no branch-work blocker; main merge policy unchanged |
