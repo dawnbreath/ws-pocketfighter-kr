@@ -11,10 +11,10 @@ POSES = {
     "zangief": "d6c38a439bca04684b9f7124e41d052e",
 }
 # Coordinates refer to the displayed crop: Chun-Li's hand on the image right.
-# The upper patch formerly called a cuff overlaps the hand and is NOT recoloured.
-# Only the lower trousers patch and Zangief's red wristbands change.
+# Preserve the central hand; recolour only the outer cuff and its two spikes.
 REGIONS = {
     "chunli": [
+        ("cuff", [(23, 22), (24, 22), (24, 28), (23, 27)]),
         ("trousers", [(18, 29), (21, 29), (23, 31), (23, 34), (17, 34), (17, 31)]),
     ],
     "zangief": [
@@ -39,4 +39,8 @@ def adjust(crop: np.ndarray, who: str, groups: np.ndarray) -> np.ndarray:
     for material, points in REGIONS[who]:
         selected = selection(crop.shape, points) & (crop > 0)
         result[selected] = 1 if material == "red" else 2
+    if who == "chunli":
+        for x, y in [(24, 22), (24, 28)]:
+            if crop[y, x] == 1:
+                result[y, x] = 3
     return result
