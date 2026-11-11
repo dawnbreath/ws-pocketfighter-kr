@@ -27,4 +27,6 @@ Update this table in the PR that changes a task’s state.
 
 | T20 | Re-author Chun-Li/Zangief from original WS pixels and actual Saturn gameplay | Codex | REJECTED by owner: broad redraw changed too much; return to middle-column #41 and apply T21 only | codex/T20-fresh-fighter-masks | visual review and remaining poses; no inherited seed approval |
 
-| T21 | Middle-version local fixes: Zangief wristbands; Chun-Li below image-right hand | Codex | actual-game verified: 58 Chun-Li / 26 Zangief pixels change, zero outside target; 6 other screens identical | codex/T21-local-wrist-fixes | basic-pose visual review; other poses remain out of scope |
+| T21 | Middle-version local fixes: Zangief wristbands; Chun-Li below image-right hand | Codex | superseded by T22: upper Chun-Li patch overlaps hand; owner requests red-only Zangief wristbands | codex/T21-local-wrist-fixes | basic-pose visual review; other poses remain out of scope |
+
+| T22 | Restore Chun-Li hand pixels; red-only Zangief wristbands | Codex | game verified: hand restored; lower trousers retained; red-only wristbands; zero out-of-region differences | codex/T22-hand-and-red-wrists | basic-pose visual review; other poses remain unverified |
