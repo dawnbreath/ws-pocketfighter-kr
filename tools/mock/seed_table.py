@@ -75,7 +75,7 @@ def collect(path: Path, who: str, idle: bool, out: Path) -> tuple[dict, dict, di
         None,
     )
     if seed is None:
-        raise ValueError("source-bound approved seed pose missing")
+        raise ValueError("source-bound historical seed pose missing")
     labels = {recipe["pose_md5"]: classify(seed, recipe)}
     crops = {recipe["pose_md5"]: seed}
     votes, sources, used = {}, {}, []
@@ -92,6 +92,10 @@ def collect(path: Path, who: str, idle: bool, out: Path) -> tuple[dict, dict, di
         ox, oy = int(xx.min()), int(yy.min())
         groups = np.full(px.shape, -1, dtype=np.int8)
         for (y, x), name in labels[key].items():
+            # The early Claude mock only painted shade-3 hair dark;
+            # lighter pixels in its broad hair rectangle remain skin.
+            if name == "hair" and crop[y, x] != 3:
+                name = "skin"
             groups[oy + y, ox + x] = GROUPS[who][name]
         merge_votes(votes, project_labels(owner, sprites, groups, cap["side"]))
         for sprite in sprites:
