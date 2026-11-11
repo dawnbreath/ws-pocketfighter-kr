@@ -1,3 +1,24 @@
+# T23 current update: separate hand and outer cuff
+
+The new candidate preserves the central hand (crop x<=22) and colours only the
+outer cuff at x=23..24, y=22..28. Two existing bright protrusions use white;
+the band uses the existing dark brown ramp. Relative to #44 this changes exactly
+10 Chun-Li pixels and zero Zangief pixels. His red-only wristbands and the lower
+trousers correction are retained. This is a narrow visual candidate, not approval.
+
+Local outputs: `work/cuff-table/`, `work/cuff.ws`, `work/cuff-preview.png`,
+`work/cuff-runtime-{chunli,zangief}/`. Use the same build command below with
+these table/output paths. No palette or engine edits.
+
+Actual-game validation: 18/18 and 28/28 active tile mirrors match. All 1946
+opaque fighter pixels match the preview. Whole screenshots against #44 differ
+by exactly 10 Chun-Li pixels and zero Zangief pixels (including background/opponent).
+The unchanged Zangief screen is the targeted unaffected-screen regression.
+Trial SHA256: `fb79428cd31904763b4bef13a5243a6be8f2293b08538183bb6f2eee163f25a7`.
+Comparison: `work/cuff-latest-comparison.png`.
+
+## Earlier T21/T22 history
+
 # T21/T22: local fixes on the selected middle version
 
 Current owner direction (T22): the upper Chun-Li patch is hand anatomy, not a cuff

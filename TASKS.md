@@ -30,3 +30,5 @@ Update this table in the PR that changes a task’s state.
 | T21 | Middle-version local fixes: Zangief wristbands; Chun-Li below image-right hand | Codex | superseded by T22: upper Chun-Li patch overlaps hand; owner requests red-only Zangief wristbands | codex/T21-local-wrist-fixes | basic-pose visual review; other poses remain out of scope |
 
 | T22 | Restore Chun-Li hand pixels; red-only Zangief wristbands | Codex | game verified: hand restored; lower trousers retained; red-only wristbands; zero out-of-region differences | codex/T22-hand-and-red-wrists | basic-pose visual review; other poses remain unverified |
+
+| T23 | Separate Chun-Li hand from outer cuff | Codex | 10 outer-edge pixels revised; central hand and Zangief unchanged | codex/T23-separate-cuff | basic-pose visual review |
