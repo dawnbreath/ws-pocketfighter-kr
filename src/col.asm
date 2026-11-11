@@ -27,6 +27,11 @@ org 0x0000
 %define PL1    0x0D40            ; P1 name-hash list {hash, body row offset}, hash 0 ends
 %define PL2    0x0D80            ; P2 name-hash list
 %define OAMCNT 0xFD5A
+%ifdef FULLTILE
+%define CTSTRIDE 50
+%else
+%define CTSTRIDE 34
+%endif
 %define CTABA  0x8000            ; class table inside the colour bank (CS=0x2000); distinct from the VRAM flag array at DS:0x8000
 %define RSY    0x8200            ; HYBRID prototype: frames left of the rolling 2bpp->4bpp resync
 %define FIGHT  0x8204            ; HYBRID: >0 while the fighter-tile copier hook is active (slots 0x180-0x1FF are owned by cphook)
@@ -633,7 +638,7 @@ cphook:
     shl di,5
     add di,0x7000
 %ifdef CTAB
-    push bx                  ; CTB2 (Codex #32): magic[4], count[2], records {hash16, source[16], mask[16]} (34 bytes), SORTED by hash16.
+    push bx                  ; Exact-source records sorted by hash16; build selects CTB2/CTB3 stride.
     xor ax,ax                ; lower-bound binary search on the hash: ax = lo, cx = hi (record indices)
     mov cx,[cs:CTABA+4]
 .lb:cmp ax,cx
@@ -641,10 +646,14 @@ cphook:
     mov bp,ax
     add bp,cx
     shr bp,1                 ; mid index
+%ifdef FULLTILE
+    imul bx,bp,50
+%else
     mov bx,bp
     shl bx,5
     add bx,bp
-    add bx,bp                ; bx = mid*34
+    add bx,bp
+%endif                ; bx = mid*record stride
     cmp [cs:bx+CTABA+6],dx
     jb .lbl
     mov cx,bp                ; record.hash >= dx -> hi = mid
@@ -652,10 +661,14 @@ cphook:
 .lbl:lea ax,[bp+1]           ; record.hash < dx -> lo = mid+1
     jmp .lb
 .lbd:mov bp,ax               ; first record with hash >= dx; verify the equal-hash run against the exact source bytes
+%ifdef FULLTILE
+    imul bx,bp,50
+%else
     mov bx,bp
     shl bx,5
     add bx,bp
     add bx,bp
+%endif
     lea bp,[bx+CTABA+6]      ; absolute pointer of that record
     mov bx,[cs:CTABA+4]      ; bx = remaining records (count - index)
     sub bx,ax
@@ -678,7 +691,7 @@ cphook:
     pop si
     pop es
     je .found
-    add bp,34
+    add bp,CTSTRIDE
     loop .s
 %endif
 .plain:
@@ -692,6 +705,15 @@ cphook:
 %ifdef CTAB
 .found:
     add bp,18
+%ifdef FULLTILE
+    ; Matched exact source: copy precomputed 4bpp. Advance original staging tile.
+    add si,16
+    mov cx,16
+.m: mov ax,[cs:bp]
+    add bp,2
+    stosw
+    loop .m
+%else
     mov cx,8
 .m: lodsw
     stosw                   ; p0,p1 unchanged
@@ -702,6 +724,7 @@ cphook:
     add bp,2
     stosw
     loop .m
+%endif
     jmp .n
 %endif
 .same:
@@ -712,7 +735,7 @@ cphook:
 %ifdef CTAB
 %ifndef FPAL
     mov ax,[cs:CTABA+4]      ; fighter palettes 12 and 13 (16 colours each) follow the entries
-    mov bx,34
+    mov bx,CTSTRIDE
     mul bx
     add ax,CTABA+6
     mov si,ax

@@ -1,3 +1,6 @@
+Current exact-colour successor: [T24](exact-cuff-colours.md) implements actual black,
+white spikes and skin hand without recolouring shared ramps. Below is T23 history.
+
 # T23 current update: separate hand and outer cuff
 
 The new candidate preserves the central hand (crop x<=22) and colours only the
