@@ -25,4 +25,6 @@ Update this table in the PR that changes a task’s state.
 | T19 | Saturn-reference proposal QA | Codex | VISUAL REJECTED by owner: previous seed colours/masks are not approved; comparing early Claude palette with actual Saturn gameplay | codex/T19-saturn-contrast | contrast restoration is a trial; beard/hair/trim region correction and all-pose review remain |
 | HANDOVER | Claude → Codex: Codex is primary engineer (see docs/codex-takeover.md) | Codex | handed over | codex/T17-takeover (based on PR #27) | no branch-work blocker; main merge policy unchanged |
 
-| T20 | Re-author Chun-Li/Zangief from original WS pixels and actual Saturn gameplay | Codex | fresh basic-pose candidates connected; 1946/1946 rendered pixels match; 6 unaffected screens identical | codex/T20-fresh-fighter-masks | visual review and remaining poses; no inherited seed approval |
+| T20 | Re-author Chun-Li/Zangief from original WS pixels and actual Saturn gameplay | Codex | REJECTED by owner: broad redraw changed too much; return to middle-column #41 and apply T21 only | codex/T20-fresh-fighter-masks | visual review and remaining poses; no inherited seed approval |
+
+| T21 | Middle-version local fixes: Zangief wristbands; Chun-Li below image-right hand | Codex | actual-game verified: 58 Chun-Li / 26 Zangief pixels change, zero outside target; 6 other screens identical | codex/T21-local-wrist-fixes | basic-pose visual review; other poses remain out of scope |
