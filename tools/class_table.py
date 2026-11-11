@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import argparse
+import hashlib
 from pathlib import Path
 import struct
 import zlib
@@ -64,6 +65,31 @@ def pack_table(records: list[tuple[bytes, bytes]], palettes: bytes) -> bytes:
     )
     validate_table(blob)
     return blob
+
+
+def records_from_votes(votes: dict, sources: dict) -> tuple[list, dict]:
+    records, omitted = [], {}
+    for key, cells in sorted(votes.items()):
+        if len(cells) != 64 or any(
+            any(v not in range(4) for v in cell) for cell in cells
+        ):
+            raise ValueError("need 64 source pixels with group values 0..3")
+        if any(len(cell) != 1 for cell in cells):
+            omitted[key] = (
+                "conflict" if any(len(cell) > 1 for cell in cells) else "unobserved"
+            )
+            continue
+        mask = bytearray(16)
+        for i, cell in enumerate(cells):
+            g = next(iter(cell))
+            y, x = divmod(i, 8)
+            mask[y * 2] |= (g & 1) << (7 - x)
+            mask[y * 2 + 1] |= ((g >> 1) & 1) << (7 - x)
+        raw = sources[key]
+        if len(raw) != 16 or hashlib.sha256(raw).hexdigest() != key:
+            raise ValueError("source identity mismatch")
+        records.append((raw, bytes(mask)))
+    return records, omitted
 
 
 def convert_pgmd(blob: bytes, palettes: bytes) -> bytes:

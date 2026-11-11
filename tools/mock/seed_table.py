@@ -14,7 +14,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from class_table import pack_table
+from class_table import pack_table, records_from_votes
 from fighter_palettes import encode
 from segment_frames import compose, merge_votes, project_labels
 from seed_recipe import RECIPES, classify, crop_md5
@@ -29,31 +29,6 @@ IDLE_CHUNLI = {
     "e9120a9dc9c057e94016e0fd43b5d755",
     "177ef0038785e1b4fe9edb46ea362abe",
 }
-
-
-def records_from_votes(votes: dict, sources: dict) -> tuple[list, dict]:
-    records, omitted = [], {}
-    for key, cells in sorted(votes.items()):
-        if len(cells) != 64 or any(
-            any(v not in range(4) for v in cell) for cell in cells
-        ):
-            raise ValueError("need 64 source pixels with group values 0..3")
-        if any(len(cell) != 1 for cell in cells):
-            omitted[key] = (
-                "conflict" if any(len(cell) > 1 for cell in cells) else "unobserved"
-            )
-            continue
-        mask = bytearray(16)
-        for i, cell in enumerate(cells):
-            g = next(iter(cell))
-            y, x = divmod(i, 8)
-            mask[y * 2] |= (g & 1) << (7 - x)
-            mask[y * 2 + 1] |= ((g >> 1) & 1) << (7 - x)
-        raw = sources[key]
-        if len(raw) != 16 or hashlib.sha256(raw).hexdigest() != key:
-            raise ValueError("source identity mismatch")
-        records.append((raw, bytes(mask)))
-    return records, omitted
 
 
 def collect(path: Path, who: str, idle: bool, out: Path) -> tuple[dict, dict, dict]:
