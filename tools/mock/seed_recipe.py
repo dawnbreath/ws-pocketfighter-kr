@@ -1,6 +1,10 @@
-"""Source-only recipe for the owner-approved seed poses (Chun-Li idle, Zangief idle). NO game data in this file.
+"""Historical source-only recipe for the formerly accepted seed poses (Chun-Li idle, Zangief idle). NO game data in this file.
 
-The approved masks are defined by (1) the pose, found in a local capture by the md5 of its translation-normalised 2bpp shade crop
+The owner has since rejected the rendered colours and masks (2026-11-11).
+These rules preserve historical provenance, NOT current visual approval.
+See docs/saturn-contrast-review.md.
+
+The historical masks are defined by (1) the pose, found in a local capture by the md5 of its translation-normalised 2bpp shade crop
 (`pose_md5`) and (2) the rules below, applied to the outline components that `segment_frames.components` (== `region_mock.segment`:
 barrier = shade 3) produces for exactly that crop. Component ids are therefore only valid for that crop. The rules were iterated with
 the owner on rendered mocks (see docs/4bpp-plan.md and issue #20); `class_name` follows tools/mock/fighter_mock.py.
