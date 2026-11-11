@@ -32,3 +32,5 @@ Update this table in the PR that changes a task’s state.
 | T22 | Restore Chun-Li hand pixels; red-only Zangief wristbands | Codex | game verified: hand restored; lower trousers retained; red-only wristbands; zero out-of-region differences | codex/T22-hand-and-red-wrists | basic-pose visual review; other poses remain unverified |
 
 | T23 | Separate Chun-Li hand from outer cuff | Codex | 10 outer-edge pixels revised; central hand and Zangief unchanged | codex/T23-separate-cuff | basic-pose visual review |
+
+| T24 | Exact black cuff / white spikes / skin hand | Codex | CTB3 fixed and tested; actual black/white/skin output verified; 9 Chun-Li pixels change, Zangief identical | codex/T24-exact-cuff-colours | basic-pose visual review; remaining poses/modes unverified |

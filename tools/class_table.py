@@ -1,4 +1,4 @@
-"""CTB2 diagnostic table: hash16 candidates always retain exact source bytes."""
+"""CTB2 group planes / CTB3 full colours, with exact source verification."""
 
 from __future__ import annotations
 import argparse
@@ -9,6 +9,7 @@ import zlib
 
 HEADER = struct.Struct("<4sH")
 RECORD = struct.Struct("<H16s16s")
+FULL_RECORD = struct.Struct("<H16s32s")
 MAX_SIZE = 0x8000
 
 
@@ -25,16 +26,26 @@ def hash16(raw: bytes) -> int:
 def validate_table(blob: bytes) -> None:
     if len(blob) < HEADER.size + 64 or len(blob) > MAX_SIZE:
         raise ValueError(
-            "CTB2 must fit color-bank 8000..FFFF and include 64 palette bytes"
+            "CTB2/CTB3 must fit color-bank 8000..FFFF and include 64 palette bytes"
         )
     magic, count = HEADER.unpack_from(blob)
-    if magic != b"CTB2" or len(blob) != HEADER.size + count * RECORD.size + 64:
+    record = FULL_RECORD if magic == b"CTB3" else RECORD
+    if (
+        magic not in (b"CTB2", b"CTB3")
+        or len(blob) != HEADER.size + count * record.size + 64
+    ):
         raise ValueError(
             "invalid CTB2 version/count/length; legacy and PGMD tables need conversion"
         )
     seen = set()
     for index in range(count):
-        digest, raw, mask = RECORD.unpack_from(blob, HEADER.size + index * RECORD.size)
+        digest, raw, mask = record.unpack_from(blob, HEADER.size + index * record.size)
+        if magic == b"CTB3":
+            for y in range(8):
+                if (raw[2 * y] | raw[2 * y + 1]) != (
+                    mask[4 * y] | mask[4 * y + 1] | mask[4 * y + 2] | mask[4 * y + 3]
+                ):
+                    raise ValueError("full tile must preserve source transparency")
         if hash16(raw) != digest:
             raise ValueError("incorrect source hash")
         if raw in seen:
@@ -61,6 +72,21 @@ def pack_table(records: list[tuple[bytes, bytes]], palettes: bytes) -> bytes:
     blob = (
         HEADER.pack(b"CTB2", len(rows))
         + b"".join(RECORD.pack(*row) for row in rows)
+        + palettes
+    )
+    validate_table(blob)
+    return blob
+
+
+def pack_full_table(records: list[tuple[bytes, bytes]], palettes: bytes) -> bytes:
+    rows = sorted((hash16(raw), raw, output) for raw, output in records)
+    if len(palettes) != 64 or any(
+        len(raw) != 16 or len(output) != 32 for _, raw, output in rows
+    ):
+        raise ValueError("invalid full tile/palettes")
+    blob = (
+        HEADER.pack(b"CTB3", len(rows))
+        + b"".join(FULL_RECORD.pack(*row) for row in rows)
         + palettes
     )
     validate_table(blob)
