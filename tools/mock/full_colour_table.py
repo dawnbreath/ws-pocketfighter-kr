@@ -16,7 +16,12 @@ from seed_recipe import crop_md5, RECIPES
 
 
 def build(
-    captures: list[Path], baseline: Path, palettes: Path, out: Path, idle: bool = False
+    captures: list[Path],
+    baseline: Path,
+    palettes: Path,
+    out: Path,
+    idle: bool = False,
+    idle_cycle: bool = False,
 ) -> None:
     out.mkdir(parents=True, exist_ok=False)
     config = json.loads(palettes.read_text())
@@ -62,7 +67,7 @@ def build(
                 indices[y, x] = 13
         np.savez_compressed(out / f"{who}.npz", source=crop, indices=indices)
         pose_indices = {key: indices}
-        if idle and who == "chunli":
+        if (idle or idle_cycle) and who == "chunli":
             from idle_neighbor import TARGET, author
 
             for frame in cap["frames"]:
@@ -78,6 +83,28 @@ def build(
                     break
             if TARGET not in pose_indices:
                 raise ValueError("requested idle neighbour absent")
+        if idle_cycle and who == "chunli":
+            from idle_neighbor import REMAINING
+
+            pending = set(REMAINING)
+            for frame in cap["frames"]:
+                px, _, _ = compose(frame, cap["side"])
+                if not px.any():
+                    continue
+                other_key, other_crop = crop_md5(px)
+                if other_key not in pending:
+                    continue
+                pose_indices[other_key] = author(
+                    target, pose_indices[TARGET], other_crop
+                )
+                np.savez_compressed(
+                    out / f"{who}-{other_key}.npz",
+                    source=other_crop,
+                    indices=pose_indices[other_key],
+                )
+                pending.remove(other_key)
+            if pending:
+                raise ValueError("idle cycle poses absent")
         used = []
         for i, frame in enumerate(cap["frames"]):
             px, owner, sprites = compose(frame, cap["side"])
@@ -132,5 +159,13 @@ if __name__ == "__main__":
     for name in ["chunli", "zangief", "baseline", "palettes", "out"]:
         p.add_argument(name, type=Path)
     p.add_argument("--idle-neighbor", action="store_true")
+    p.add_argument("--idle-cycle", action="store_true")
     a = p.parse_args()
-    build([a.chunli, a.zangief], a.baseline, a.palettes, a.out, a.idle_neighbor)
+    build(
+        [a.chunli, a.zangief],
+        a.baseline,
+        a.palettes,
+        a.out,
+        a.idle_neighbor,
+        a.idle_cycle,
+    )

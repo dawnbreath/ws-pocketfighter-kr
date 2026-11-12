@@ -1,3 +1,5 @@
+The remaining two idle poses are continued in [T28](idle-cycle.md).
+
 # T27: one additional Chun-Li breathing pose
 
 Continue from the owner's preferred T26 hand/cuff colours without redesigning the
