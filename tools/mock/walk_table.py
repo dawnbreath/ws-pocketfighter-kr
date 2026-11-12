@@ -30,6 +30,10 @@ def build(capture: Path, baseline: Path, out: Path, motion: str = "walk") -> dic
         from attack_colours import POSES, author
 
         protocols = {"reload base; settle 240; single attack hold"}
+    elif motion == "low-air":
+        from low_air_colours import POSES, author
+
+        protocols = {"reload base; settle 240; crouch12 or jump4-release8; action hold"}
     else:
         raise ValueError("unsupported motion")
     cap = json.loads(capture.read_text())
@@ -109,6 +113,8 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     for name in ["capture", "baseline", "out"]:
         p.add_argument(name, type=Path)
-    p.add_argument("--motion", choices=["walk", "dash", "attack"], default="walk")
+    p.add_argument(
+        "--motion", choices=["walk", "dash", "attack", "low-air"], default="walk"
+    )
     args = p.parse_args()
     print(json.dumps(build(args.capture, args.baseline, args.out, args.motion)))

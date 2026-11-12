@@ -17,9 +17,13 @@ from class_table import HEADER, FULL_RECORD, validate_table
 
 
 def match_render(
-    expected: np.ndarray, actual: np.ndarray, visible: np.ndarray, moving: bool
+    expected: np.ndarray,
+    actual: np.ndarray,
+    visible: np.ndarray,
+    moving: bool,
+    airborne: bool = False,
 ) -> tuple[bool, int, list[int] | None]:
-    """Accept only an exact, unique horizontal registration; never recolour a shot."""
+    """Accept exact registration only; air motion also permits vertical displacement."""
     yy, xx = np.nonzero(visible)
     if not len(xx):
         return False, 0, None
@@ -27,12 +31,19 @@ def match_render(
     if not direct:
         return True, 0, [0, 0]
     matches = []
-    for dx in range(-6, 7) if moving else []:
+    offsets = (
+        ((0, dy) for dy in range(-8, 9))
+        if airborne
+        else (((dx, 0) for dx in range(-6, 7)) if moving else ())
+    )
+    for dx, dy in offsets:
         if (xx + dx).min() < 0 or (xx + dx).max() >= actual.shape[1]:
             continue
-        if np.array_equal(expected[yy, xx], actual[yy, xx + dx]):
-            matches.append(dx)
-    return (True, 0, [matches[0], 0]) if len(matches) == 1 else (False, direct, None)
+        if (yy + dy).min() < 0 or (yy + dy).max() >= actual.shape[0]:
+            continue
+        if np.array_equal(expected[yy, xx], actual[yy + dy, xx + dx]):
+            matches.append([dx, dy])
+    return (True, 0, matches[0]) if len(matches) == 1 else (False, direct, None)
 
 
 def capture(args: argparse.Namespace) -> dict:
@@ -71,13 +82,16 @@ def capture(args: argparse.Namespace) -> dict:
         "emucap_sha256": digest(args.emucap_mcp),
         "mednafen_sha256": digest(args.mednafen),
         "state_sha256": digest(state),
-        "settle_frames_after_load": 240 if args.motion in ("dash", "attack") else 180,
+        "settle_frames_after_load": (
+            240 if args.motion in ("dash", "attack", "low-air") else 180
+        ),
         "input_protocol": (
             {
                 "dash": "reload base; settle 240; tap 4 release 4 then hold",
                 "dash-repeat": "reload base; settle 180; repeated two-frame taps",
                 "walk": "reload base; settle 180; single continuous hold",
                 "attack": "reload base; settle 240; single attack hold",
+                "low-air": "reload base; settle 240; crouch12 or jump4-release8; action hold",
             }[args.motion]
         ),
     }
@@ -96,27 +110,50 @@ def capture(args: argparse.Namespace) -> dict:
                 "read_memory", {"memory_type": "ram", "address": a, "length": n}
             )["hex"]
 
-        for direction in (["a", "b"] if args.motion == "attack" else ["left", "right"]):
+        directions = (
+            ["crouch", "crouch-a", "crouch-b", "jump", "jump-a", "jump-b"]
+            if args.motion == "low-air"
+            else (["a", "b"] if args.motion == "attack" else ["left", "right"])
+        )
+        for direction in directions:
             for tick, duration in enumerate(args.frames):
                 c.call("load_state", {"path": str(state)})
                 c.call(
                     "step", {"count": r["settle_frames_after_load"], "unit": "frames"}
                 )
-                event = {
-                    "buttons": [direction],
-                    "press_frames": duration,
-                    "after_frames": 0,
-                }
-                prefix = (
-                    [{**event, "press_frames": 4, "after_frames": 4}]
-                    if args.motion == "dash"
-                    else []
-                )
-                events = prefix + (
-                    [{**event, "press_frames": 2}] * (duration // 2)
-                    if args.motion == "dash-repeat"
-                    else [event]
-                )
+                if args.motion == "low-air":
+                    airborne = direction.startswith("jump")
+                    suffix = direction.split("-")[1:]
+                    events = [
+                        {
+                            "buttons": ["up" if airborne else "down"],
+                            "press_frames": 4 if airborne else 12,
+                            "after_frames": 8 if airborne else 0,
+                        },
+                        {
+                            "buttons": (
+                                (suffix or ["up"]) if airborne else ["down", *suffix]
+                            ),
+                            "press_frames": duration,
+                            "after_frames": 0,
+                        },
+                    ]
+                else:
+                    event = {
+                        "buttons": [direction],
+                        "press_frames": duration,
+                        "after_frames": 0,
+                    }
+                    prefix = (
+                        [{**event, "press_frames": 4, "after_frames": 4}]
+                        if args.motion == "dash"
+                        else []
+                    )
+                    events = prefix + (
+                        [{**event, "press_frames": 2}] * (duration // 2)
+                        if args.motion == "dash-repeat"
+                        else [event]
+                    )
                 for event in events:
                     result = c.call("tap", event)
                     r["events"].append(event)
@@ -164,7 +201,11 @@ def capture(args: argparse.Namespace) -> dict:
                 actual = np.array(Image.open(shot).convert("RGB"))
                 valid = px > 0
                 matches, count, offset = match_render(
-                    expected, actual, valid, args.motion in ("dash", "dash-repeat")
+                    expected,
+                    actual,
+                    valid,
+                    args.motion in ("dash", "dash-repeat"),
+                    args.motion == "low-air" and direction.startswith("jump"),
                 )
                 f.update(
                     render_matches=matches,
@@ -202,6 +243,8 @@ if __name__ == "__main__":
     p.add_argument("--mednafen", type=Path, required=True)
     p.add_argument("--frames", nargs="+", type=int, default=list(range(2, 45, 2)))
     p.add_argument(
-        "--motion", choices=["walk", "dash", "dash-repeat", "attack"], default="walk"
+        "--motion",
+        choices=["walk", "dash", "dash-repeat", "attack", "low-air"],
+        default="walk",
     )
     capture(p.parse_args())
