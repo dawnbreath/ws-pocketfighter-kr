@@ -44,3 +44,5 @@ Update this table in the PR that changes a task’s state.
 | T28 | Complete four-pose Chun-Li idle colouring | Codex | all 4 poses connected and full return cycle observed; 2721/2721 pixels match; old poses/title identical | codex/T28-complete-idle | visual review; non-idle actions outside scope |
 
 | T29 | Chun-Li forward/backward walking colours | Codex | four drawings integrated; 2689/2689 representative pixels, 14/14 runtime samples; six unaffected screens identical; 73 old records preserved | codex/T29-chunli-walk | visual review; dash/attacks/damage/opposite facing and performance coverage remain |
+
+| T30 | Chun-Li dash/transition colours | Codex | four drawings connected; 2704/2704 representative pixels; 12/14 dash samples match; walking four poses and six pinned screens unchanged; all139 old records preserved | codex/T30-chunli-dash | visual review; 2 transient samples excluded from pixel proof; attacks/damage/opposite facing and performance remain |
