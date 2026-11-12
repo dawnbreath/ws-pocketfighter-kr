@@ -46,3 +46,5 @@ Update this table in the PR that changes a task’s state.
 | T29 | Chun-Li forward/backward walking colours | Codex | four drawings integrated; 2689/2689 representative pixels, 14/14 runtime samples; six unaffected screens identical; 73 old records preserved | codex/T29-chunli-walk | visual review; dash/attacks/damage/opposite facing and performance coverage remain |
 
 | T30 | Chun-Li dash/transition colours | Codex | four drawings connected; 2704/2704 representative pixels; 12/14 dash samples match; walking four poses and six pinned screens unchanged; all139 old records preserved | codex/T30-chunli-dash | visual review; 2 transient samples excluded from pixel proof; attacks/damage/opposite facing and performance remain |
+
+| T31 | Chun-Li standing kick/punch colours | Codex | six drawings connected; 20/20 samples and 4422/4422 representative pixels match; idle6 screens and walk/dash8 drawings unchanged; all211 old records preserved | codex/T31-chunli-basic-attacks | visual review; combos/crouch/jump/contact/damage/opposite-facing and remaining fighters pending |

@@ -1,4 +1,4 @@
-"""Append reviewed Chun-Li movement drawings to an existing CTB3 table."""
+"""Append reviewed Chun-Li action drawings to an existing CTB3 table."""
 
 from __future__ import annotations
 import argparse
@@ -26,6 +26,10 @@ def build(capture: Path, baseline: Path, out: Path, motion: str = "walk") -> dic
         from walk_colours import POSES, author
 
         protocols = {"reload base; settle 180; single continuous hold"}
+    elif motion == "attack":
+        from attack_colours import POSES, author
+
+        protocols = {"reload base; settle 240; single attack hold"}
     else:
         raise ValueError("unsupported motion")
     cap = json.loads(capture.read_text())
@@ -105,6 +109,6 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     for name in ["capture", "baseline", "out"]:
         p.add_argument(name, type=Path)
-    p.add_argument("--motion", choices=["walk", "dash"], default="walk")
+    p.add_argument("--motion", choices=["walk", "dash", "attack"], default="walk")
     args = p.parse_args()
     print(json.dumps(build(args.capture, args.baseline, args.out, args.motion)))
