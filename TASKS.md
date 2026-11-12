@@ -39,4 +39,6 @@ Update this table in the PR that changes a task’s state.
 
 | T26 | Correct the cuff directly beneath Chun-Li hand | Codex | 16 lower-band pixels revised; hand, trousers and Zangief unchanged | codex/T26-lower-cuff | basic-pose visual review |
 
-| T27 | Extend T26 colours to next Chun-Li breathing pose | Codex | game verified: next pose 679/679 pixels, base/title identical; 10 new records | codex/T27-chunli-idle-neighbor | remaining idle poses/actions and visual review |
+| T27 | Extend T26 colours to next Chun-Li breathing pose | Codex | game verified: next pose 679/679 pixels, base/title identical; 10 new records | codex/T27-chunli-idle-neighbor | idle cycle continued in T28; other actions and visual review |
+
+| T28 | Complete four-pose Chun-Li idle colouring | Codex | all 4 poses connected and full return cycle observed; 2721/2721 pixels match; old poses/title identical | codex/T28-complete-idle | visual review; non-idle actions outside scope |
