@@ -15,7 +15,9 @@ from segment_frames import compose, merge_votes, project_labels
 from seed_recipe import crop_md5, RECIPES
 
 
-def build(captures: list[Path], baseline: Path, palettes: Path, out: Path) -> None:
+def build(
+    captures: list[Path], baseline: Path, palettes: Path, out: Path, idle: bool = False
+) -> None:
     out.mkdir(parents=True, exist_ok=False)
     config = json.loads(palettes.read_text())
     votes = {}
@@ -59,15 +61,37 @@ def build(captures: list[Path], baseline: Path, palettes: Path, out: Path) -> No
                     raise ValueError("spike is not opaque")
                 indices[y, x] = 13
         np.savez_compressed(out / f"{who}.npz", source=crop, indices=indices)
+        pose_indices = {key: indices}
+        if idle and who == "chunli":
+            from idle_neighbor import TARGET, author
+
+            for frame in cap["frames"]:
+                px, _, _ = compose(frame, cap["side"])
+                if px.any() and crop_md5(px)[0] == TARGET:
+                    target = crop_md5(px)[1]
+                    pose_indices[TARGET] = author(crop, indices, target)
+                    np.savez_compressed(
+                        out / f"{who}-{TARGET}.npz",
+                        source=target,
+                        indices=pose_indices[TARGET],
+                    )
+                    break
+            if TARGET not in pose_indices:
+                raise ValueError("requested idle neighbour absent")
         used = []
         for i, frame in enumerate(cap["frames"]):
             px, owner, sprites = compose(frame, cap["side"])
-            if not px.any() or crop_md5(px)[0] != key:
+            if not px.any():
+                continue
+            pose_key, pose_crop = crop_md5(px)
+            if pose_key not in pose_indices:
                 continue
             yy, xx = np.nonzero(px)
             x, y = int(xx.min()), int(yy.min())
             plane = np.full(px.shape, -1, dtype=np.int8)
-            plane[y : y + crop.shape[0], x : x + crop.shape[1]] = indices
+            plane[y : y + pose_crop.shape[0], x : x + pose_crop.shape[1]] = (
+                pose_indices[pose_key]
+            )
             merge_votes(votes, project_labels(owner, sprites, plane, cap["side"]))
             sources.update(
                 {s["hash"]: s["raw"] for s in sprites if s["side"] == cap["side"]}
@@ -107,5 +131,6 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     for name in ["chunli", "zangief", "baseline", "palettes", "out"]:
         p.add_argument(name, type=Path)
+    p.add_argument("--idle-neighbor", action="store_true")
     a = p.parse_args()
-    build([a.chunli, a.zangief], a.baseline, a.palettes, a.out)
+    build([a.chunli, a.zangief], a.baseline, a.palettes, a.out, a.idle_neighbor)

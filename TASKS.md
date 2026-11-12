@@ -38,3 +38,5 @@ Update this table in the PR that changes a task’s state.
 | T25 | Match inner Chun-Li cuff against Saturn | Codex | 13 inner-band pixels revised; lower hand and Zangief unchanged | codex/T25-inner-cuff | basic-pose visual review |
 
 | T26 | Correct the cuff directly beneath Chun-Li hand | Codex | 16 lower-band pixels revised; hand, trousers and Zangief unchanged | codex/T26-lower-cuff | basic-pose visual review |
+
+| T27 | Extend T26 colours to next Chun-Li breathing pose | Codex | game verified: next pose 679/679 pixels, base/title identical; 10 new records | codex/T27-chunli-idle-neighbor | remaining idle poses/actions and visual review |
