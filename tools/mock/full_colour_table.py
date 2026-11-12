@@ -41,7 +41,14 @@ def build(captures: list[Path], baseline: Path, palettes: Path, out: Path) -> No
                 for x in (23, 24):
                     if crop[y, x]:
                         indices[y, x] = 4
-            for x, y in [(24, 22), (24, 26)]:
+            # Saturn shows another black cuff to the left of the lower hand.
+            # Preserve the knuckles below/right; mark the upper/left band only.
+            inner_band = {22: range(16, 23), 23: range(16, 20), 24: range(17, 19)}
+            for y, xs in inner_band.items():
+                for x in xs:
+                    if crop[y, x]:
+                        indices[y, x] = 4
+            for x, y in [(24, 22), (24, 26), (18, 24)]:
                 if not crop[y, x]:
                     raise ValueError("spike is not opaque")
                 indices[y, x] = 13

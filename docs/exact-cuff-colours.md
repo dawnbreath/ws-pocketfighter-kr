@@ -1,3 +1,29 @@
+# T25 current correction: include the inner cuff
+
+Actual Saturn Training reference (`work/saturn-chunli-detail.png`, derived from
+`reference/saturn-run/fighters.png`) shows the black cuff and white stud on the left
+of the lower hand as well as its outer edge. T24's rectangular skin assignment
+incorrectly included this inner/upper band. The current source-bound correction
+sets crop row 22 x16..22, row23 x16..19, row24 x17..18 to black where opaque,
+with the existing bright pixel at (18,24) white. Lower/right knuckle pixels
+remain skin. Existing outer cuff and spikes remain unchanged.
+
+Exactly 13 Chun-Li indices differ from T24, all within that region. The lower/right
+hand indices and every Zangief index are unchanged. Palette and runtime engine
+are unchanged. Candidate preview: `work/inner-cuff-comparison.png`, with actual
+Saturn reference, previous result and current interpretation side by side. No
+all-pose or owner visual approval is implied.
+
+Regenerate with the command below using `work/inner-cuff-table` and `work/inner-cuff.ws`.
+ROM SHA256: `ae5af23fe35aeb904a15050a1b5d3a1f6ab824ec5c99f8402b498fef19299224`.
+Runtime evidence/save: `work/inner-cuff-runtime-chunli/`.
+
+Current real-game verification: all 18 active tile mirrors and 677 opaque pixels
+match the new table. Whole screenshot versus T24 differs by exactly 13 pixels;
+title is pixel-identical. Report: `work/inner-cuff-runtime-verification.json`.
+
+## T24 implementation and historical verification
+
 # T24: opaque black cuff, white spikes, skin-coloured hand
 
 The owner specifies Chun-Li's bracelet as black with white spikes and the hand as
