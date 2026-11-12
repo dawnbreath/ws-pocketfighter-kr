@@ -36,3 +36,5 @@ Update this table in the PR that changes a task’s state.
 | T24 | Exact black cuff / white spikes / skin hand | Codex | CTB3 fixed and tested; actual black/white/skin output verified; 9 Chun-Li pixels change, Zangief identical | codex/T24-exact-cuff-colours | basic-pose visual review; remaining poses/modes unverified |
 
 | T25 | Match inner Chun-Li cuff against Saturn | Codex | 13 inner-band pixels revised; lower hand and Zangief unchanged | codex/T25-inner-cuff | basic-pose visual review |
+
+| T26 | Correct the cuff directly beneath Chun-Li hand | Codex | 16 lower-band pixels revised; hand, trousers and Zangief unchanged | codex/T26-lower-cuff | basic-pose visual review |

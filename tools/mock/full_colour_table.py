@@ -48,7 +48,13 @@ def build(captures: list[Path], baseline: Path, palettes: Path, out: Path) -> No
                 for x in xs:
                     if crop[y, x]:
                         indices[y, x] = 4
-            for x, y in [(24, 22), (24, 26), (18, 24)]:
+            # Lower cuff under the skin-coloured fist, above the trousers.
+            lower_band = {28: range(18, 23), 29: range(18, 24), 30: range(19, 24)}
+            for y, xs in lower_band.items():
+                for x in xs:
+                    if crop[y, x]:
+                        indices[y, x] = 4
+            for x, y in [(24, 22), (24, 26), (18, 24), (20, 28), (22, 30)]:
                 if not crop[y, x]:
                     raise ValueError("spike is not opaque")
                 indices[y, x] = 13
