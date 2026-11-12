@@ -42,3 +42,5 @@ Update this table in the PR that changes a task’s state.
 | T27 | Extend T26 colours to next Chun-Li breathing pose | Codex | game verified: next pose 679/679 pixels, base/title identical; 10 new records | codex/T27-chunli-idle-neighbor | idle cycle continued in T28; other actions and visual review |
 
 | T28 | Complete four-pose Chun-Li idle colouring | Codex | all 4 poses connected and full return cycle observed; 2721/2721 pixels match; old poses/title identical | codex/T28-complete-idle | visual review; non-idle actions outside scope |
+
+| T29 | Chun-Li forward/backward walking colours | Codex | four drawings integrated; 2689/2689 representative pixels, 14/14 runtime samples; six unaffected screens identical; 73 old records preserved | codex/T29-chunli-walk | visual review; dash/attacks/damage/opposite facing and performance coverage remain |
