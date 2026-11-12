@@ -1,3 +1,26 @@
+# T26 current correction: cuff directly below the skin-coloured hand
+
+Owner clarified the target is below the skin-coloured hand on the image right.
+Recompare with the actual Saturn Training reference: the band underneath the fist
+is black with white studs, rather than skin/trousers. Change only crop row28 x18..22,
+row29 x18..23, row30 x19..23 to opaque black, with existing opaque studs (20,28) and
+(22,30) white. Preserve every pixel above row28 (including the hand), every pixel
+below row30 (trousers), existing upper/outer cuffs, and all Zangief indices.
+
+Exactly 16 Chun-Li pixels change from T25. Palette/engine unchanged. Regenerate
+with `full_colour_table.py` using `work/lower-cuff-table`, then build
+`work/lower-cuff.ws` with the same flags below. Local comparison with actual Saturn:
+`work/lower-cuff-comparison.png`. Runtime screenshots, save and source frame:
+`work/lower-cuff-runtime-chunli/`. Only the selected basic pose is reviewed here;
+no all-pose or owner visual approval is implied.
+
+Current game check: 18/18 active tiles and all 677 opaque pixels match. Whole
+screenshot against T25 changes exactly 16 pixels; title is pixel-identical.
+Report: `work/lower-cuff-runtime-verification.json`. ROM SHA256:
+`ab1d607945707ae9a8b78fc9eae3a7320cc627501730e949a07a8a90926398c7`.
+
+## Earlier T25/T24 history
+
 # T25 current correction: include the inner cuff
 
 Actual Saturn Training reference (`work/saturn-chunli-detail.png`, derived from
