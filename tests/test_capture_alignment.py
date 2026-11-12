@@ -23,6 +23,24 @@ class RenderAlignment(unittest.TestCase):
         )
         self.assertFalse(match_render(self.expected, actual, self.visible, False)[0])
 
+    def test_air_vertical_registration_is_exact_and_opt_in(self):
+        actual = np.roll(self.expected, 4, axis=0)
+        self.assertEqual(
+            match_render(self.expected, actual, self.visible, False, True),
+            (True, 0, [0, 4]),
+        )
+        self.assertFalse(match_render(self.expected, actual, self.visible, True)[0])
+        actual[8, 14, 0] += 1
+        self.assertFalse(
+            match_render(self.expected, actual, self.visible, False, True)[0]
+        )
+
+    def test_air_ambiguous_registration_rejected(self):
+        actual = np.roll(self.expected, 3, axis=0) + np.roll(self.expected, -3, axis=0)
+        self.assertFalse(
+            match_render(self.expected, actual, self.visible, False, True)[0]
+        )
+
     def test_changed_pixel_is_not_accepted(self):
         actual = np.roll(self.expected, 3, axis=1)
         actual[4, 17, 0] += 1
