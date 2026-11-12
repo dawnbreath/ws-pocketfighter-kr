@@ -1,4 +1,4 @@
-"""Append the four captured Chun-Li walk drawings to an existing CTB3 table."""
+"""Append reviewed Chun-Li movement drawings to an existing CTB3 table."""
 
 from __future__ import annotations
 import argparse
@@ -12,10 +12,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from class_table import HEADER, FULL_RECORD, pack_full_table, validate_table
 from segment_frames import compose, project_labels, merge_votes
 from seed_recipe import crop_md5
-from walk_colours import POSES, author
 
 
-def build(capture: Path, baseline: Path, out: Path) -> dict:
+def build(capture: Path, baseline: Path, out: Path, motion: str = "walk") -> dict:
+    if motion == "dash":
+        from dash_colours import POSES, author
+
+        protocols = {
+            "reload base; settle 240; tap 4 release 4 then hold",
+            "reload base; settle 180; repeated two-frame taps",
+        }
+    elif motion == "walk":
+        from walk_colours import POSES, author
+
+        protocols = {"reload base; settle 180; single continuous hold"}
+    else:
+        raise ValueError("unsupported motion")
     cap = json.loads(capture.read_text())
     if (cap.get("character"), cap.get("side"), cap.get("status")) != (
         "chunli",
@@ -23,8 +35,8 @@ def build(capture: Path, baseline: Path, out: Path) -> dict:
         "CAPTURED",
     ):
         raise ValueError("requires captured P1 Chun-Li")
-    if cap.get("input_protocol") != "reload base; settle 180; single continuous hold":
-        raise ValueError("walking requires a continuous hold, not repeated taps")
+    if cap.get("input_protocol") not in protocols:
+        raise ValueError("capture input protocol does not match the motion")
     blob = baseline.read_bytes()
     validate_table(blob)
     magic, count = HEADER.unpack_from(blob)
@@ -56,7 +68,7 @@ def build(capture: Path, baseline: Path, out: Path) -> dict:
         sources.update({s["hash"]: s["raw"] for s in sprites if s["side"] == 4})
         seen.setdefault(key, []).append(n)
     if set(seen) != set(POSES):
-        raise ValueError("complete walk cycle absent")
+        raise ValueError("required movement drawings absent")
     records = dict(original)
     for key, cells in votes.items():
         if any(len(cell) != 1 for cell in cells):
@@ -71,12 +83,13 @@ def build(capture: Path, baseline: Path, out: Path) -> dict:
                 output[y * 4 + p] |= ((value >> p) & 1) << (7 - x)
         raw = sources[key]
         if raw in original and original[raw] != bytes(output):
-            raise ValueError("walk mask would change an existing tile")
+            raise ValueError("movement mask would change an existing tile")
         records[raw] = bytes(output)
     result = pack_full_table(list(records.items()), blob[-64:])
     out.mkdir(parents=True, exist_ok=False)
     (out / "full.ctb3").write_bytes(result)
     report = {
+        "motion": motion,
         "capture_sha256": hashlib.sha256(capture.read_bytes()).hexdigest(),
         "baseline_sha256": hashlib.sha256(blob).hexdigest(),
         "table_sha256": hashlib.sha256(result).hexdigest(),
@@ -92,5 +105,6 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     for name in ["capture", "baseline", "out"]:
         p.add_argument(name, type=Path)
+    p.add_argument("--motion", choices=["walk", "dash"], default="walk")
     args = p.parse_args()
-    print(json.dumps(build(args.capture, args.baseline, args.out)))
+    print(json.dumps(build(args.capture, args.baseline, args.out, args.motion)))

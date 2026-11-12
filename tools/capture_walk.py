@@ -1,6 +1,6 @@
-"""Capture a continuous hold from a pinned pre-control Chun-Li state, with render checks.
+"""Capture walking or double-tap dash from a pinned Chun-Li state, with render checks.
 
-Each sample reloads the same state before one hold; repeated taps can trigger dash.
+Each sample reloads the same state before its recorded hold or tap sequence.
 All ROM-derived outputs and saves must remain local.
 """
 
@@ -16,9 +16,30 @@ from segment_frames import compose
 from class_table import HEADER, FULL_RECORD, validate_table
 
 
+def match_render(
+    expected: np.ndarray, actual: np.ndarray, visible: np.ndarray, moving: bool
+) -> tuple[bool, int, list[int] | None]:
+    """Accept only an exact, unique horizontal registration; never recolour a shot."""
+    yy, xx = np.nonzero(visible)
+    if not len(xx):
+        return False, 0, None
+    direct = int((expected[yy, xx] != actual[yy, xx]).any(axis=1).sum())
+    if not direct:
+        return True, 0, [0, 0]
+    matches = []
+    for dx in range(-6, 7) if moving else []:
+        if (xx + dx).min() < 0 or (xx + dx).max() >= actual.shape[1]:
+            continue
+        if np.array_equal(expected[yy, xx], actual[yy, xx + dx]):
+            matches.append(dx)
+    return (True, 0, [matches[0], 0]) if len(matches) == 1 else (False, direct, None)
+
+
 def capture(args: argparse.Namespace) -> dict:
     if not args.frames or any(n < 1 or n > 120 for n in args.frames):
         raise ValueError("hold lengths must be 1..120 frames")
+    if args.motion == "dash-repeat" and any(n % 2 for n in args.frames):
+        raise ValueError("repeated two-frame taps require even durations")
     blob = args.table.read_bytes()
     validate_table(blob)
     if HEADER.unpack_from(blob)[0] != b"CTB3":
@@ -50,8 +71,14 @@ def capture(args: argparse.Namespace) -> dict:
         "emucap_sha256": digest(args.emucap_mcp),
         "mednafen_sha256": digest(args.mednafen),
         "state_sha256": digest(state),
-        "settle_frames_after_load": 180,
-        "input_protocol": "reload base; settle 180; single continuous hold",
+        "settle_frames_after_load": 240 if args.motion == "dash" else 180,
+        "input_protocol": (
+            {
+                "dash": "reload base; settle 240; tap 4 release 4 then hold",
+                "dash-repeat": "reload base; settle 180; repeated two-frame taps",
+                "walk": "reload base; settle 180; single continuous hold",
+            }[args.motion]
+        ),
     }
     try:
         c = MCP(args.emucap_mcp, out, args.mednafen)
@@ -71,19 +98,29 @@ def capture(args: argparse.Namespace) -> dict:
         for direction in ["left", "right"]:
             for tick, duration in enumerate(args.frames):
                 c.call("load_state", {"path": str(state)})
-                c.call("step", {"count": 180, "unit": "frames"})
+                c.call(
+                    "step", {"count": r["settle_frames_after_load"], "unit": "frames"}
+                )
                 event = {
                     "buttons": [direction],
                     "press_frames": duration,
                     "after_frames": 0,
                 }
-                result = c.call(
-                    "tap",
-                    event,
+                prefix = (
+                    [{**event, "press_frames": 4, "after_frames": 4}]
+                    if args.motion == "dash"
+                    else []
                 )
-                r["events"].append(event)
-                if result.get("status") == "interrupted":
-                    raise RuntimeError("hold interrupted")
+                events = prefix + (
+                    [{**event, "press_frames": 2}] * (duration // 2)
+                    if args.motion == "dash-repeat"
+                    else [event]
+                )
+                for event in events:
+                    result = c.call("tap", event)
+                    r["events"].append(event)
+                    if result.get("status") == "interrupted":
+                        raise RuntimeError("hold interrupted")
                 g = c.call("get_state", {"groups": ["Gfx"]})["state"]
                 r["frames"].append(
                     {
@@ -125,11 +162,13 @@ def capture(args: argparse.Namespace) -> dict:
                 c.call("screenshot", {"save_path": str(shot)})
                 actual = np.array(Image.open(shot).convert("RGB"))
                 valid = px > 0
-                f["render_matches"] = bool(
-                    valid.any() and np.array_equal(expected[valid], actual[valid])
+                matches, count, offset = match_render(
+                    expected, actual, valid, args.motion != "walk"
                 )
-                f["mismatched_pixels"] = int(
-                    ((expected != actual).any(axis=2) & valid).sum()
+                f.update(
+                    render_matches=matches,
+                    mismatched_pixels=count,
+                    render_offset=offset,
                 )
                 if f["render_matches"]:
                     c.call(
@@ -141,9 +180,11 @@ def capture(args: argparse.Namespace) -> dict:
     finally:
         try:
             if c and lid:
+                status_before_stop = r["status"]
+                r["status"] = "STOP_UNCONFIRMED"
                 r["stop"] = c.call("stop", {"launch_id": lid})
-                if not r["stop"].get("stopped"):
-                    r["status"] = "STOP_UNCONFIRMED"
+                if r["stop"].get("stopped"):
+                    r["status"] = status_before_stop
         finally:
             if c:
                 c.close()
@@ -159,4 +200,5 @@ if __name__ == "__main__":
     p.add_argument("--emucap-mcp", type=Path, required=True)
     p.add_argument("--mednafen", type=Path, required=True)
     p.add_argument("--frames", nargs="+", type=int, default=list(range(2, 45, 2)))
+    p.add_argument("--motion", choices=["walk", "dash", "dash-repeat"], default="walk")
     capture(p.parse_args())
