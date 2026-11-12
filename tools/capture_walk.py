@@ -1,4 +1,4 @@
-"""Capture walking or double-tap dash from a pinned Chun-Li state, with render checks.
+"""Capture Chun-Li movement or basic attacks from a pinned state, with render checks.
 
 Each sample reloads the same state before its recorded hold or tap sequence.
 All ROM-derived outputs and saves must remain local.
@@ -71,12 +71,13 @@ def capture(args: argparse.Namespace) -> dict:
         "emucap_sha256": digest(args.emucap_mcp),
         "mednafen_sha256": digest(args.mednafen),
         "state_sha256": digest(state),
-        "settle_frames_after_load": 240 if args.motion == "dash" else 180,
+        "settle_frames_after_load": 240 if args.motion in ("dash", "attack") else 180,
         "input_protocol": (
             {
                 "dash": "reload base; settle 240; tap 4 release 4 then hold",
                 "dash-repeat": "reload base; settle 180; repeated two-frame taps",
                 "walk": "reload base; settle 180; single continuous hold",
+                "attack": "reload base; settle 240; single attack hold",
             }[args.motion]
         ),
     }
@@ -95,7 +96,7 @@ def capture(args: argparse.Namespace) -> dict:
                 "read_memory", {"memory_type": "ram", "address": a, "length": n}
             )["hex"]
 
-        for direction in ["left", "right"]:
+        for direction in (["a", "b"] if args.motion == "attack" else ["left", "right"]):
             for tick, duration in enumerate(args.frames):
                 c.call("load_state", {"path": str(state)})
                 c.call(
@@ -163,7 +164,7 @@ def capture(args: argparse.Namespace) -> dict:
                 actual = np.array(Image.open(shot).convert("RGB"))
                 valid = px > 0
                 matches, count, offset = match_render(
-                    expected, actual, valid, args.motion != "walk"
+                    expected, actual, valid, args.motion in ("dash", "dash-repeat")
                 )
                 f.update(
                     render_matches=matches,
@@ -200,5 +201,7 @@ if __name__ == "__main__":
     p.add_argument("--emucap-mcp", type=Path, required=True)
     p.add_argument("--mednafen", type=Path, required=True)
     p.add_argument("--frames", nargs="+", type=int, default=list(range(2, 45, 2)))
-    p.add_argument("--motion", choices=["walk", "dash", "dash-repeat"], default="walk")
+    p.add_argument(
+        "--motion", choices=["walk", "dash", "dash-repeat", "attack"], default="walk"
+    )
     capture(p.parse_args())
