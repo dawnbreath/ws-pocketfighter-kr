@@ -51,6 +51,8 @@ def capture(args: argparse.Namespace) -> dict:
         raise ValueError("hold lengths must be 1..120 frames")
     if args.motion == "dash-repeat" and any(n % 2 for n in args.frames):
         raise ValueError("repeated two-frame taps require even durations")
+    if args.settle_frames is not None and not 0 <= args.settle_frames <= 600:
+        raise ValueError("settle override must be 0..600 frames")
     blob = args.table.read_bytes()
     validate_table(blob)
     if HEADER.unpack_from(blob)[0] != b"CTB3":
@@ -95,6 +97,9 @@ def capture(args: argparse.Namespace) -> dict:
             }[args.motion]
         ),
     }
+    if args.settle_frames is not None:
+        r["settle_frames_after_load"] = args.settle_frames
+        r["input_protocol"] += f"; settle override {args.settle_frames}"
     try:
         c = MCP(args.emucap_mcp, out, args.mednafen)
         c.call("bootstrap")
@@ -118,9 +123,11 @@ def capture(args: argparse.Namespace) -> dict:
         for direction in directions:
             for tick, duration in enumerate(args.frames):
                 c.call("load_state", {"path": str(state)})
-                c.call(
-                    "step", {"count": r["settle_frames_after_load"], "unit": "frames"}
-                )
+                if r["settle_frames_after_load"]:
+                    c.call(
+                        "step",
+                        {"count": r["settle_frames_after_load"], "unit": "frames"},
+                    )
                 if args.motion == "low-air":
                     airborne = direction.startswith("jump")
                     suffix = direction.split("-")[1:]
@@ -239,6 +246,12 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     for name in ["rom", "state", "table", "palettes", "out"]:
         p.add_argument(name, type=Path)
+    p.add_argument(
+        "--settle-frames",
+        type=int,
+        default=None,
+        help="Override the default settle for an already playable pinned state (0..600).",
+    )
     p.add_argument("--emucap-mcp", type=Path, required=True)
     p.add_argument("--mednafen", type=Path, required=True)
     p.add_argument("--frames", nargs="+", type=int, default=list(range(2, 45, 2)))
