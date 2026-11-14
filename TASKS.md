@@ -54,3 +54,5 @@ Update this table in the PR that changes a task’s state.
 | T33 | Recover lost T32 colour data/runtime and reverse idle | Codex | exact602-record historical table recovered; new build21 drawings/14744 pixels verified; mirrored base idle5 samples verified; restart backup generated | codex/T33-recover-runtime | ROM differs due reacquired fonts; old text-image equivalence and other reverse actions remain unverified |
 
 | T34 | Opposite-facing Chun-Li standing attacks and walking | Codex | 6 attack +4 walking drawings verified, 7111 representative pixels; unchanged recovered ROM/table; restart evidence bundled | codex/T34-reverse-actions | reverse dash/crouch/jump/contact/damage remain; away direction blocks in this state |
+
+| T35 | Opposite-facing Chun-Li dash/crouch/air attacks | Codex | 4 dash +15 low/air drawings verified,13026 representative pixels; combined29 reverse drawings/20137 pixels; unchanged ROM/table and restart archive | codex/T35-reverse-low-air | visual approval; contact/combos/damage/unobserved frames and other fighters remain |
