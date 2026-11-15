@@ -189,6 +189,9 @@ def capture(args: argparse.Namespace) -> dict:
                     }
                 )
                 f = r["frames"][-1]
+                if args.read_colour_buffer:
+                    f["colour_vram_base"] = 0x7000
+                    f["colour_vram"] = read(0x7000, 4096)
                 px, owner, sprites = compose(f, 4)
                 expected = np.zeros((144, 224, 3), dtype=np.uint8)
                 for sprite in sprites:
@@ -265,6 +268,11 @@ if __name__ == "__main__":
     )
     p.add_argument("--emucap-mcp", type=Path, required=True)
     p.add_argument("--mednafen", type=Path, required=True)
+    p.add_argument(
+        "--read-colour-buffer",
+        action="store_true",
+        help="Read the fighter 4bpp mirror for hidden-tile verification; no writes.",
+    )
     p.add_argument("--frames", nargs="+", type=int, default=list(range(2, 45, 2)))
     p.add_argument(
         "--motion",

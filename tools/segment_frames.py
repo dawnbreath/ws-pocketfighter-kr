@@ -85,13 +85,19 @@ def active_sprites(frame: dict) -> list[dict]:
     return sprites
 
 
-def compose(frame: dict, side: int) -> tuple[np.ndarray, np.ndarray, list[dict]]:
+def compose(
+    frame: dict, side: int, *, occluders: bool = True
+) -> tuple[np.ndarray, np.ndarray, list[dict]]:
+    # Palette grouping is not general actor ownership. Isolated composition is
+    # only source-authoring/RAM evidence; screenshot checks keep occluders.
     sprites = active_sprites(frame)
     # WS OAM priority: earlier active entry wins. Coordinates wrap modulo 256;
     # clip to LCD after wrapping, preserving offscreen/overlapped pixels as unobserved.
     pixels = np.zeros((144, 224), dtype=np.int8)
     owner = np.full((144, 224), -1, dtype=np.int16)
     for sprite in sprites:
+        if not occluders and sprite["side"] != side:
+            continue
         for sy in range(8):
             for sx in range(8):
                 x = (sprite["x"] + (7 - sx if sprite["word"] & 0x4000 else sx)) & 255

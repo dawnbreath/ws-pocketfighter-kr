@@ -53,6 +53,13 @@ def build(
         protocols = {
             "reload base; settle 180; single no-input step; settle override 600",
         }
+    elif motion == "contact":
+        from contact_colours import POSES, author
+
+        protocols = {
+            "reload base; settle 180; single no-input step; settle override 400",
+            "reload base; settle 180; single no-input step; settle override 600",
+        }
     else:
         raise ValueError("unsupported motion")
     paths = [capture, *(additional_captures or [])]
@@ -87,7 +94,7 @@ def build(
     for cap_index, n, frame in frames:
         if not frame.get("render_matches"):
             continue
-        px, owner, sprites = compose(frame, 4)
+        px, owner, sprites = compose(frame, 4, occluders=motion != "contact")
         if not px.any():
             continue
         key, source = crop_md5(px)
@@ -152,7 +159,7 @@ if __name__ == "__main__":
         p.add_argument(name, type=Path)
     p.add_argument(
         "--motion",
-        choices=["walk", "dash", "attack", "low-air", "defence", "damage"],
+        choices=["walk", "dash", "attack", "low-air", "defence", "damage", "contact"],
         default="walk",
     )
     p.add_argument("--additional-capture", type=Path, action="append", default=[])
