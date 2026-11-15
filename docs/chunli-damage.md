@@ -107,3 +107,7 @@ Affected Python files pass Black, py_compile and diff checks. Unchanged assembly
 suites are not repeated. This does not establish general VRAM font residency or
 whole-population performance; earlier coverage/translation limitations persist.
 Sol/Medium remains sufficient; no model escalation is needed.
+
+T39 follow-up: suitable Saturn throw/rotation footage exposed sleeve/hand
+material errors in both roll recipes. See chunli-roll-reference.md for the
+147-pixel correction and new ROM/table hashes; the figures above describe T38.
