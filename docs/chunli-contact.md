@@ -109,3 +109,8 @@ contact-flat-fine/, contact-boot/, contact-states/, damage-gap-{flat,roll,opposi
 Hidden art visibility/owner review, ambiguous round forms, other moves/fighters,
 T36 standing-guard reference, prior translation limits, font VRAM residency and
 full-population performance remain open. Sol/Medium remained sufficient.
+
+T41 follow-up: actual Saturn soccer-throw footage identifies the two previously
+ambiguous round forms as Ken's victim-to-ball transformation. They are integrated
+with white/black/gold colours in chunli-soccer-ball.md; T40 hashes above remain
+historical evidence for its759-record build.

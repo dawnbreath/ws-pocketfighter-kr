@@ -12,6 +12,29 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from class_table import HEADER, FULL_RECORD, pack_full_table, validate_table
 from segment_frames import compose, project_labels, merge_votes
 from seed_recipe import crop_md5
+from fighter_palettes import encode
+
+
+def compatible_palettes(blob: bytes, config: dict) -> bytes:
+    """Change only swatches unreferenced by any baseline output, in both footers."""
+    new = encode(config["fighters"]["CHUN-LI"]) + encode(config["fighters"]["ZANGIEF"])
+    used = set()
+    for i in range(HEADER.unpack_from(blob)[1]):
+        output = FULL_RECORD.unpack_from(blob, HEADER.size + i * FULL_RECORD.size)[2]
+        for y in range(8):
+            for x in range(8):
+                used.add(
+                    sum(((output[y * 4 + p] >> (7 - x)) & 1) << p for p in range(4))
+                )
+    old = blob[-64:]
+    if any(
+        old[base + index * 2 : base + index * 2 + 2]
+        != new[base + index * 2 : base + index * 2 + 2]
+        for base in (0, 32)
+        for index in used
+    ):
+        raise ValueError("palette update would recolour an existing output")
+    return new
 
 
 def build(
@@ -20,6 +43,7 @@ def build(
     out: Path,
     motion: str = "walk",
     additional_captures: list[Path] | None = None,
+    palettes: Path | None = None,
 ) -> dict:
     if motion == "dash":
         from dash_colours import POSES, author
@@ -60,8 +84,16 @@ def build(
             "reload base; settle 180; single no-input step; settle override 400",
             "reload base; settle 180; single no-input step; settle override 600",
         }
+    elif motion == "ball":
+        from ball_colours import POSES, author
+
+        protocols = {
+            "reload base; settle 180; single no-input step; settle override 400"
+        }
     else:
         raise ValueError("unsupported motion")
+    if motion == "ball" and palettes is None:
+        raise ValueError("ball export requires --palettes to synchronize gold swatches")
     paths = [capture, *(additional_captures or [])]
     caps = []
     for path in paths:
@@ -128,7 +160,12 @@ def build(
         if raw in original and original[raw] != bytes(output):
             raise ValueError("movement mask would change an existing tile")
         records[raw] = bytes(output)
-    result = pack_full_table(list(records.items()), blob[-64:])
+    footer = (
+        compatible_palettes(blob, json.loads(palettes.read_text()))
+        if palettes
+        else blob[-64:]
+    )
+    result = pack_full_table(list(records.items()), footer)
     out.mkdir(parents=True, exist_ok=False)
     (out / "full.ctb3").write_bytes(result)
     report = {
@@ -140,6 +177,8 @@ def build(
         "preserved_records": count,
         "records": len(records),
     }
+    if palettes:
+        report["palettes_sha256"] = hashlib.sha256(palettes.read_bytes()).hexdigest()
     if len(paths) > 1:
         report["captures"] = [
             {
@@ -159,8 +198,22 @@ if __name__ == "__main__":
         p.add_argument(name, type=Path)
     p.add_argument(
         "--motion",
-        choices=["walk", "dash", "attack", "low-air", "defence", "damage", "contact"],
+        choices=[
+            "walk",
+            "dash",
+            "attack",
+            "low-air",
+            "defence",
+            "damage",
+            "contact",
+            "ball",
+        ],
         default="walk",
+    )
+    p.add_argument(
+        "--palettes",
+        type=Path,
+        help="Update only unused footer swatches from the fighter catalogue",
     )
     p.add_argument("--additional-capture", type=Path, action="append", default=[])
     args = p.parse_args()
@@ -172,6 +225,7 @@ if __name__ == "__main__":
                 args.out,
                 args.motion,
                 args.additional_capture,
+                args.palettes,
             )
         )
     )
