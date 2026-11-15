@@ -56,3 +56,5 @@ Update this table in the PR that changes a task’s state.
 | T34 | Opposite-facing Chun-Li standing attacks and walking | Codex | 6 attack +4 walking drawings verified, 7111 representative pixels; unchanged recovered ROM/table; restart evidence bundled | codex/T34-reverse-actions | reverse dash/crouch/jump/contact/damage remain; away direction blocks in this state |
 
 | T35 | Opposite-facing Chun-Li dash/crouch/air attacks | Codex | 4 dash +15 low/air drawings verified,13026 representative pixels; combined29 reverse drawings/20137 pixels; unchanged ROM/table and restart archive | codex/T35-reverse-low-air | visual approval; contact/combos/damage/unobserved frames and other fighters remain |
+
+| T36 | Chun-Li standing guard/hit colours | Codex | review candidate:2 drawings/1323 pixels;9 guard+14 full hit samples;35 records added, all602 preserved;637-record table/IPS roundtrip and restart backup | codex/T36-chunli-guard-hit | exact same-pose Saturn standing-guard reference and visual approval; other hit/contact/KO poses; only848 table bytes remain |

@@ -13,7 +13,7 @@ from segment_frames import compose
 from capture_walk import match_render
 from regress import digest
 from seed_recipe import crop_md5
-import attack_colours, walk_colours, dash_colours, low_air_colours
+import attack_colours, walk_colours, dash_colours, low_air_colours, defence_colours
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("standing", type=Path)
@@ -21,6 +21,7 @@ parser.add_argument("walk", type=Path)
 parser.add_argument("out", type=Path)
 parser.add_argument("--dash", type=Path, nargs="+")
 parser.add_argument("--low-air", type=Path, nargs="+")
+parser.add_argument("--defence", type=Path, nargs="+")
 parser.add_argument(
     "--palettes",
     type=Path,
@@ -39,6 +40,8 @@ if args.dash:
     families.append(("dash", dash_colours, args.dash))
 if args.low_air:
     families.append(("low_air", low_air_colours, args.low_air))
+if args.defence:
+    families.append(("defence", defence_colours, args.defence))
 rows = (sum(len(mod.POSES) for _, mod, _ in families) + 4) // 5
 sheet = Image.new("RGB", (5 * 300, rows * 300), "#333333")
 draw = ImageDraw.Draw(sheet)
@@ -73,7 +76,7 @@ for family, mod, roots in families:
         for n, f in enumerate(cap["frames"]):
             px, owner, sprites = compose(f, 4)
             key, source = crop_md5(px)
-            mirrored = np.fliplr(source)
+            mirrored = source if family == "defence" else np.fliplr(source)
             reversekey, _ = crop_md5(mirrored)
             if reversekey not in mod.POSES:
                 others.setdefault(key, []).append({"capture": str(root), "index": n})
@@ -85,14 +88,15 @@ for family, mod, roots in families:
             h, w = source.shape
             name = f["direction"] + f"-{n%per:02}.png"
             im = Image.open(root / name).convert("RGB")
-            expected = colors[np.fliplr(mod.author(mirrored))]
+            indices = mod.author(mirrored)
+            expected = colors[indices if family == "defence" else np.fliplr(indices)]
             plane = np.zeros((144, 224, 3), dtype=np.uint8)
             plane[y : y + h, x : x + w] = expected
             valid, count, offset = match_render(
                 plane,
                 np.array(im),
                 px > 0,
-                family in ("walk", "dash"),
+                family in ("walk", "dash", "defence"),
                 family == "low_air" and f["direction"].startswith("jump"),
             )
             if not valid:

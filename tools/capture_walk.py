@@ -92,6 +92,7 @@ def capture(args: argparse.Namespace) -> dict:
                 "dash": "reload base; settle 240; tap 4 release 4 then hold",
                 "dash-repeat": "reload base; settle 180; repeated two-frame taps",
                 "walk": "reload base; settle 180; single continuous hold",
+                "idle": "reload base; settle 180; single no-input step",
                 "attack": "reload base; settle 240; single attack hold",
                 "low-air": "reload base; settle 240; crouch12 or jump4-release8; action hold",
             }[args.motion]
@@ -118,7 +119,11 @@ def capture(args: argparse.Namespace) -> dict:
         directions = (
             ["crouch", "crouch-a", "crouch-b", "jump", "jump-a", "jump-b"]
             if args.motion == "low-air"
-            else (["a", "b"] if args.motion == "attack" else ["left", "right"])
+            else (
+                ["neutral"]
+                if args.motion == "idle"
+                else (["a", "b"] if args.motion == "attack" else ["left", "right"])
+            )
         )
         for direction in directions:
             for tick, duration in enumerate(args.frames):
@@ -147,7 +152,7 @@ def capture(args: argparse.Namespace) -> dict:
                     ]
                 else:
                     event = {
-                        "buttons": [direction],
+                        "buttons": [] if args.motion == "idle" else [direction],
                         "press_frames": duration,
                         "after_frames": 0,
                     }
@@ -162,7 +167,13 @@ def capture(args: argparse.Namespace) -> dict:
                         else [event]
                     )
                 for event in events:
-                    result = c.call("tap", event)
+                    result = (
+                        c.call("tap", event)
+                        if event["buttons"]
+                        else c.call(
+                            "step", {"count": event["press_frames"], "unit": "frames"}
+                        )
+                    )
                     r["events"].append(event)
                     if result.get("status") == "interrupted":
                         raise RuntimeError("hold interrupted")
@@ -257,7 +268,7 @@ if __name__ == "__main__":
     p.add_argument("--frames", nargs="+", type=int, default=list(range(2, 45, 2)))
     p.add_argument(
         "--motion",
-        choices=["walk", "dash", "dash-repeat", "attack", "low-air"],
+        choices=["walk", "dash", "dash-repeat", "attack", "low-air", "idle"],
         default="walk",
     )
     capture(p.parse_args())
