@@ -58,3 +58,5 @@ Update this table in the PR that changes a task’s state.
 | T35 | Opposite-facing Chun-Li dash/crouch/air attacks | Codex | 4 dash +15 low/air drawings verified,13026 representative pixels; combined29 reverse drawings/20137 pixels; unchanged ROM/table and restart archive | codex/T35-reverse-low-air | visual approval; contact/combos/damage/unobserved frames and other fighters remain |
 
 | T36 | Chun-Li standing guard/hit colours | Codex | review candidate:2 drawings/1323 pixels;9 guard+14 full hit samples;35 records added, all602 preserved;637-record table/IPS roundtrip and restart backup | codex/T36-chunli-guard-hit | exact same-pose Saturn standing-guard reference and visual approval; other hit/contact/KO poses; only848 table bytes remain |
+
+| T37 | Reclaim same-bank colour table capacity | Codex | data relocated to2200;free bytes848->24912,max CTB3 records1135;18 relevant tests;current637-record table unchanged;Chun-Li1323+Zangief1269 pixels verified;default build identical | codex/T37-colour-bank-layout | actual runtime tested at637 records;full-size performance/remaining fighter data and prior visual/VRAM items remain open |

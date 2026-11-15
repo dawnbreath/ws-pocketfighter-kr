@@ -3,6 +3,7 @@
 ; Scene = the mono words of palettes 0 and 1 (matched against the scene list). Unknown sets use the default table.
 bits 16
 cpu 186
+%include "colour_layout.inc"
 org 0x0000
 %ifdef HYBRID
 %define SLIST  0x0800            ; HYBRID: scene list moved up for code room (build.py passes slist=0x800)
@@ -32,7 +33,7 @@ org 0x0000
 %else
 %define CTSTRIDE 34
 %endif
-%define CTABA  0x8000            ; class table inside the colour bank (CS=0x2000); distinct from the VRAM flag array at DS:0x8000
+%define CTABA  CLASS_TABLE_BASE            ; class table inside the colour bank (CS=0x2000); distinct from the VRAM flag array at DS:0x8000
 %define RSY    0x8200            ; HYBRID prototype: frames left of the rolling 2bpp->4bpp resync
 %define FIGHT  0x8204            ; HYBRID: >0 while the fighter-tile copier hook is active (slots 0x180-0x1FF are owned by cphook)
 %define FORCE  0x8205            ; HYBRID: 1 = cphook converts every staging tile on this call (first call after it did not own the slots)
@@ -767,7 +768,7 @@ fighter_palettes:
     call .side
     mov bx,[V_B2]
 .side:
-    mov si,0x7000             ; neutral palette for unknown/unregistered character
+    mov si,FIGHTER_PALETTE_BASE ; neutral palette for unknown/unregistered character
     or bx,bx
     jz .copy
     mov ax,[cs:bx+22]

@@ -1,5 +1,6 @@
 import json, struct, os, sys
 from paths import ROOT
+from colour_layout import COLOUR_BANK_END
 SPEC=ROOT+'/text/color_spec.json'
 NOM=[15,13,11,9,7,5,3,0]   # nominal luma per shade (shade0 lightest)
 def hexc(h): return tuple(int(c,16) for c in h)
@@ -44,7 +45,7 @@ def expand(spec):
                 continue
             seen[k]=(sc['name'],t); scenes.append((k,t))
     return default,scenes,conf
-def build_bank(code,spec,slist=0x600,fighter_palettes=None):
+def build_bank(code,spec,slist=0x600,fighter_palettes=None,data_limit=COLOUR_BANK_END):
     default,scenes,conf=expand(spec)
     bank=bytearray(b'\xff'*0x10000); bank[:len(code)]=code
     enc=lambda t: b''.join(struct.pack('<H',rgbw(c)) for p in range(16) for c in t[p])
@@ -81,7 +82,9 @@ def build_bank(code,spec,slist=0x600,fighter_palettes=None):
         if e not in cache: cache[e]=off+len(tabs); tabs+=e
         lst+=struct.pack('<2HH',*k,cache[e])
     lst+=struct.pack('<H',0xFFFF)
-    assert slist+len(lst)<=0xC00 and 0x1000+len(tabs)<=0x10000
+    assert slist+len(lst)<=0xC00
+    if 0x1000+len(tabs)>data_limit:
+        raise ValueError("scene palettes overlap reserved colour data")
     bank[slist:slist+len(lst)]=lst; bank[0x1000:0x1000+len(tabs)]=tabs
     if fighter_palettes is not None:
         from fighter_palettes import install

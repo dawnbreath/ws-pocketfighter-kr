@@ -9,6 +9,7 @@ import unittest
 import zlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+from colour_layout import CLASS_TABLE_BASE
 from class_table import hash16, pack_table, validate_table, convert_pgmd, MAX_SIZE
 
 try:
@@ -47,10 +48,11 @@ class FormatTests(unittest.TestCase):
             pack_table([(B, bytes(16)), (B, bytes([255] * 16))], PAL)
 
     def test_capacity_limit(self) -> None:
-        records = [(i.to_bytes(16, "little"), bytes(16)) for i in range(961)]
+        capacity = (MAX_SIZE - 6 - 64) // 34
+        records = [(i.to_bytes(16, "little"), bytes(16)) for i in range(capacity)]
         self.assertLessEqual(len(pack_table(records, PAL)), MAX_SIZE)
         with self.assertRaises(ValueError):
-            pack_table(records + [((961).to_bytes(16, "little"), bytes(16))], PAL)
+            pack_table(records + [((capacity).to_bytes(16, "little"), bytes(16))], PAL)
 
     def test_pgmd_roundtrip(self) -> None:
         pgmd = struct.pack("<4sHHI", b"PGMD", 1, 37, 1) + struct.pack(
@@ -75,7 +77,7 @@ class RuntimeTests(unittest.TestCase):
         u = Uc(UC_ARCH_X86, UC_MODE_16)
         u.mem_map(0, 0x100000)
         u.mem_write(0x20000, self.code)
-        u.mem_write(0x28000, pack_table(records, PAL))
+        u.mem_write(0x20000 + CLASS_TABLE_BASE, pack_table(records, PAL))
         u.mem_write(0x61000, bytes.fromhex("9a00050020f4"))
         u.mem_write(0x500, source * 128)
         u.mem_write(0x3800, bytes([255] * 2048))

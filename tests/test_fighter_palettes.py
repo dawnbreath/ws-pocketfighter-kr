@@ -41,6 +41,25 @@ class CatalogueTests(unittest.TestCase):
         self.assertEqual(struct.unpack_from("<H", bank, 0xE30 + 22)[0], 0)
         self.assertEqual(bank[BASE : BASE + 32], encode(CONFIG["fallback"]))
 
+    def test_full_roster_fits_and_catalogue_overflow_is_atomic(self) -> None:
+        chars = [{"name": str(n)} for n in range(12)]
+        config = {
+            "version": 1,
+            "fallback": ["111"] * 16,
+            "fighters": {c["name"]: ["123"] * 16 for c in chars},
+        }
+        bank = bytearray(65536)
+        install(bank, chars, config, 0x1600)
+        self.assertEqual(
+            struct.unpack_from("<H", bank, 0xE00 + 11 * 24 + 22)[0], BASE + 12 * 32
+        )
+        chars = [{"name": str(n)} for n in range(16)]
+        config["fighters"] = {c["name"]: ["123"] * 16 for c in chars}
+        bank = bytearray(65536)
+        with self.assertRaises(ValueError):
+            install(bank, chars, config, 0x1600)
+        self.assertFalse(any(bank))
+
     def test_invalid_catalogue_does_not_mutate_bank(self) -> None:
         bad = copy.deepcopy(CONFIG)
         bad["fighters"]["A"] = ["fff"] * 15

@@ -49,6 +49,7 @@ def apply_engine(R):
 # ------------------------------------------------------------------ colour
 import colorlib
 from class_table import validate_table
+from colour_layout import CLASS_TABLE_BASE, COLOUR_BANK_END
 def apply_color(R,survey=False,spec_path=None):
     fp_path=os.environ.get("PF_FIGHTER_PALETTES")
     if fp_path and not (os.environ.get("PF_HYBRID")=="1" and os.environ.get("PF_CLASS_TABLE")):
@@ -62,12 +63,12 @@ def apply_color(R,survey=False,spec_path=None):
     slist=0x800 if os.environ.get('PF_HYBRID')=='1' else 0x600
     assert len(code)<slist
     spec=colorlib.load_spec(spec_path or colorlib.SPEC)
-    bank,conf,n=colorlib.build_bank(code,spec,slist,fighter_palettes=fp)
+    bank,conf,n=colorlib.build_bank(code,spec,slist,fighter_palettes=fp,data_limit=CLASS_TABLE_BASE if tb else COLOUR_BANK_END)
     for c in conf: print('colour conflict',c)
     print('colour scenes',n)
     b=COL_IDX<<16; R.b[b:b+0x10000]=bank
     if os.environ.get('PF_HYBRID')=='1' and os.environ.get('PF_CLASS_TABLE'):
-        R.b[b+0x8000:b+0x8000+len(tb)]=tb; print('class table',len(tb),'bytes at bank+0x8000')
+        R.b[b+CLASS_TABLE_BASE:b+CLASS_TABLE_BASE+len(tb)]=tb; print('class table',len(tb),'bytes at bank+'+hex(CLASS_TABLE_BASE))
 # ------------------------------------------------------------------ font / encoding
 # Korean text is pre-rendered per line (proportional, Galmuri11 12px) and sliced into 8x16 cells.
 # Each unique cell bitmap gets a 2-byte code: lead 0xA0..0xFE (page), trail 1..254 (index).
