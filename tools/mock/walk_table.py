@@ -14,7 +14,13 @@ from segment_frames import compose, project_labels, merge_votes
 from seed_recipe import crop_md5
 
 
-def build(capture: Path, baseline: Path, out: Path, motion: str = "walk") -> dict:
+def build(
+    capture: Path,
+    baseline: Path,
+    out: Path,
+    motion: str = "walk",
+    additional_captures: list[Path] | None = None,
+) -> dict:
     if motion == "dash":
         from dash_colours import POSES, author
 
@@ -34,17 +40,28 @@ def build(capture: Path, baseline: Path, out: Path, motion: str = "walk") -> dic
         from low_air_colours import POSES, author
 
         protocols = {"reload base; settle 240; crouch12 or jump4-release8; action hold"}
+    elif motion == "defence":
+        from defence_colours import POSES, author
+
+        protocols = {
+            "reload base; settle 180; single continuous hold",
+            "reload base; settle 180; single continuous hold; settle override 0",
+        }
     else:
         raise ValueError("unsupported motion")
-    cap = json.loads(capture.read_text())
-    if (cap.get("character"), cap.get("side"), cap.get("status")) != (
-        "chunli",
-        4,
-        "CAPTURED",
-    ):
-        raise ValueError("requires captured P1 Chun-Li")
-    if cap.get("input_protocol") not in protocols:
-        raise ValueError("capture input protocol does not match the motion")
+    paths = [capture, *(additional_captures or [])]
+    caps = []
+    for path in paths:
+        cap = json.loads(path.read_text())
+        if (cap.get("character"), cap.get("side"), cap.get("status")) != (
+            "chunli",
+            4,
+            "CAPTURED",
+        ):
+            raise ValueError("requires captured P1 Chun-Li")
+        if cap.get("input_protocol") not in protocols:
+            raise ValueError("capture input protocol does not match the motion")
+        caps.append(cap)
     blob = baseline.read_bytes()
     validate_table(blob)
     magic, count = HEADER.unpack_from(blob)
@@ -58,7 +75,10 @@ def build(capture: Path, baseline: Path, out: Path, motion: str = "walk") -> dic
         ]
     }
     votes, sources, seen = {}, {}, {}
-    for n, frame in enumerate(cap["frames"]):
+    frames = [
+        (i, n, f) for i, cap in enumerate(caps) for n, f in enumerate(cap["frames"])
+    ]
+    for cap_index, n, frame in frames:
         if not frame.get("render_matches"):
             continue
         px, owner, sprites = compose(frame, 4)
@@ -74,7 +94,9 @@ def build(capture: Path, baseline: Path, out: Path, motion: str = "walk") -> dic
         plane[y : y + source.shape[0], x : x + source.shape[1]] = indices
         merge_votes(votes, project_labels(owner, sprites, plane, 4))
         sources.update({s["hash"]: s["raw"] for s in sprites if s["side"] == 4})
-        seen.setdefault(key, []).append(n)
+        seen.setdefault(key, []).append(
+            n if len(caps) == 1 else {"capture": cap_index, "frame": n}
+        )
     if set(seen) != set(POSES):
         raise ValueError("required movement drawings absent")
     records = dict(original)
@@ -105,6 +127,15 @@ def build(capture: Path, baseline: Path, out: Path, motion: str = "walk") -> dic
         "preserved_records": count,
         "records": len(records),
     }
+    if len(paths) > 1:
+        report["captures"] = [
+            {
+                "path": str(p),
+                "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
+                "protocol": c["input_protocol"],
+            }
+            for p, c in zip(paths, caps)
+        ]
     (out / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
 
@@ -114,7 +145,20 @@ if __name__ == "__main__":
     for name in ["capture", "baseline", "out"]:
         p.add_argument(name, type=Path)
     p.add_argument(
-        "--motion", choices=["walk", "dash", "attack", "low-air"], default="walk"
+        "--motion",
+        choices=["walk", "dash", "attack", "low-air", "defence"],
+        default="walk",
     )
+    p.add_argument("--additional-capture", type=Path, action="append", default=[])
     args = p.parse_args()
-    print(json.dumps(build(args.capture, args.baseline, args.out, args.motion)))
+    print(
+        json.dumps(
+            build(
+                args.capture,
+                args.baseline,
+                args.out,
+                args.motion,
+                args.additional_capture,
+            )
+        )
+    )
