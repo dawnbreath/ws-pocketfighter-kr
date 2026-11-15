@@ -18,15 +18,20 @@ sys.path[:0] = [
 from segment_frames import compose
 from seed_recipe import crop_md5
 from regress import digest
-from contact_colours import POSES, author
+import contact_colours
+import ball_colours
+from types import ModuleType
 
 
 def verify_frame(
-    frame: dict, screenshot: np.ndarray, colors: np.ndarray
+    frame: dict,
+    screenshot: np.ndarray,
+    colors: np.ndarray,
+    recipes: ModuleType = contact_colours,
 ) -> dict | None:
     full, owners, sprites = compose(frame, 4, occluders=False)
     key, source = crop_md5(full)
-    if key not in POSES:
+    if key not in recipes.POSES:
         return None
     if frame.get("colour_vram_base") != 0x7000:
         raise ValueError("requires explicit fighter colour-buffer read")
@@ -54,7 +59,7 @@ def verify_frame(
     x = int(xx.min())
     y = int(yy.min())
     h, w = source.shape
-    expected = author(source)
+    expected = recipes.author(source)
     if not np.array_equal(
         indices[y : y + h, x : x + w][source > 0], expected[source > 0]
     ):
@@ -81,13 +86,16 @@ def main() -> None:
         type=Path,
         default=Path(__file__).resolve().parents[1] / "data/palettes/wrist-fixes.json",
     )
+    p.add_argument("--family", choices=["contact", "ball"], default="contact")
     args = p.parse_args()
+    recipes = ball_colours if args.family == "ball" else contact_colours
     args.out.mkdir(parents=True, exist_ok=False)
     pal = json.loads(args.palettes.read_text())["fighters"]["CHUN-LI"]
     colors = np.array([[int(n, 16) * 17 for n in word] for word in pal], dtype=np.uint8)
     seen = {}
     provenance = []
-    sheet = Image.new("RGB", (1200, 700), "#333333")
+    excluded = []
+    sheet = Image.new("RGB", (1200, ((len(recipes.POSES) + 1) // 2) * 350), "#333333")
     draw = ImageDraw.Draw(sheet)
     for root in args.captures:
         cap = json.loads((root / "capture.json").read_text())
@@ -108,15 +116,24 @@ def main() -> None:
             }
         )
         for n, f in enumerate(cap["frames"]):
+            if not f.get("render_matches"):
+                excluded.append(
+                    {
+                        "capture": str(root),
+                        "frame": n,
+                        "reason": "source/screenshot incoherent in capture",
+                    }
+                )
+                continue
             shot = Image.open(root / (f["direction"] + f"-{n:02}.png")).convert("RGB")
-            result = verify_frame(f, np.array(shot), colors)
+            result = verify_frame(f, np.array(shot), colors, recipes)
             if result is None:
                 continue
             key = result["key"]
             result["capture"] = str(root)
             result["frame"] = n
             if key not in seen:
-                i = POSES.index(key)
+                i = recipes.POSES.index(key)
                 sx = i % 2 * 600
                 sy = i // 2 * 350
                 x, y, w, h = result["box"]
@@ -128,21 +145,23 @@ def main() -> None:
                 )
                 _, source = crop_md5(compose(f, 4, occluders=False)[0])
                 sheet.paste(
-                    Image.fromarray(colors[author(source)]).resize(
+                    Image.fromarray(colors[recipes.author(source)]).resize(
                         (w * 6, h * 6), Image.Resampling.NEAREST
                     ),
                     (sx + 300, sy + 40),
                 )
-                draw.text((sx, sy), key[:8] + " screenshot (occluded)", fill="white")
+                draw.text((sx, sy), key[:8] + " actual screenshot", fill="white")
                 draw.text((sx + 300, sy), "verified RAM reconstruction", fill="white")
             seen.setdefault(key, []).append(result)
     if len({c["rom_sha256"] for c in provenance}) != 1:
         raise ValueError("contact verification requires one ROM build")
     r = {
+        "excluded": excluded,
+        "family": args.family,
         "poses": seen,
-        "missing": sorted(set(POSES) - set(seen)),
+        "missing": sorted(set(recipes.POSES) - set(seen)),
         "captures": provenance,
-        "scope": "hidden pixels: actual RAM; visible pixels: exact screenshot; no unoccluded-screen claim",
+        "scope": "hidden pixels: actual RAM; visible pixels: exact screenshot; visibility measured per sample; reconstructions are not screenshots",
     }
     (args.out / "report.json").write_text(json.dumps(r, indent=2) + "\n")
     sheet.save(args.out / "detail.png")
