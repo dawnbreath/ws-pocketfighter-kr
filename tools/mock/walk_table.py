@@ -47,6 +47,12 @@ def build(
             "reload base; settle 180; single continuous hold",
             "reload base; settle 180; single continuous hold; settle override 0",
         }
+    elif motion == "damage":
+        from damage_colours import POSES, author
+
+        protocols = {
+            "reload base; settle 180; single no-input step; settle override 600",
+        }
     else:
         raise ValueError("unsupported motion")
     paths = [capture, *(additional_captures or [])]
@@ -146,7 +152,7 @@ if __name__ == "__main__":
         p.add_argument(name, type=Path)
     p.add_argument(
         "--motion",
-        choices=["walk", "dash", "attack", "low-air", "defence"],
+        choices=["walk", "dash", "attack", "low-air", "defence", "damage"],
         default="walk",
     )
     p.add_argument("--additional-capture", type=Path, action="append", default=[])
