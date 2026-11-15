@@ -5,7 +5,7 @@ SRC=ROOT+'/src/'
 def assemble(name, defines=None):
     """assemble SRC/name.asm -> (bytes, symbols dict)"""
     out=(os.makedirs(TMP,exist_ok=True), tempfile.mkdtemp(dir=TMP))[1]
-    args=['nasm','-f','bin','-o',out+'/o.bin']
+    args=['nasm','-I',SRC,'-f','bin','-o',out+'/o.bin']
     for k,v in (defines or {}).items(): args.append('-D%s=%s'%(k,v))
     args.append(SRC+name+'.asm')
     subprocess.run(args,check=True,cwd=out)

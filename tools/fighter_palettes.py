@@ -4,8 +4,10 @@ from __future__ import annotations
 import re
 import struct
 
-BASE = 0x7000
-LIMIT = 0x8000
+from colour_layout import FIGHTER_PALETTE_BASE, CLASS_TABLE_BASE
+
+BASE = FIGHTER_PALETTE_BASE
+LIMIT = CLASS_TABLE_BASE
 ROW_BASE = 0xE00
 ROW_SIZE = 24
 POINTER_OFFSET = 22

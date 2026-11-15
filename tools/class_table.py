@@ -10,7 +10,9 @@ import zlib
 HEADER = struct.Struct("<4sH")
 RECORD = struct.Struct("<H16s16s")
 FULL_RECORD = struct.Struct("<H16s32s")
-MAX_SIZE = 0x8000
+from colour_layout import CLASS_TABLE_BASE, COLOUR_BANK_END
+
+MAX_SIZE = COLOUR_BANK_END - CLASS_TABLE_BASE
 
 
 def hash16(raw: bytes) -> int:
@@ -26,7 +28,7 @@ def hash16(raw: bytes) -> int:
 def validate_table(blob: bytes) -> None:
     if len(blob) < HEADER.size + 64 or len(blob) > MAX_SIZE:
         raise ValueError(
-            "CTB2/CTB3 must fit color-bank 8000..FFFF and include 64 palette bytes"
+            f"CTB2/CTB3 must fit color-bank {CLASS_TABLE_BASE:04X}..FFFF and include 64 palette bytes"
         )
     magic, count = HEADER.unpack_from(blob)
     record = FULL_RECORD if magic == b"CTB3" else RECORD
@@ -62,7 +64,7 @@ def pack_table(records: list[tuple[bytes, bytes]], palettes: bytes) -> bytes:
         len(palettes) != 64
         or len(records) > (MAX_SIZE - HEADER.size - 64) // RECORD.size
     ):
-        raise ValueError("invalid palette length or table exceeds reserved bank half")
+        raise ValueError("invalid palette length or table exceeds reserved bank region")
     rows = []
     for raw, mask in records:
         if len(raw) != 16 or len(mask) != 16:

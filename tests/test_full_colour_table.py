@@ -1,6 +1,7 @@
 """Exercise emitted CTB3 lookup/copy, including collisions and transparent pixels."""
 
 import test_class_table as legacy
+from colour_layout import CLASS_TABLE_BASE
 from class_table import pack_full_table, validate_table
 
 
@@ -44,6 +45,29 @@ class FullRuntimeTests(legacy.RuntimeTests):
         expected = b"".join(legacy.C[i : i + 2] + b"\0\0" for i in range(0, 16, 2))
         self.assertEqual(result, expected * 128)
 
+    def test_full_capacity_crosses_signed_offset_boundary(self) -> None:
+        from class_table import MAX_SIZE, HEADER, FULL_RECORD, hash16
+
+        capacity = (MAX_SIZE - HEADER.size - 64) // FULL_RECORD.size
+        records = [
+            (n.to_bytes(16, "little"), solid(n.to_bytes(16, "little"), 2))
+            for n in range(capacity)
+        ]
+        source, output = max(records, key=lambda row: (hash16(row[0]), row[0]))
+        self.assertGreater((capacity - 1) * FULL_RECORD.size, 0x7FFF)
+        self.assertEqual(self.run_table(source, records), output * 128)
+        with self.assertRaises(ValueError):
+            pack_full_table(
+                records
+                + [
+                    (
+                        capacity.to_bytes(16, "little"),
+                        solid(capacity.to_bytes(16, "little"), 2),
+                    )
+                ],
+                legacy.PAL,
+            )
+
     def test_transparency_cannot_be_changed(self):
         with self.assertRaises(ValueError):
             pack_full_table([(legacy.B, bytes(32))], legacy.PAL)
@@ -54,7 +78,8 @@ class FullRuntimeTests(legacy.RuntimeTests):
         u.mem_write(0x20000, self.code)
         oa, ob = solid(legacy.A, 3), solid(legacy.B, 2)
         u.mem_write(
-            0x28000, pack_full_table([(legacy.A, oa), (legacy.B, ob)], legacy.PAL)
+            0x20000 + CLASS_TABLE_BASE,
+            pack_full_table([(legacy.A, oa), (legacy.B, ob)], legacy.PAL),
         )
         u.mem_write(0x61000, bytes.fromhex("9a00050020f4"))
         source = (legacy.A + legacy.B) * 64
