@@ -15,12 +15,46 @@ sys.path[:0] = [
     str(Path(__file__).resolve().parent),
     str(Path(__file__).resolve().parent / "mock"),
 ]
-from segment_frames import compose
+from segment_frames import compose, cyclic_crop
 from seed_recipe import crop_md5
 from regress import digest
 import contact_colours
 import ball_colours
+import defence_colours
 from types import ModuleType
+
+
+def source_region(
+    frame: dict, wrapped: bool = False
+) -> (
+    tuple[np.ndarray, np.ndarray, list[dict], np.ndarray, tuple[int, int, int, int]]
+    | None
+):
+    viewport = (256, 256) if wrapped else (224, 144)
+    full, owners, sprites = compose(frame, 4, occluders=False, viewport=viewport)
+    if not full.any():
+        return None
+    if wrapped:
+        source, box = cyclic_crop(full)
+    else:
+        _, source = crop_md5(full)
+        yy, xx = np.nonzero(full)
+        box = (int(xx.min()), int(yy.min()), source.shape[1], source.shape[0])
+    return full, owners, sprites, source, box
+
+
+def resolve_recipe(
+    source: np.ndarray, recipes: ModuleType, orientation: str
+) -> tuple[str, np.ndarray, bool] | None:
+    # Reflection is exact source matching, never a nearest-pose transfer.
+    choices = (False, True) if orientation == "either" else (orientation == "mirror",)
+    for mirrored in choices:
+        canonical = np.fliplr(source) if mirrored else source
+        key, _ = crop_md5(canonical)
+        if key in recipes.POSES:
+            expected = recipes.author(canonical)
+            return key, np.fliplr(expected) if mirrored else expected, mirrored
+    return None
 
 
 def verify_frame(
@@ -28,17 +62,26 @@ def verify_frame(
     screenshot: np.ndarray,
     colors: np.ndarray,
     recipes: ModuleType = contact_colours,
+    *,
+    wrapped: bool = False,
+    orientation: str = "source",
 ) -> dict | None:
-    full, owners, sprites = compose(frame, 4, occluders=False)
-    key, source = crop_md5(full)
-    if key not in recipes.POSES:
+    region = source_region(frame, wrapped)
+    if region is None:
         return None
+    full, owners, sprites, source, box = region
+    if max(source.shape) > 255:
+        return None  # Cannot be an exact recipe with the existing shape-byte hash.
+    recipe = resolve_recipe(source, recipes, orientation)
+    if recipe is None:
+        return None
+    key, expected, mirrored = recipe
     if frame.get("colour_vram_base") != 0x7000:
         raise ValueError("requires explicit fighter colour-buffer read")
     buffer = bytes.fromhex(frame["colour_vram"])
     if len(buffer) != 4096:
         raise ValueError("short fighter colour-buffer read")
-    indices = np.zeros((144, 224), dtype=np.uint8)
+    indices = np.zeros(full.shape, dtype=np.uint8)
     for s in sprites:
         if s["side"] != 4:
             continue
@@ -53,26 +96,30 @@ def verify_frame(
                     raise ValueError("runtime transparency mismatch")
                 x = (s["x"] + (7 - xx if s["word"] & 0x4000 else xx)) & 255
                 y = (s["y"] + (7 - yy if s["word"] & 0x8000 else yy)) & 255
-                if x < 224 and y < 144 and owners[y, x] == s["rank"]:
+                if (
+                    x < full.shape[1]
+                    and y < full.shape[0]
+                    and owners[y, x] == s["rank"]
+                ):
                     indices[y, x] = value
-    yy, xx = np.nonzero(full)
-    x = int(xx.min())
-    y = int(yy.min())
-    h, w = source.shape
-    expected = recipes.author(source)
-    if not np.array_equal(
-        indices[y : y + h, x : x + w][source > 0], expected[source > 0]
-    ):
+    x, y, w, h = box
+    grid = np.ix_((y + np.arange(h)) & 255, (x + np.arange(w)) & 255)
+    if not np.array_equal(indices[grid][source > 0], expected[source > 0]):
         raise ValueError("runtime buffer does not match authored contact drawing")
     visible, _, _ = compose(frame, 4)
     mask = visible > 0
-    if not mask.any() or not np.array_equal(screenshot[mask], colors[indices[mask]]):
+    if not mask.any() or not np.array_equal(
+        screenshot[mask], colors[indices[:144, :224][mask]]
+    ):
         raise ValueError("visible screenshot does not match runtime contact output")
     return {
         "key": key,
+        "mirrored": mirrored,
         "buffer_pixels": int((source > 0).sum()),
         "visible_pixels": int(mask.sum()),
         "hidden_pixels": int((full > 0).sum() - mask.sum()),
+        "offscreen_pixels": int((full > 0).sum() - (full[:144, :224] > 0).sum()),
+        "occluded_pixels": int((full[:144, :224] > 0).sum() - mask.sum()),
         "box": [x, y, w, h],
     }
 
@@ -86,9 +133,19 @@ def main() -> None:
         type=Path,
         default=Path(__file__).resolve().parents[1] / "data/palettes/wrist-fixes.json",
     )
-    p.add_argument("--family", choices=["contact", "ball"], default="contact")
+    p.add_argument(
+        "--family", choices=["contact", "ball", "defence"], default="contact"
+    )
+    p.add_argument("--wrapped-source", action="store_true")
+    p.add_argument(
+        "--orientation", choices=["source", "mirror", "either"], default="source"
+    )
     args = p.parse_args()
-    recipes = ball_colours if args.family == "ball" else contact_colours
+    recipes = {
+        "ball": ball_colours,
+        "contact": contact_colours,
+        "defence": defence_colours,
+    }[args.family]
     args.out.mkdir(parents=True, exist_ok=False)
     pal = json.loads(args.palettes.read_text())["fighters"]["CHUN-LI"]
     colors = np.array([[int(n, 16) * 17 for n in word] for word in pal], dtype=np.uint8)
@@ -115,7 +172,11 @@ def main() -> None:
                 "stop": True,
             }
         )
+        direction_ticks: dict[str, int] = {}
         for n, f in enumerate(cap["frames"]):
+            tick = direction_ticks.get(f["direction"], 0)
+            direction_ticks[f["direction"]] = tick + 1
+            screenshot_name = f["direction"] + f"-{tick:02}.png"
             if not f.get("render_matches"):
                 excluded.append(
                     {
@@ -125,27 +186,40 @@ def main() -> None:
                     }
                 )
                 continue
-            shot = Image.open(root / (f["direction"] + f"-{n:02}.png")).convert("RGB")
-            result = verify_frame(f, np.array(shot), colors, recipes)
+            shot = Image.open(root / screenshot_name).convert("RGB")
+            result = verify_frame(
+                f,
+                np.array(shot),
+                colors,
+                recipes,
+                wrapped=args.wrapped_source,
+                orientation=args.orientation,
+            )
             if result is None:
                 continue
             key = result["key"]
             result["capture"] = str(root)
             result["frame"] = n
+            result["screenshot"] = screenshot_name
             if key not in seen:
                 i = recipes.POSES.index(key)
                 sx = i % 2 * 600
                 sy = i // 2 * 350
                 x, y, w, h = result["box"]
+                # Grey denotes coordinates outside the LCD, never generated pixels.
+                screen = np.full((256, 256, 3), 96, dtype=np.uint8)
+                screen[:144, :224] = np.array(shot)
+                grid = np.ix_((y + np.arange(h)) & 255, (x + np.arange(w)) & 255)
                 sheet.paste(
-                    shot.crop((x, y, x + w, y + h)).resize(
+                    Image.fromarray(screen[grid]).resize(
                         (w * 6, h * 6), Image.Resampling.NEAREST
                     ),
                     (sx, sy + 40),
                 )
-                _, source = crop_md5(compose(f, 4, occluders=False)[0])
+                source = source_region(f, args.wrapped_source)[3]
+                expected = resolve_recipe(source, recipes, args.orientation)[1]
                 sheet.paste(
-                    Image.fromarray(colors[recipes.author(source)]).resize(
+                    Image.fromarray(colors[expected]).resize(
                         (w * 6, h * 6), Image.Resampling.NEAREST
                     ),
                     (sx + 300, sy + 40),
@@ -158,6 +232,8 @@ def main() -> None:
     r = {
         "excluded": excluded,
         "family": args.family,
+        "wrapped_source": args.wrapped_source,
+        "orientation": args.orientation,
         "poses": seen,
         "missing": sorted(set(recipes.POSES) - set(seen)),
         "captures": provenance,
