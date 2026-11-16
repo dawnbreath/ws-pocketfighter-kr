@@ -86,15 +86,20 @@ def active_sprites(frame: dict) -> list[dict]:
 
 
 def compose(
-    frame: dict, side: int, *, occluders: bool = True
+    frame: dict,
+    side: int,
+    *,
+    occluders: bool = True,
+    viewport: tuple[int, int] = (224, 144),
 ) -> tuple[np.ndarray, np.ndarray, list[dict]]:
     # Palette grouping is not general actor ownership. Isolated composition is
     # only source-authoring/RAM evidence; screenshot checks keep occluders.
     sprites = active_sprites(frame)
     # WS OAM priority: earlier active entry wins. Coordinates wrap modulo 256;
     # clip to LCD after wrapping, preserving offscreen/overlapped pixels as unobserved.
-    pixels = np.zeros((144, 224), dtype=np.int8)
-    owner = np.full((144, 224), -1, dtype=np.int16)
+    width, height = viewport
+    pixels = np.zeros((height, width), dtype=np.int8)
+    owner = np.full((height, width), -1, dtype=np.int16)
     for sprite in sprites:
         if not occluders and sprite["side"] != side:
             continue
@@ -103,12 +108,29 @@ def compose(
                 x = (sprite["x"] + (7 - sx if sprite["word"] & 0x4000 else sx)) & 255
                 y = (sprite["y"] + (7 - sy if sprite["word"] & 0x8000 else sy)) & 255
                 value = int(sprite["pixels"][sy, sx])
-                if x < 224 and y < 144 and value and owner[y, x] < 0:
+                if x < width and y < height and value and owner[y, x] < 0:
                     pixels[y, x] = value
                     owner[y, x] = sprite["rank"]
     selected = {s["rank"] for s in sprites if s["side"] == side}
     mask = np.isin(owner, list(selected))
     return np.where(mask, pixels, 0), np.where(mask, owner, -1), sprites
+
+
+def cyclic_crop(pixels: np.ndarray) -> tuple[np.ndarray, tuple[int, int, int, int]]:
+    """Minimum source rectangle on the 256-coordinate OAM surface, not the LCD."""
+    if pixels.shape != (256, 256) or not pixels.any():
+        raise ValueError("cyclic source crop requires a nonempty 256x256 surface")
+
+    def bounds(occupied: np.ndarray) -> tuple[int, int]:
+        coords = np.flatnonzero(occupied)
+        gaps = np.diff(np.r_[coords, coords[0] + 256])
+        i = int(np.argmax(gaps))
+        return int(coords[(i + 1) % len(coords)]), 256 - int(gaps[i]) + 1
+
+    x, w = bounds(pixels.any(axis=0))
+    y, h = bounds(pixels.any(axis=1))
+    crop = pixels[np.ix_((y + np.arange(h)) & 255, (x + np.arange(w)) & 255)]
+    return crop, (x, y, w, h)
 
 
 def components(pixels: np.ndarray) -> tuple[np.ndarray, int]:
