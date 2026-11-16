@@ -108,3 +108,7 @@ Saturn standing-guard reference, owner art approval, other fighters, translation
 limits, general VRAM font residency and full-population timing remain open.
 The bounded source reconstruction and existing-recipe checks needed no model
 escalation; Sol/Medium remained sufficient.
+
+T43 follow-up: the reflected guard is verified in three new samples using this
+checker:604 RAM pixels/523 representative visible/81 offscreen. The formerly
+pending Saturn guard counterpart is also obtained; see reverse-guard.md.
