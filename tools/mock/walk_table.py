@@ -1,4 +1,4 @@
-"""Append reviewed Chun-Li action drawings to an existing CTB3 table."""
+"""Append exact source-bound fighter drawings to an existing CTB3 table."""
 
 from __future__ import annotations
 import argparse
@@ -45,6 +45,7 @@ def build(
     additional_captures: list[Path] | None = None,
     palettes: Path | None = None,
 ) -> dict:
+    character = "chunli"
     if motion == "dash":
         from dash_colours import POSES, author
 
@@ -90,6 +91,13 @@ def build(
         protocols = {
             "reload base; settle 180; single no-input step; settle override 400"
         }
+    elif motion == "zangief-idle":
+        from zangief_idle_colours import POSES, author
+
+        character = "zangief"
+        protocols = {
+            "reload base; settle 180; single no-input step; settle override 240"
+        }
     else:
         raise ValueError("unsupported motion")
     if motion == "ball" and palettes is None:
@@ -99,11 +107,11 @@ def build(
     for path in paths:
         cap = json.loads(path.read_text())
         if (cap.get("character"), cap.get("side"), cap.get("status")) != (
-            "chunli",
+            character,
             4,
             "CAPTURED",
         ):
-            raise ValueError("requires captured P1 Chun-Li")
+            raise ValueError(f"requires captured P1 {character}")
         if cap.get("input_protocol") not in protocols:
             raise ValueError("capture input protocol does not match the motion")
         caps.append(cap)
@@ -207,6 +215,7 @@ if __name__ == "__main__":
             "damage",
             "contact",
             "ball",
+            "zangief-idle",
         ],
         default="walk",
     )

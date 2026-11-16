@@ -1,5 +1,10 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+Latest T44 candidate: [Zangief breathing](zangief-breathing.md) adds two exact
+source-bound poses while preserving all763 retained records. Native output is
+verified; a237-pixel transient banner source-phase difference remains documented,
+so the stable T41 reference is preserved separately.
+
 ## Why
 In WSC 2bpp mode only sprite palettes 12-15 are transparent and each tile has 4 colours; the original character art
 encodes no skin/cloth distinction. Current result (v006): per-character vertical bands + horizontal limits, two

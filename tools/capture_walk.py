@@ -1,4 +1,4 @@
-"""Capture Chun-Li movement or basic attacks from a pinned state, with render checks.
+"""Capture fighter movement or basic attacks from a pinned state, with render checks.
 
 Each sample reloads the same state before its recorded hold or tap sequence.
 All ROM-derived outputs and saves must remain local.
@@ -64,7 +64,8 @@ def capture(args: argparse.Namespace) -> dict:
             for i in range(HEADER.unpack_from(blob)[1])
         ]
     }
-    pal = json.loads(args.palettes.read_text())["fighters"]["CHUN-LI"]
+    palette_name = {"chunli": "CHUN-LI", "zangief": "ZANGIEF"}[args.character]
+    pal = json.loads(args.palettes.read_text())["fighters"][palette_name]
     colors = np.array([[int(n, 16) * 17 for n in word] for word in pal], dtype=np.uint8)
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=False)
@@ -74,7 +75,7 @@ def capture(args: argparse.Namespace) -> dict:
     lid = None
     r = {
         "schema": 1,
-        "character": "chunli",
+        "character": args.character,
         "side": 4,
         "rom_sha256": digest(rom),
         "status": "INCOMPLETE",
@@ -267,6 +268,7 @@ if __name__ == "__main__":
         help="Override the default settle for an already playable pinned state (0..600).",
     )
     p.add_argument("--emucap-mcp", type=Path, required=True)
+    p.add_argument("--character", choices=["chunli", "zangief"], default="chunli")
     p.add_argument("--mednafen", type=Path, required=True)
     p.add_argument(
         "--read-colour-buffer",

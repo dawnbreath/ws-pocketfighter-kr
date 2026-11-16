@@ -21,6 +21,7 @@ from regress import digest
 import contact_colours
 import ball_colours
 import defence_colours
+import zangief_idle_colours
 from types import ModuleType
 
 
@@ -134,7 +135,9 @@ def main() -> None:
         default=Path(__file__).resolve().parents[1] / "data/palettes/wrist-fixes.json",
     )
     p.add_argument(
-        "--family", choices=["contact", "ball", "defence"], default="contact"
+        "--family",
+        choices=["contact", "ball", "defence", "zangief-idle"],
+        default="contact",
     )
     p.add_argument("--wrapped-source", action="store_true")
     p.add_argument(
@@ -145,9 +148,12 @@ def main() -> None:
         "ball": ball_colours,
         "contact": contact_colours,
         "defence": defence_colours,
+        "zangief-idle": zangief_idle_colours,
     }[args.family]
     args.out.mkdir(parents=True, exist_ok=False)
-    pal = json.loads(args.palettes.read_text())["fighters"]["CHUN-LI"]
+    character = "zangief" if args.family == "zangief-idle" else "chunli"
+    palette_name = "ZANGIEF" if character == "zangief" else "CHUN-LI"
+    pal = json.loads(args.palettes.read_text())["fighters"][palette_name]
     colors = np.array([[int(n, 16) * 17 for n in word] for word in pal], dtype=np.uint8)
     seen = {}
     provenance = []
@@ -157,12 +163,12 @@ def main() -> None:
     for root in args.captures:
         cap = json.loads((root / "capture.json").read_text())
         if (cap["character"], cap["side"], cap["status"], cap["stop"]["stopped"]) != (
-            "chunli",
+            character,
             4,
             "CAPTURED",
             True,
         ):
-            raise ValueError("requires completed Chun-Li capture and stop receipt")
+            raise ValueError(f"requires completed {character} capture and stop receipt")
         provenance.append(
             {
                 "path": str(root),
