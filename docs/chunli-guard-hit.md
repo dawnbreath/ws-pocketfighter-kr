@@ -95,3 +95,9 @@ defence-guard-runtime/, defence-hit-runtime/, defence-runtime-reproduced/ and
 saturn-reference/. Final art review, exact Saturn standing-guard reference,
 other defence/damage/knockdown/contact/combo poses and other fighters remain open.
 T33's font/historical-ROM limitations persist. Sol/Medium remained sufficient.
+
+T43 follow-up: controlled Saturn GUARD ON/OFF follow-up punches now supply a
+confirmed standing-guard counterpart. The old first-punch images remain HIT
+references; both settings give the same first reaction. See reverse-guard.md
+for the subsequent-strike control and the limits on cross-port frame identity.
+Owner art approval remains open.
