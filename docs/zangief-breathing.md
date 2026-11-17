@@ -1,5 +1,9 @@
 # T44: Zangief breathing colour candidate
 
+T45 update: the banner blocker below is diagnosed and repaired in
+[the atomic copier change](atomic-copier.md). The original T44 results below
+remain historical evidence; corrected T45 retains the exact819-record table.
+
 Completion items: (1) identify compatible drawings and compare actual Saturn
 materials, (2) connect them to the ROM and verify native output while preserving
 existing art, (3) record regression results and preserve restart data. The two
