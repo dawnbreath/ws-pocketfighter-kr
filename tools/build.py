@@ -44,7 +44,17 @@ def apply_engine(R):
     R.patch(0x19C80F,'b800209a60970090',far(0x5000,S('storyseg'))+b'\x90'*3,'story bank seg')
     R.patch(0x19CA0A,'b800209a4c970090',far(0x5000,S('storymap'))+b'\x90'*3,'story bank map')
     R.patch(0x1403C4,'b800108ed8',far(0x5000,S('colstub')),'vblank colour hook')
-    if os.environ.get('PF_HYBRID')=='1': R.patch(0x1402A4,'ea20010000',far(0x5000,S('cpstub'),opcode=0xEA),'copier tail-jump trampoline')
+    if os.environ.get('PF_HYBRID')=='1':
+        R.patch(0x1402A4,'ea20010000',far(0x5000,S('cpstub'),opcode=0xEA),'copier tail-jump trampoline')
+        # Preserve the original relocation size and far-call path. SP is the
+        # source pointer only inside an interrupt-masked fixed-size copy.
+        copier,_=asm.assemble('copier')
+        expected=bytes.fromhex('1e578bd4bc00058cd08ed8bf002081c70018b94000b82000'
+                               '8f058f45028f45048f45068f45088f450a8f450c8f450e'
+                               '8f45108f45128f45148f45168f45188f451a8f451c8f451e'
+                               '03f8e2cd8be25f1fcb90909090')
+        assert len(copier)==len(expected)==84
+        R.patch(0x1402C0,expected,copier,'atomic stack-borrowing RAM copier')
     R.patch(0x14028D,'8a2e3c108a0e3d10',far(0x5000,S('oamstub'))+b'\x90\x90\x90','OAM builder: character bands')
 # ------------------------------------------------------------------ colour
 import colorlib

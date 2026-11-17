@@ -54,6 +54,10 @@ class CopierTests(unittest.TestCase):
         u.mem_write(0x3800, bytes(2048) if changed else staging)
         sentinel = bytes([0x7E] * 4096)
         u.mem_write(0x7000, sentinel)
+        # Equal-source skipping is valid only after the colour hook owns
+        # these slots; first use deliberately forces conversion.
+        u.mem_write(0xFD6A, b"\x5a\xa5")
+        u.mem_write(0x8204, b"\x5a")
         initial = {
             UC_X86_REG_CS: 0x6000,
             UC_X86_REG_SS: 0,
@@ -115,3 +119,14 @@ class CopierTests(unittest.TestCase):
 
     def test_equal_tiles_preserve_destination_and_return(self) -> None:
         self.run_hook(False)
+
+    def test_atomic_template_is_hybrid_only(self) -> None:
+        import build
+
+        self.assertEqual(len(self.rom.patches[0x1402C0]), 84)
+        self.assertTrue(self.rom.patches[0x1402C0].startswith(b"\x9c\xfa"))
+        plain = RecordingRom()
+        with patch.dict(os.environ, {"PF_HYBRID": "0"}):
+            build.apply_engine(plain)
+        self.assertNotIn(0x1402C0, plain.patches)
+        self.assertNotIn(0x1402A4, plain.patches)
