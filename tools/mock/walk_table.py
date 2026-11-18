@@ -4,23 +4,30 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from collections.abc import Iterable
+from itertools import chain
 from pathlib import Path
 import sys
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from class_table import HEADER, FULL_RECORD, pack_full_table, validate_table
+from compact_colour_table import fallback_output, read_full_records
 from segment_frames import compose, project_labels, merge_votes
 from seed_recipe import crop_md5
 from fighter_palettes import encode
 
 
-def compatible_palettes(blob: bytes, config: dict) -> bytes:
+def compatible_palettes(
+    blob: bytes, config: dict, protected_outputs: Iterable[bytes] = ()
+) -> bytes:
     """Change only swatches unreferenced by any baseline output, in both footers."""
     new = encode(config["fighters"]["CHUN-LI"]) + encode(config["fighters"]["ZANGIEF"])
     used = set()
-    for i in range(HEADER.unpack_from(blob)[1]):
-        output = FULL_RECORD.unpack_from(blob, HEADER.size + i * FULL_RECORD.size)[2]
+    outputs = (
+        output for _, _, output in FULL_RECORD.iter_unpack(blob[HEADER.size : -64])
+    )
+    for output in chain(outputs, protected_outputs):
         for y in range(8):
             for x in range(8):
                 used.add(
@@ -44,6 +51,7 @@ def build(
     motion: str = "walk",
     additional_captures: list[Path] | None = None,
     palettes: Path | None = None,
+    preserve_fallback_from: list[Path] | None = None,
 ) -> dict:
     character = "chunli"
     if motion == "dash":
@@ -143,6 +151,13 @@ def build(
             for i in range(count)
         ]
     }
+    protected = {}
+    for path in preserve_fallback_from or []:
+        for _, raw, output in read_full_records(path.read_bytes()):
+            if output == fallback_output(raw):
+                if original.get(raw, output) != output:
+                    raise ValueError("baseline recolours a protected fallback tile")
+                protected[raw] = output
     votes, sources, seen = {}, {}, {}
     frames = [
         (i, n, f) for i, cap in enumerate(caps) for n, f in enumerate(cap["frames"])
@@ -183,9 +198,15 @@ def build(
         raw = sources[key]
         if raw in original and original[raw] != bytes(output):
             raise ValueError("movement mask would change an existing tile")
-        records[raw] = bytes(output)
+        if raw in protected:
+            if protected[raw] != bytes(output):
+                raise ValueError(
+                    "movement mask would recolour a protected fallback tile"
+                )
+        else:
+            records[raw] = bytes(output)
     footer = (
-        compatible_palettes(blob, json.loads(palettes.read_text()))
+        compatible_palettes(blob, json.loads(palettes.read_text()), protected.values())
         if palettes
         else blob[-64:]
     )
@@ -203,6 +224,12 @@ def build(
     }
     if palettes:
         report["palettes_sha256"] = hashlib.sha256(palettes.read_bytes()).hexdigest()
+    if preserve_fallback_from:
+        report["protected_fallback_sources"] = len(protected)
+        report["fallback_reference_sha256"] = [
+            hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in preserve_fallback_from
+        ]
     if len(paths) > 1:
         report["captures"] = [
             {
@@ -243,6 +270,12 @@ if __name__ == "__main__":
         help="Update only unused footer swatches from the fighter catalogue",
     )
     p.add_argument("--additional-capture", type=Path, action="append", default=[])
+    p.add_argument(
+        "--preserve-fallback-from",
+        type=Path,
+        action="append",
+        help="Protect fallback tiles in a CTB3 table saved before compaction",
+    )
     args = p.parse_args()
     print(
         json.dumps(
@@ -253,6 +286,7 @@ if __name__ == "__main__":
                 args.motion,
                 args.additional_capture,
                 args.palettes,
+                args.preserve_fallback_from,
             )
         )
     )

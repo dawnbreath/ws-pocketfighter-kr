@@ -1,6 +1,8 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
-Latest T47: [Zangief basic actions](zangief-basics.md) adds five standing
+T48 recovers 284 free records through [colour table compaction](colour-table-compaction.md).
+
+T47: [Zangief basic actions](zangief-basics.md) adds five standing
 kick/punch drawings and a shared movement drawing:1116 records,all942 retained.
 Native proof covers7845 new pixels and9105 retained pixels. The former transition
 is classified through far walking controls. Bounded raster-phase exclusions and
