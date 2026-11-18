@@ -52,6 +52,7 @@ def build(
     additional_captures: list[Path] | None = None,
     palettes: Path | None = None,
     preserve_fallback_from: list[Path] | None = None,
+    compact_fallback: bool = False,
 ) -> dict:
     character = "chunli"
     if motion == "dash":
@@ -113,6 +114,13 @@ def build(
         protocols = {
             "reload base; settle 180; single continuous hold; settle override 600",
             "reload base; settle 180; single continuous hold; settle override 0",
+        }
+    elif motion == "zangief-low-air":
+        from zangief_low_air_colours import POSES, author
+
+        character = "zangief"
+        protocols = {
+            "reload base; settle 240; crouch12 or jump4-release8; action hold; settle override 0",
         }
     elif motion == "zangief-basic":
         from zangief_basic_colours import POSES, author
@@ -210,9 +218,25 @@ def build(
         if palettes
         else blob[-64:]
     )
+    fallback_records = dict(protected)
+    if compact_fallback:
+        fallback_records.update(
+            (raw, output)
+            for raw, output in records.items()
+            if output == fallback_output(raw)
+        )
+        records = {
+            raw: output
+            for raw, output in records.items()
+            if raw not in fallback_records
+        }
     result = pack_full_table(list(records.items()), footer)
     out.mkdir(parents=True, exist_ok=False)
     (out / "full.ctb3").write_bytes(result)
+    if compact_fallback:
+        (out / "fallback.ctb3").write_bytes(
+            pack_full_table(list(fallback_records.items()), footer)
+        )
     report = {
         "motion": motion,
         "capture_sha256": hashlib.sha256(capture.read_bytes()).hexdigest(),
@@ -222,6 +246,9 @@ def build(
         "preserved_records": count,
         "records": len(records),
     }
+    if compact_fallback:
+        report["fallback_reference_records"] = len(fallback_records)
+        report["omitted_fallback_records"] = len(fallback_records) - len(protected)
     if palettes:
         report["palettes_sha256"] = hashlib.sha256(palettes.read_bytes()).hexdigest()
     if preserve_fallback_from:
@@ -261,6 +288,7 @@ if __name__ == "__main__":
             "zangief-idle",
             "zangief-walk",
             "zangief-basic",
+            "zangief-low-air",
         ],
         default="walk",
     )
@@ -276,6 +304,11 @@ if __name__ == "__main__":
         action="append",
         help="Protect fallback tiles in a CTB3 table saved before compaction",
     )
+    p.add_argument(
+        "--compact-fallback",
+        action="store_true",
+        help="Omit exact fallback outputs before capacity checking and save their protection reference",
+    )
     args = p.parse_args()
     print(
         json.dumps(
@@ -287,6 +320,7 @@ if __name__ == "__main__":
                 args.additional_capture,
                 args.palettes,
                 args.preserve_fallback_from,
+                args.compact_fallback,
             )
         )
     )
