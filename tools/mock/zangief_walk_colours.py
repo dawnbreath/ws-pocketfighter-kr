@@ -1,7 +1,7 @@
-"""Exact-source Zangief forward/backward steps and one observed transition.
+"""Exact-source Zangief forward/backward walking drawings.
 
 Keep hands/legs skin, wristbands/boots red1, trunks red2 and hair/beard dark
-skin. The final drawing is a late forward-input transition, not all-move proof.
+skin. The fifth drawing also repeats in far forward walking (T47 controls).
 Source hashes bind these polygons; they are not an arbitrary pose transfer.
 """
 
@@ -12,8 +12,8 @@ from wrist_fixes import selection
 
 BACK = ("edf5d1e6518c1d82e730660e36da1b83", "0ce1c596239944b85ecf69468ba56ab2")
 FORWARD = ("17ece493fd2fc86f91c2a224d7f08b0e", "bc0c17f07da6642035c689f7fade1f41")
-TRANSITION = "5f7e6f558f359512ba60ee52a941d42b"
-POSES = (*BACK, *FORWARD, TRANSITION)
+FORWARD_STEP = "5f7e6f558f359512ba60ee52a941d42b"
+POSES = (*BACK, *FORWARD, FORWARD_STEP)
 REGIONS = {
     BACK[0]: {
         1: [
@@ -69,7 +69,7 @@ REGIONS = {
             [(24, 40), (24, 41)],
         ],
     },
-    TRANSITION: {
+    FORWARD_STEP: {
         1: [
             [(7, 17), (9, 17), (10, 20), (10, 23), (7, 23)],
             [(28, 22), (30, 21), (32, 23), (31, 26), (28, 27), (27, 25)],

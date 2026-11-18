@@ -23,6 +23,7 @@ import ball_colours
 import defence_colours
 import zangief_idle_colours
 import zangief_walk_colours
+import zangief_basic_colours
 from types import ModuleType
 
 
@@ -126,6 +127,32 @@ def verify_frame(
     }
 
 
+def save_gallery(
+    panes: dict[str, tuple[Image.Image, Image.Image]],
+    poses: tuple[str, ...],
+    path: Path,
+) -> None:
+    """Size cells from captured drawings: a wide kick must not cover its pair."""
+    width = max((im.width for pair in panes.values() for im in pair), default=48)
+    height = max((im.height for pair in panes.values() for im in pair), default=48)
+    cell_width, cell_height = max(300, width * 6 + 24), height * 6 + 50
+    sheet = Image.new(
+        "RGB", (cell_width * 4, ((len(poses) + 1) // 2) * cell_height), "#333333"
+    )
+    draw = ImageDraw.Draw(sheet)
+    for key, pair in panes.items():
+        i = poses.index(key)
+        x, y = i % 2 * cell_width * 2, i // 2 * cell_height
+        for n, im in enumerate(pair):
+            sheet.paste(
+                im.resize((im.width * 6, im.height * 6), Image.Resampling.NEAREST),
+                (x + n * cell_width, y + 40),
+            )
+        draw.text((x, y), key[:8] + " actual screenshot", fill="white")
+        draw.text((x + cell_width, y), "verified RAM reconstruction", fill="white")
+    sheet.save(path)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("out", type=Path)
@@ -137,7 +164,14 @@ def main() -> None:
     )
     p.add_argument(
         "--family",
-        choices=["contact", "ball", "defence", "zangief-idle", "zangief-walk"],
+        choices=[
+            "contact",
+            "ball",
+            "defence",
+            "zangief-idle",
+            "zangief-walk",
+            "zangief-basic",
+        ],
         default="contact",
     )
     p.add_argument("--wrapped-source", action="store_true")
@@ -151,6 +185,7 @@ def main() -> None:
         "defence": (defence_colours, "chunli"),
         "zangief-idle": (zangief_idle_colours, "zangief"),
         "zangief-walk": (zangief_walk_colours, "zangief"),
+        "zangief-basic": (zangief_basic_colours, "zangief"),
     }[args.family]
     args.out.mkdir(parents=True, exist_ok=False)
     palette_name = "ZANGIEF" if character == "zangief" else "CHUN-LI"
@@ -159,8 +194,7 @@ def main() -> None:
     seen = {}
     provenance = []
     excluded = []
-    sheet = Image.new("RGB", (1200, ((len(recipes.POSES) + 1) // 2) * 350), "#333333")
-    draw = ImageDraw.Draw(sheet)
+    panes = {}
     for root in args.captures:
         cap = json.loads((root / "capture.json").read_text())
         if (cap["character"], cap["side"], cap["status"], cap["stop"]["stopped"]) != (
@@ -209,30 +243,17 @@ def main() -> None:
             result["frame"] = n
             result["screenshot"] = screenshot_name
             if key not in seen:
-                i = recipes.POSES.index(key)
-                sx = i % 2 * 600
-                sy = i // 2 * 350
                 x, y, w, h = result["box"]
                 # Grey denotes coordinates outside the LCD, never generated pixels.
                 screen = np.full((256, 256, 3), 96, dtype=np.uint8)
                 screen[:144, :224] = np.array(shot)
                 grid = np.ix_((y + np.arange(h)) & 255, (x + np.arange(w)) & 255)
-                sheet.paste(
-                    Image.fromarray(screen[grid]).resize(
-                        (w * 6, h * 6), Image.Resampling.NEAREST
-                    ),
-                    (sx, sy + 40),
-                )
                 source = source_region(f, args.wrapped_source)[3]
                 expected = resolve_recipe(source, recipes, args.orientation)[1]
-                sheet.paste(
-                    Image.fromarray(colors[expected]).resize(
-                        (w * 6, h * 6), Image.Resampling.NEAREST
-                    ),
-                    (sx + 300, sy + 40),
+                panes[key] = (
+                    Image.fromarray(screen[grid]),
+                    Image.fromarray(colors[expected]),
                 )
-                draw.text((sx, sy), key[:8] + " actual screenshot", fill="white")
-                draw.text((sx + 300, sy), "verified RAM reconstruction", fill="white")
             seen.setdefault(key, []).append(result)
     if len({c["rom_sha256"] for c in provenance}) != 1:
         raise ValueError("contact verification requires one ROM build")
@@ -247,7 +268,7 @@ def main() -> None:
         "scope": "hidden pixels: actual RAM; visible pixels: exact screenshot; visibility measured per sample; reconstructions are not screenshots",
     }
     (args.out / "report.json").write_text(json.dumps(r, indent=2) + "\n")
-    sheet.save(args.out / "detail.png")
+    save_gallery(panes, recipes.POSES, args.out / "detail.png")
     print(json.dumps(r, indent=2))
     if r["missing"]:
         raise SystemExit("required contact drawing missing")

@@ -106,6 +106,14 @@ def build(
             "reload base; settle 180; single continuous hold; settle override 600",
             "reload base; settle 180; single continuous hold; settle override 0",
         }
+    elif motion == "zangief-basic":
+        from zangief_basic_colours import POSES, author
+
+        character = "zangief"
+        protocols = {
+            "reload base; settle 240; single attack hold; settle override 0",
+            "reload base; settle 180; single continuous hold; settle override 0",
+        }
     else:
         raise ValueError("unsupported motion")
     if motion == "ball" and palettes is None:
@@ -225,6 +233,7 @@ if __name__ == "__main__":
             "ball",
             "zangief-idle",
             "zangief-walk",
+            "zangief-basic",
         ],
         default="walk",
     )
