@@ -24,6 +24,7 @@ import defence_colours
 import zangief_idle_colours
 import zangief_walk_colours
 import zangief_basic_colours
+import zangief_low_air_colours
 from types import ModuleType
 
 
@@ -171,6 +172,7 @@ def main() -> None:
             "zangief-idle",
             "zangief-walk",
             "zangief-basic",
+            "zangief-low-air",
         ],
         default="contact",
     )
@@ -186,6 +188,7 @@ def main() -> None:
         "zangief-idle": (zangief_idle_colours, "zangief"),
         "zangief-walk": (zangief_walk_colours, "zangief"),
         "zangief-basic": (zangief_basic_colours, "zangief"),
+        "zangief-low-air": (zangief_low_air_colours, "zangief"),
     }[args.family]
     args.out.mkdir(parents=True, exist_ok=False)
     palette_name = "ZANGIEF" if character == "zangief" else "CHUN-LI"

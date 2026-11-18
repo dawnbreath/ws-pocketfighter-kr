@@ -1,5 +1,8 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T49 adds [12 Zangief crouch and air drawings](zangief-low-air.md), preserving all
+previous outputs; the resulting table has 122 free records.
+
 T48 recovers 284 free records through [colour table compaction](colour-table-compaction.md).
 
 T47: [Zangief basic actions](zangief-basics.md) adds five standing
