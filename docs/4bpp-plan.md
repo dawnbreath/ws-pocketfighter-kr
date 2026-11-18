@@ -1,9 +1,10 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
-Latest T45: [atomic RAM copier](atomic-copier.md) fixes the T44 banner
-corruption caused by interrupts while SP points into source tiles. Fixed763/819
-builds have identical banner screens; the819-record colour table is unchanged.
-Original/T41/T44 builds remain preserved separately.
+Latest T46: [Zangief walking](zangief-walking.md) adds four observed step
+drawings and one separately labelled transition,942 records with all819 prior
+outputs preserved. Native proof covers5322 new pixels and unchanged old poses.
+The T45 atomic copier remains byte-identical; bounded frame-phase evidence is
+recorded separately from pixel-identical comparisons.
 
 ## Why
 In WSC 2bpp mode only sprite palettes 12-15 are transparent and each tile has 4 colours; the original character art
