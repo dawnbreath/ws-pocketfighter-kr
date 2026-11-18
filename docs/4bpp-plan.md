@@ -1,10 +1,10 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
-Latest T46: [Zangief walking](zangief-walking.md) adds four observed step
-drawings and one separately labelled transition,942 records with all819 prior
-outputs preserved. Native proof covers5322 new pixels and unchanged old poses.
-The T45 atomic copier remains byte-identical; bounded frame-phase evidence is
-recorded separately from pixel-identical comparisons.
+Latest T47: [Zangief basic actions](zangief-basics.md) adds five standing
+kick/punch drawings and a shared movement drawing:1116 records,all942 retained.
+Native proof covers7845 new pixels and9105 retained pixels. The former transition
+is classified through far walking controls. Bounded raster-phase exclusions and
+the962-byte remaining capacity are recorded separately from passing comparisons.
 
 ## Why
 In WSC 2bpp mode only sprite palettes 12-15 are transparent and each tile has 4 colours; the original character art

@@ -1,5 +1,10 @@
 # T46: Zangief walking drawings and an observed transition
 
+T47 update: the formerly provisional drawing repeats under far forward walking
+with a43-pixel opponent gap and no attack/contact; it is classified as a forward
+walking phase. See [the basic-action follow-up](zangief-basics.md). The original
+T46 results below remain historical evidence.
+
 Completion items: (1) capture/classify compatible drawings and compare Saturn
 materials, (2) integrate their colours and prove native output, (3) check retained
 output and preserve restart data. All three are complete as a review candidate.
