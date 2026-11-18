@@ -22,6 +22,7 @@ import contact_colours
 import ball_colours
 import defence_colours
 import zangief_idle_colours
+import zangief_walk_colours
 from types import ModuleType
 
 
@@ -136,7 +137,7 @@ def main() -> None:
     )
     p.add_argument(
         "--family",
-        choices=["contact", "ball", "defence", "zangief-idle"],
+        choices=["contact", "ball", "defence", "zangief-idle", "zangief-walk"],
         default="contact",
     )
     p.add_argument("--wrapped-source", action="store_true")
@@ -144,14 +145,14 @@ def main() -> None:
         "--orientation", choices=["source", "mirror", "either"], default="source"
     )
     args = p.parse_args()
-    recipes = {
-        "ball": ball_colours,
-        "contact": contact_colours,
-        "defence": defence_colours,
-        "zangief-idle": zangief_idle_colours,
+    recipes, character = {
+        "ball": (ball_colours, "chunli"),
+        "contact": (contact_colours, "chunli"),
+        "defence": (defence_colours, "chunli"),
+        "zangief-idle": (zangief_idle_colours, "zangief"),
+        "zangief-walk": (zangief_walk_colours, "zangief"),
     }[args.family]
     args.out.mkdir(parents=True, exist_ok=False)
-    character = "zangief" if args.family == "zangief-idle" else "chunli"
     palette_name = "ZANGIEF" if character == "zangief" else "CHUN-LI"
     pal = json.loads(args.palettes.read_text())["fighters"][palette_name]
     colors = np.array([[int(n, 16) * 17 for n in word] for word in pal], dtype=np.uint8)
