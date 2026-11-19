@@ -29,13 +29,15 @@ from types import ModuleType
 
 
 def source_region(
-    frame: dict, wrapped: bool = False
+    frame: dict, wrapped: bool = False, *, visible_source: bool = False
 ) -> (
     tuple[np.ndarray, np.ndarray, list[dict], np.ndarray, tuple[int, int, int, int]]
     | None
 ):
     viewport = (256, 256) if wrapped else (224, 144)
-    full, owners, sprites = compose(frame, 4, occluders=False, viewport=viewport)
+    full, owners, sprites = compose(
+        frame, 4, occluders=visible_source, viewport=viewport
+    )
     if not full.any():
         return None
     if wrapped:
@@ -69,8 +71,9 @@ def verify_frame(
     *,
     wrapped: bool = False,
     orientation: str = "source",
+    visible_source: bool = False,
 ) -> dict | None:
-    region = source_region(frame, wrapped)
+    region = source_region(frame, wrapped, visible_source=visible_source)
     if region is None:
         return None
     full, owners, sprites, source, box = region

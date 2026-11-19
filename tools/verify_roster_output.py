@@ -5,7 +5,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-from types import SimpleNamespace
+from types import SimpleNamespace, ModuleType
 import numpy as np
 from PIL import Image
 from verify_contact_output import verify_frame, save_gallery, source_region
@@ -19,6 +19,7 @@ def check(
     palettes: Path,
     out: Path,
     additional_captures: list[Path] | None = None,
+    family_module: ModuleType = roster_colours,
 ) -> dict:
     report = json.loads((capture_root / "report.json").read_text())
     if report["status"] != "CAPTURED" or not report["stop"]["stopped"]:
@@ -42,7 +43,7 @@ def check(
             recipes[name] = data
     expected_keys = {
         name + "-" + key
-        for name, recipe in roster_colours.RECIPES.items()
+        for name, recipe in family_module.RECIPES.items()
         for key in recipe["poses"]
     }
     actual_keys = {name + "-" + key for name, data in recipes.items() for key in data}
@@ -97,7 +98,9 @@ def check(
             shot = np.array(
                 Image.open(root / f"{direction}-{tick:02}.png").convert("RGB")
             )
-            result = verify_frame(f, shot, colors, family)
+            # Roster labels are authored with opponent occlusion retained.
+            # Contact families default to isolated P1, including hidden pixels.
+            result = verify_frame(f, shot, colors, family, visible_source=True)
             if result is None:
                 continue
             key = name + "-" + result["key"]
@@ -111,7 +114,7 @@ def check(
             seen.setdefault(key, []).append(result)
             if key not in panes:
                 x, y, w, h = result["box"]
-                source = source_region(f)[3]
+                source = source_region(f, visible_source=True)[3]
                 panes[key] = (
                     Image.fromarray(shot[y : y + h, x : x + w]),
                     Image.fromarray(colors[author(source)]),
@@ -130,6 +133,7 @@ def check(
         "representative_pixels": sum(
             rows[0]["buffer_pixels"] for rows in seen.values()
         ),
+        "source_visibility": "visible P1; opponent occlusion retained as in roster export",
         "missing": missing,
         "poses": seen,
         "excluded": excluded,
@@ -147,7 +151,11 @@ if __name__ == "__main__":
     for name in ["labels", "capture_root", "palettes", "out"]:
         p.add_argument(name, type=Path)
     p.add_argument("--additional-capture", type=Path, action="append")
+    p.add_argument("--family", choices=["basics", "motions"], default="basics")
     a = p.parse_args()
-    r = check(a.labels, a.capture_root, a.palettes, a.out, a.additional_capture)
+    family = roster_colours
+    if a.family == "motions":
+        import roster_motion_colours as family
+    r = check(a.labels, a.capture_root, a.palettes, a.out, a.additional_capture, family)
     if r["missing"]:
         raise SystemExit("required roster drawings missing")

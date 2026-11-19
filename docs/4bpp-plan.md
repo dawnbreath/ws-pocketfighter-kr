@@ -118,3 +118,20 @@ Also merged: #34 (class-id fix in propagate_proto, Saturn reference QA doc).
 
 ### T17 update 5: fighter-slot ownership between cphook and the rolling resync (Claude)
 Codex #32 noted that the rolling `rsyn` can overwrite class planes and that the equal-source skip leaves validity unresolved. Fix (HYBRID only): `FIGHT` (0x8204) is set to 90 by every `cphook` call and decremented per colour-hook call; while `FIGHT>0`, `rsyn` skips cursor batches covering tiles 0x180-0x1FF (owned by `cphook`); when `FIGHT` was 0 at `cphook` entry, `FORCE` (0x8205) makes that call convert all 128 staging tiles without trusting the equal-source skip. HYBRID builds put the scene list at colour-bank 0x800 (default stays 0x600; `colorlib.build_bank(slist=)`) to make room for the code (limit now `len(code) < slist`). Default build SHA unchanged (1493264631a1316cc8e0e4cb32abb5e9637f7bbce27cf06ef87cd01c2ec8a279). Real-game check (P1 Chun-Li, five frames): coloured Chun-Li in idle, walking, knocked-down poses; the hit pose and Ken (no table) stay skin colour; no corruption of class planes seen. Not proven: other modes, long fights, calibrated cost.
+
+### T52: observed roster motion batch
+
+The roster exporter and native verifier accept an explicit `motions` family;
+`basics` remains their backwards-compatible default. The new registry covers
+57 observed drawings from the other ten fighters. This uses the existing
+partitioned data path, with no new runtime branch, call, bank-switch instruction,
+palette change or VRAM allocation. See [roster-motion-colours.md](roster-motion-colours.md)
+for the bounded completion checklist, reproduction and pending material conflicts.
+
+Source acquisition found controls ignored during some long fighter entrances,
+backwards inputs becoming guard, hidden opaque tile pixels, and shared-source
+material votes that cannot all be represented by one global table output.
+Entry/hit/effect composites are not promoted into proven action coverage.
+Per-fighter disambiguation remains an unresolved design item; excluding a recipe
+alone cannot isolate its constituent shared tiles from other poses. No claim is
+made about complete actions, final art approval or calibrated hardware timing.

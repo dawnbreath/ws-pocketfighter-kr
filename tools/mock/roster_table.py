@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 import struct
 import sys
+from types import ModuleType
 import numpy as np
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1])]
@@ -49,6 +50,7 @@ def build(
     source_rom: Path,
     out: Path,
     accept_reference_tiles: bool = False,
+    family_module: ModuleType = roster_colours,
 ) -> dict:
     spec = json.loads(manifest.read_text())
     rom = source_rom.read_bytes()
@@ -78,7 +80,7 @@ def build(
         cap = json.loads(capture.read_text())
         frame = cap["frames"][entry["frame"]]
         if (
-            cap["ROM_SHA256"] != rom_hash
+            cap.get("ROM_SHA256", cap.get("rom_sha256")) != rom_hash
             or not frame["render_matches"]
             or frame["render_offset"] != [0, 0]
         ):
@@ -94,7 +96,7 @@ def build(
         if key != entry["pose"] or (who, key) in seen:
             raise ValueError("duplicate or mismatched drawing")
         seen.add((who, key))
-        indices = roster_colours.author(who, source)
+        indices = family_module.author(who, source)
         yy, xx = np.nonzero(full)
         x0, y0 = int(xx.min()), int(yy.min())
         index = len(drawings)
@@ -118,7 +120,7 @@ def build(
                     cells[y * 8 + x].append((value, index, rx, ry))
     required = {
         (name, key)
-        for name, recipe in roster_colours.RECIPES.items()
+        for name, recipe in family_module.RECIPES.items()
         for key in recipe["poses"]
     }
     if seen != required:
@@ -204,7 +206,7 @@ def build(
         "ROM_SHA256": rom_hash,
         "manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
         "recipe_sha256": hashlib.sha256(
-            Path(roster_colours.__file__).read_bytes()
+            Path(family_module.__file__).read_bytes()
         ).hexdigest(),
         "fallback_reference_sha256": catalogue_digest(fallback),
         "capture_files": [
@@ -219,7 +221,7 @@ def build(
         "records": len(records),
         "preserved_explicit_outputs": len(original),
         "drawings": len(drawings),
-        "fighters": len(roster_colours.RECIPES),
+        "fighters": len(family_module.RECIPES),
         "constraints": conflicts,
         "corrected_pixels": dict(corrections),
         "scope": "ordered exact-source tile donors, immutable prior outputs; final labels require art review",
@@ -233,7 +235,11 @@ if __name__ == "__main__":
     for name in ["manifest", "baseline", "fallback", "source_rom", "out"]:
         p.add_argument(name, type=Path)
     p.add_argument("--accept-reference-tiles", action="store_true")
+    p.add_argument("--family", choices=["basics", "motions"], default="basics")
     a = p.parse_args()
+    family = roster_colours
+    if a.family == "motions":
+        import roster_motion_colours as family
     r = build(
         a.manifest,
         a.baseline,
@@ -241,5 +247,6 @@ if __name__ == "__main__":
         a.source_rom,
         a.out,
         a.accept_reference_tiles,
+        family,
     )
     print({k: v for k, v in r.items() if k != "constraints"})
