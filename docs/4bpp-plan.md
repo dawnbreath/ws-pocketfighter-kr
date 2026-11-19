@@ -1,5 +1,8 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T51 adds [35 basic drawings for the remaining ten fighters](roster-basic-colours.md).
+All twelve now have registered material palettes; unobserved moves remain open.
+
 T50 connects [sixteen hash-partitioned tables](sharded-colour-tables.md), preserving
 existing outputs and allowing up to 18,160 stored records (1,135 per partition).
 

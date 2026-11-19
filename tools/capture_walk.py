@@ -55,8 +55,11 @@ def capture(args: argparse.Namespace) -> dict:
         raise ValueError("settle override must be 0..600 frames")
     rows, _ = read_catalogue(args.table)
     table = {raw: output for _, raw, output in rows}
-    palette_name = {"chunli": "CHUN-LI", "zangief": "ZANGIEF"}[args.character]
-    pal = json.loads(args.palettes.read_text())["fighters"][palette_name]
+    palette_name = {"chunli": "CHUN-LI", "leilei": "LEI-LEI"}.get(
+        args.character, args.character.upper()
+    )
+    config = json.loads(args.palettes.read_text())
+    pal = config["fighters"].get(palette_name, config["fallback"])
     colors = np.array([[int(n, 16) * 17 for n in word] for word in pal], dtype=np.uint8)
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=False)
@@ -259,7 +262,24 @@ if __name__ == "__main__":
         help="Override the default settle for an already playable pinned state (0..600).",
     )
     p.add_argument("--emucap-mcp", type=Path, required=True)
-    p.add_argument("--character", choices=["chunli", "zangief"], default="chunli")
+    p.add_argument(
+        "--character",
+        choices=[
+            "ryu",
+            "ken",
+            "chunli",
+            "sakura",
+            "morrigan",
+            "leilei",
+            "felicia",
+            "tabasa",
+            "ibuki",
+            "zangief",
+            "dan",
+            "gouki",
+        ],
+        default="chunli",
+    )
     p.add_argument("--mednafen", type=Path, required=True)
     p.add_argument(
         "--read-colour-buffer",
