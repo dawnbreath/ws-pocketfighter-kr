@@ -634,6 +634,15 @@ cphook:
     xor dx,ax
     loop .h
     pop si
+%ifdef SHARDED
+    ; Only changed tiles select a shard. All sixteen images contain identical
+    ; code at identical offsets, so OUT changes the data window without a call
+    ; or a dependency on P1/P2 tile-slot ownership. DX retains the full hash.
+    mov al,dh
+    shr al,4
+    add al,CLASS_SHARD_BANK_BASE
+    out 0xC2,al
+%endif
 %endif
     mov di,bx
     shl di,5

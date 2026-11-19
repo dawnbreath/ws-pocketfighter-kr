@@ -61,15 +61,24 @@ import colorlib
 from class_table import validate_table
 from colour_layout import CLASS_TABLE_BASE, COLOUR_BANK_END
 def apply_color(R,survey=False,spec_path=None):
+    shard_path=os.environ.get("PF_CLASS_SHARDS")
+    if shard_path and (os.environ.get("PF_HYBRID")!="1" or not os.environ.get("PF_FIGHTER_PALETTES") or os.environ.get("PF_CLASS_TABLE")):
+        raise ValueError("PF_CLASS_SHARDS requires HYBRID, fighter palettes, and no PF_CLASS_TABLE")
     fp_path=os.environ.get("PF_FIGHTER_PALETTES")
-    if fp_path and not (os.environ.get("PF_HYBRID")=="1" and os.environ.get("PF_CLASS_TABLE")):
+    if fp_path and not (os.environ.get("PF_HYBRID")=="1" and (os.environ.get("PF_CLASS_TABLE") or shard_path)):
         raise ValueError("PF_FIGHTER_PALETTES requires HYBRID and a CTB2/CTB3 table")
     fp=json.load(open(fp_path)) if fp_path else None
+    shards=None
     tb=None
+    if shard_path:
+        from pathlib import Path
+        from sharded_colour_table import read_shards
+        shards=read_shards(Path(shard_path))
+        tb=shards[0]
     if os.environ.get('PF_HYBRID')=='1' and os.environ.get('PF_CLASS_TABLE'):
         tb=open(os.environ['PF_CLASS_TABLE'],'rb').read()
         validate_table(tb)
-    code,_=asm.assemble('col',({'FULLTILE':'1'} if tb and tb[:4]==b'CTB3' else {}) | ({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} | ({'CTAB':'1'} | ({'FPAL':'1'} if fp_path else {}) if os.environ.get('PF_CLASS_TABLE') else {}) if os.environ.get('PF_HYBRID')=='1' else {}))
+    code,_=asm.assemble('col',({'SHARDED':'1'} if shards else {}) | ({'FULLTILE':'1'} if tb and tb[:4]==b'CTB3' else {}) | ({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} | ({'CTAB':'1'} | ({'FPAL':'1'} if fp_path else {}) if tb else {}) if os.environ.get('PF_HYBRID')=='1' else {}))
     slist=0x800 if os.environ.get('PF_HYBRID')=='1' else 0x600
     assert len(code)<slist
     spec=colorlib.load_spec(spec_path or colorlib.SPEC)
@@ -77,8 +86,17 @@ def apply_color(R,survey=False,spec_path=None):
     for c in conf: print('colour conflict',c)
     print('colour scenes',n)
     b=COL_IDX<<16; R.b[b:b+0x10000]=bank
-    if os.environ.get('PF_HYBRID')=='1' and os.environ.get('PF_CLASS_TABLE'):
+    if tb:
         R.b[b+CLASS_TABLE_BASE:b+CLASS_TABLE_BASE+len(tb)]=tb; print('class table',len(tb),'bytes at bank+'+hex(CLASS_TABLE_BASE))
+    if shards:
+        from colour_layout import CLASS_SHARD_BANK_BASE
+        for n, table in enumerate(shards):
+            address=(CLASS_SHARD_BANK_BASE-0xC0+n)<<16
+            assert all(v==255 for v in R.b[address:address+0x10000]), 'shard bank is occupied'
+            image=bytearray(bank)
+            image[CLASS_TABLE_BASE:CLASS_TABLE_BASE+len(table)]=table
+            R.b[address:address+0x10000]=image
+        print('colour shards',len(shards),'records',sum((len(table)-70)//50 for table in shards))
 # ------------------------------------------------------------------ font / encoding
 # Korean text is pre-rendered per line (proportional, Galmuri11 12px) and sliced into 8x16 cells.
 # Each unique cell bitmap gets a 2-byte code: lead 0xA0..0xFE (page), trail 1..254 (index).

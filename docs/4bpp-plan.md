@@ -1,5 +1,8 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T50 connects [sixteen hash-partitioned tables](sharded-colour-tables.md), preserving
+existing outputs and allowing up to 18,160 stored records (1,135 per partition).
+
 T49 adds [12 Zangief crouch and air drawings](zangief-low-air.md), preserving all
 previous outputs; the resulting table has 122 free records.
 

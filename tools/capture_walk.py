@@ -13,7 +13,7 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from regress import MCP, digest
 from segment_frames import compose
-from class_table import HEADER, FULL_RECORD, validate_table
+from sharded_colour_table import read_catalogue, catalogue_digest
 
 
 def match_render(
@@ -53,17 +53,8 @@ def capture(args: argparse.Namespace) -> dict:
         raise ValueError("repeated two-frame taps require even durations")
     if args.settle_frames is not None and not 0 <= args.settle_frames <= 600:
         raise ValueError("settle override must be 0..600 frames")
-    blob = args.table.read_bytes()
-    validate_table(blob)
-    if HEADER.unpack_from(blob)[0] != b"CTB3":
-        raise ValueError("walk capture requires CTB3")
-    table = {
-        raw: output
-        for _, raw, output in [
-            FULL_RECORD.unpack_from(blob, HEADER.size + i * FULL_RECORD.size)
-            for i in range(HEADER.unpack_from(blob)[1])
-        ]
-    }
+    rows, _ = read_catalogue(args.table)
+    table = {raw: output for _, raw, output in rows}
     palette_name = {"chunli": "CHUN-LI", "zangief": "ZANGIEF"}[args.character]
     pal = json.loads(args.palettes.read_text())["fighters"][palette_name]
     colors = np.array([[int(n, 16) * 17 for n in word] for word in pal], dtype=np.uint8)
@@ -81,7 +72,7 @@ def capture(args: argparse.Namespace) -> dict:
         "status": "INCOMPLETE",
         "frames": [],
         "events": [],
-        "table_sha256": digest(args.table),
+        "table_sha256": catalogue_digest(args.table),
         "emucap_sha256": digest(args.emucap_mcp),
         "mednafen_sha256": digest(args.mednafen),
         "state_sha256": digest(state),
