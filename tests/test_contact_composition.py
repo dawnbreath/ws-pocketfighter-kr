@@ -7,6 +7,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 from segment_frames import compose
+from verify_contact_output import source_region
 
 
 class ContactCompositionTests(unittest.TestCase):
@@ -39,6 +40,21 @@ class ContactCompositionTests(unittest.TestCase):
         self.assertEqual(int(px[20, 20]), 0)
         self.assertEqual(int(owner[21, 21]), 1)
         self.assertEqual(len(sprites), 2)
+
+    def test_visible_recipe_does_not_claim_fully_hidden_pixels(self):
+        self.assertEqual(int((source_region(self.frame())[3] > 0).sum()), 63)
+        self.assertIsNone(source_region(self.frame(), visible_source=True))
+
+    def test_visible_recipe_crop_keeps_partial_opponent_occlusion(self):
+        frame = self.frame()
+        oam = bytearray.fromhex(frame["oam"])
+        oam[3] = 24
+        frame["oam"] = oam.hex()
+        isolated = source_region(frame)
+        visible = source_region(frame, visible_source=True)
+        self.assertEqual(isolated[4], (20, 20, 8, 8))
+        self.assertEqual(visible[4], (20, 20, 4, 8))
+        self.assertEqual(int((visible[3] > 0).sum()), 31)
 
 
 if __name__ == "__main__":
