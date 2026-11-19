@@ -11,11 +11,12 @@ import sys
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from class_table import HEADER, FULL_RECORD, pack_full_table, validate_table
-from compact_colour_table import fallback_output, read_full_records
+from class_table import HEADER, FULL_RECORD, pack_full_table
+from compact_colour_table import fallback_output
 from segment_frames import compose, project_labels, merge_votes
 from seed_recipe import crop_md5
 from fighter_palettes import encode
+from sharded_colour_table import read_catalogue, catalogue_digest, write_shards
 
 
 def compatible_palettes(
@@ -147,21 +148,12 @@ def build(
         if cap.get("input_protocol") not in protocols:
             raise ValueError("capture input protocol does not match the motion")
         caps.append(cap)
-    blob = baseline.read_bytes()
-    validate_table(blob)
-    magic, count = HEADER.unpack_from(blob)
-    if magic != b"CTB3":
-        raise ValueError("invalid baseline CTB3")
-    original = {
-        raw: output
-        for _, raw, output in [
-            FULL_RECORD.unpack_from(blob, HEADER.size + i * FULL_RECORD.size)
-            for i in range(count)
-        ]
-    }
+    baseline_rows, baseline_footer = read_catalogue(baseline)
+    count = len(baseline_rows)
+    original = {raw: output for _, raw, output in baseline_rows}
     protected = {}
     for path in preserve_fallback_from or []:
-        for _, raw, output in read_full_records(path.read_bytes()):
+        for _, raw, output in read_catalogue(path)[0]:
             if output == fallback_output(raw):
                 if original.get(raw, output) != output:
                     raise ValueError("baseline recolours a protected fallback tile")
@@ -214,9 +206,13 @@ def build(
         else:
             records[raw] = bytes(output)
     footer = (
-        compatible_palettes(blob, json.loads(palettes.read_text()), protected.values())
+        compatible_palettes(
+            HEADER.pack(b"CTB3", 0) + baseline_footer,
+            json.loads(palettes.read_text()),
+            chain(original.values(), protected.values()),
+        )
         if palettes
-        else blob[-64:]
+        else baseline_footer
     )
     fallback_records = dict(protected)
     if compact_fallback:
@@ -230,18 +226,25 @@ def build(
             for raw, output in records.items()
             if raw not in fallback_records
         }
-    result = pack_full_table(list(records.items()), footer)
-    out.mkdir(parents=True, exist_ok=False)
-    (out / "full.ctb3").write_bytes(result)
-    if compact_fallback:
-        (out / "fallback.ctb3").write_bytes(
-            pack_full_table(list(fallback_records.items()), footer)
-        )
+    if baseline.is_dir():
+        write_shards(list(records.items()), footer, out)
+        if compact_fallback:
+            write_shards(list(fallback_records.items()), footer, out / "fallback")
+    else:
+        result = pack_full_table(list(records.items()), footer)
+        out.mkdir(parents=True, exist_ok=False)
+        (out / "full.ctb3").write_bytes(result)
+        if compact_fallback:
+            (out / "fallback.ctb3").write_bytes(
+                pack_full_table(list(fallback_records.items()), footer)
+            )
     report = {
         "motion": motion,
         "capture_sha256": hashlib.sha256(capture.read_bytes()).hexdigest(),
-        "baseline_sha256": hashlib.sha256(blob).hexdigest(),
-        "table_sha256": hashlib.sha256(result).hexdigest(),
+        "baseline_sha256": catalogue_digest(baseline),
+        "table_sha256": catalogue_digest(
+            out if baseline.is_dir() else out / "full.ctb3"
+        ),
         "frames": seen,
         "preserved_records": count,
         "records": len(records),
@@ -254,8 +257,7 @@ def build(
     if preserve_fallback_from:
         report["protected_fallback_sources"] = len(protected)
         report["fallback_reference_sha256"] = [
-            hashlib.sha256(path.read_bytes()).hexdigest()
-            for path in preserve_fallback_from
+            catalogue_digest(path) for path in preserve_fallback_from
         ]
     if len(paths) > 1:
         report["captures"] = [
