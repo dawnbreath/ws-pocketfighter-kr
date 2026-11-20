@@ -64,6 +64,26 @@ def capture(args: argparse.Namespace) -> dict:
     config = json.loads(args.palettes.read_text())
     pal = config["fighters"].get(palette_name, config["fallback"])
     colors = np.array([[int(n, 16) * 17 for n in word] for word in pal], dtype=np.uint8)
+    directions = (
+        ["crouch", "crouch-a", "crouch-b", "jump", "jump-a", "jump-b"]
+        if args.motion == "low-air"
+        else (
+            ["neutral"]
+            if args.motion == "idle"
+            else (["a", "b"] if args.motion == "attack" else ["left", "right"])
+        )
+    )
+    requested = getattr(args, "directions", None)
+    if requested is not None:
+        if (
+            not requested
+            or len(set(requested)) != len(requested)
+            or any(value not in directions for value in requested)
+        ):
+            raise ValueError(
+                "directions must be unique members of the selected motion protocol"
+            )
+        directions = requested
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=False)
     rom = args.rom.resolve()
@@ -114,15 +134,6 @@ def capture(args: argparse.Namespace) -> dict:
                 "read_memory", {"memory_type": "ram", "address": a, "length": n}
             )["hex"]
 
-        directions = (
-            ["crouch", "crouch-a", "crouch-b", "jump", "jump-a", "jump-b"]
-            if args.motion == "low-air"
-            else (
-                ["neutral"]
-                if args.motion == "idle"
-                else (["a", "b"] if args.motion == "attack" else ["left", "right"])
-            )
-        )
         for direction in directions:
             for tick, duration in enumerate(args.frames):
                 c.call("load_state", {"path": str(state)})
@@ -293,6 +304,11 @@ if __name__ == "__main__":
         help="Read the fighter 4bpp mirror for hidden-tile verification; no writes.",
     )
     p.add_argument("--frames", nargs="+", type=int, default=list(range(2, 45, 2)))
+    p.add_argument(
+        "--directions",
+        nargs="+",
+        help="Capture only these directions/actions from the selected motion protocol.",
+    )
     p.add_argument(
         "--read-context-map",
         action="store_true",
