@@ -135,3 +135,12 @@ Entry/hit/effect composites are not promoted into proven action coverage.
 Per-fighter disambiguation remains an unresolved design item; excluding a recipe
 alone cannot isolate its constituent shared tiles from other poses. No claim is
 made about complete actions, final art approval or calibrated hardware timing.
+
+### T53: context-specific shared materials
+
+The existing OAM and tile conversion paths now carry a per-slot character
+selector, resolving Gouki bare hands versus Ryu red gloves without changing
+palettes or canonical source outputs. Three deferred drawings are connected.
+See [context-colour-table.md](context-colour-table.md) for the four completion
+units, CTB4 format, retained-context exporters, native evidence and bounded
+RAM/timing/P2 coverage. This does not complete remaining moves or font VRAM.

@@ -16,7 +16,12 @@ from compact_colour_table import fallback_output
 from segment_frames import compose, project_labels, merge_votes
 from seed_recipe import crop_md5
 from fighter_palettes import encode
-from sharded_colour_table import read_catalogue, catalogue_digest, write_shards
+from sharded_colour_table import (
+    read_catalogue,
+    catalogue_digest,
+    write_shards,
+    read_context_overrides,
+)
 
 
 def compatible_palettes(
@@ -149,6 +154,11 @@ def build(
             raise ValueError("capture input protocol does not match the motion")
         caps.append(cap)
     baseline_rows, baseline_footer = read_catalogue(baseline)
+    contexts = read_context_overrides(baseline)
+    if contexts is not None and not baseline.is_dir():
+        raise ValueError(
+            "context-preserving movement export requires a shard directory"
+        )
     count = len(baseline_rows)
     original = {raw: output for _, raw, output in baseline_rows}
     protected = {}
@@ -209,12 +219,17 @@ def build(
         compatible_palettes(
             HEADER.pack(b"CTB3", 0) + baseline_footer,
             json.loads(palettes.read_text()),
-            chain(original.values(), protected.values()),
+            chain(
+                original.values(),
+                protected.values(),
+                *(rows.values() for rows in (contexts or {}).values()),
+            ),
         )
         if palettes
         else baseline_footer
     )
     fallback_records = dict(protected)
+    before_compaction = len(records)
     if compact_fallback:
         fallback_records.update(
             (raw, output)
@@ -225,9 +240,10 @@ def build(
             raw: output
             for raw, output in records.items()
             if raw not in fallback_records
+            or any(raw in rows for rows in (contexts or {}).values())
         }
     if baseline.is_dir():
-        write_shards(list(records.items()), footer, out)
+        written = write_shards(list(records.items()), footer, out, contexts=contexts)
         if compact_fallback:
             write_shards(list(fallback_records.items()), footer, out / "fallback")
     else:
@@ -249,9 +265,16 @@ def build(
         "preserved_records": count,
         "records": len(records),
     }
+    if contexts is not None:
+        report.update(
+            records=sum(written["counts"]),
+            inherited_context_variants=sum(len(v) for v in contexts.values()),
+        )
     if compact_fallback:
         report["fallback_reference_records"] = len(fallback_records)
         report["omitted_fallback_records"] = len(fallback_records) - len(protected)
+        if contexts is not None:
+            report["omitted_fallback_records"] = before_compaction - len(records)
     if palettes:
         report["palettes_sha256"] = hashlib.sha256(palettes.read_bytes()).hexdigest()
     if preserve_fallback_from:
