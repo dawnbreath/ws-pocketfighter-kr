@@ -1,5 +1,9 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T57 connects [Tabasa’s toothed familiar form](tabasa-familiar-colours.md),
+identified in actual Saturn training footage. One complete source is verified;
+two related partial sources remain explicitly outside certification.
+
 T56 connects [26 observed dash-protocol bodies](roster-dash-colours.md).
 The inputs also expose guard, airborne and damage forms; complete dashes are
 not asserted. An eight-pixel opponent material change is explicitly separated

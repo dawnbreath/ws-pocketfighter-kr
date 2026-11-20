@@ -326,6 +326,7 @@ if __name__ == "__main__":
             "low-air",
             "followthrough",
             "dash",
+            "familiar",
         ],
         default="basics",
     )
@@ -337,6 +338,8 @@ if __name__ == "__main__":
         import roster_motion_colours as family
     elif a.family == "gouki-context":
         import gouki_context_colours as family
+    elif a.family == "familiar":
+        import tabasa_familiar_colours as family
     elif a.family == "dash":
         import roster_dash_colours as family
     elif a.family == "followthrough":
