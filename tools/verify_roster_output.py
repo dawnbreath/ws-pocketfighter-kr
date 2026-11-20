@@ -174,7 +174,14 @@ if __name__ == "__main__":
     p.add_argument("--additional-capture", type=Path, action="append")
     p.add_argument(
         "--family",
-        choices=["basics", "motions", "gouki-context", "low-air", "followthrough"],
+        choices=[
+            "basics",
+            "motions",
+            "gouki-context",
+            "low-air",
+            "followthrough",
+            "dash",
+        ],
         default="basics",
     )
     p.add_argument("--require-context", type=int)
@@ -184,6 +191,8 @@ if __name__ == "__main__":
         import roster_motion_colours as family
     elif a.family == "gouki-context":
         import gouki_context_colours as family
+    elif a.family == "dash":
+        import roster_dash_colours as family
     elif a.family == "followthrough":
         import roster_followthrough_colours as family
     elif a.family == "low-air":

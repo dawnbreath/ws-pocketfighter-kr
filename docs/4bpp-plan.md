@@ -1,5 +1,10 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T56 connects [26 observed dash-protocol bodies](roster-dash-colours.md).
+The inputs also expose guard, airborne and damage forms; complete dashes are
+not asserted. An eight-pixel opponent material change is explicitly separated
+from the initial scanout exclusion in the regression evidence.
+
 T55 registers [44 further captured crouch/air drawings](roster-followthrough-colours.md):
 36 add colours and 8 use known tile combinations. The observed 101-hash cohort
 now has 94 registered drawings and 7 explicitly held hashes; unobserved moves remain open.
