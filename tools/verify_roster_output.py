@@ -10,6 +10,8 @@ import numpy as np
 from PIL import Image
 from verify_contact_output import verify_frame, save_gallery, source_region
 from regress import digest
+from segment_frames import active_sprites
+from colour_layout import CONTEXT_MAP_BASE, CONTEXT_MAP_SIZE
 import roster_colours
 
 
@@ -20,6 +22,7 @@ def check(
     out: Path,
     additional_captures: list[Path] | None = None,
     family_module: ModuleType = roster_colours,
+    required_context: int | None = None,
 ) -> dict:
     report = json.loads((capture_root / "report.json").read_text())
     if report["status"] != "CAPTURED" or not report["stop"]["stopped"]:
@@ -103,6 +106,22 @@ def check(
             result = verify_frame(f, shot, colors, family, visible_source=True)
             if result is None:
                 continue
+            if required_context is not None:
+                context_map = bytes.fromhex(f.get("context_map", ""))
+                if (
+                    f.get("context_map_base") != CONTEXT_MAP_BASE
+                    or len(context_map) != CONTEXT_MAP_SIZE
+                ):
+                    raise ValueError("requires actual 128-byte context-map read")
+                for sprite in active_sprites(f):
+                    if sprite["side"] != 4:
+                        continue
+                    slot = (sprite["word"] & 511) - 384
+                    if (
+                        not 0 <= slot < 128
+                        or context_map[slot] & 15 != required_context
+                    ):
+                        raise ValueError("runtime P1 ownership context mismatch")
             key = name + "-" + result["key"]
             result.update(
                 character=name,
@@ -139,6 +158,8 @@ def check(
         "excluded": excluded,
         "scope": "exact source-bound labels, actual RAM and zero-offset screenshot pixels; art approval separate",
     }
+    if required_context is not None:
+        r["required_context"] = required_context
     out.mkdir(parents=True, exist_ok=False)
     (out / "report.json").write_text(json.dumps(r, indent=2))
     save_gallery(panes, required, out / "detail.png")
@@ -151,11 +172,24 @@ if __name__ == "__main__":
     for name in ["labels", "capture_root", "palettes", "out"]:
         p.add_argument(name, type=Path)
     p.add_argument("--additional-capture", type=Path, action="append")
-    p.add_argument("--family", choices=["basics", "motions"], default="basics")
+    p.add_argument(
+        "--family", choices=["basics", "motions", "gouki-context"], default="basics"
+    )
+    p.add_argument("--require-context", type=int)
     a = p.parse_args()
     family = roster_colours
     if a.family == "motions":
         import roster_motion_colours as family
-    r = check(a.labels, a.capture_root, a.palettes, a.out, a.additional_capture, family)
+    elif a.family == "gouki-context":
+        import gouki_context_colours as family
+    r = check(
+        a.labels,
+        a.capture_root,
+        a.palettes,
+        a.out,
+        a.additional_capture,
+        family,
+        a.require_context,
+    )
     if r["missing"]:
         raise SystemExit("required roster drawings missing")

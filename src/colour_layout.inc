@@ -6,3 +6,6 @@
 ; Hash-prefix shard banks are replicated code/data images, mapped through C2.
 %define CLASS_SHARD_COUNT 0x10
 %define CLASS_SHARD_BANK_BASE 0xD0
+; CTB4 workspace, outside the 4bpp mirror and rolling-resync flags.
+%define CONTEXT_MAP_BASE 0x8300
+%define CONTEXT_MAP_SIZE 0x80

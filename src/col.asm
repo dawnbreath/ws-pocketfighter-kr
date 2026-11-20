@@ -28,7 +28,11 @@ org 0x0000
 %define PL1    0x0D40            ; P1 name-hash list {hash, body row offset}, hash 0 ends
 %define PL2    0x0D80            ; P2 name-hash list
 %define OAMCNT 0xFD5A
-%ifdef FULLTILE
+%ifdef CONTEXT
+%define CTSTRIDE 52
+%define CTXMAP CONTEXT_MAP_BASE   ; 128 scoped owner IDs; bit7 forces recolour after an owner change
+%define CTXACTIVE 0xFD30          ; unused band scratch in CONTEXT/CTAB builds
+%elifdef FULLTILE
 %define CTSTRIDE 50
 %else
 %define CTSTRIDE 34
@@ -75,6 +79,9 @@ entry:
     mov byte [RSY],255         ; first use: establish the prototype's state (RAM is not assumed zeroed)
     mov word [RSC],0
     mov word [FIGHT],0         ; FIGHT/FORCE start unowned; scratch RAM need not be zero
+%ifdef CONTEXT
+    call context_init
+%endif
 %endif
 .init:
 %ifdef HYBRID
@@ -306,6 +313,104 @@ times 0x240-($-$$) db 0xFF
 ; P1 sprites (palette field 4) / P2 (5): top part -> palette 8 / 10, bottom part -> 9 / 11, middle unchanged.
 ; cx = ch:start index, cl:count (from the caller). Preserves nothing (caller saves).
 oam:
+%ifdef CONTEXT
+    ; The existing OAM-builder trampoline supplies the NEW start/count before
+    ; publishing ports 5/6. Only selected HUD rows carry a nonzero context ID.
+    ; DS/ES and all general registers are already saved by that trampoline.
+    cld
+    xor ax,ax
+    mov ds,ax
+    mov es,ax
+    cmp word [V_M],0xA55A
+    jne .return
+    xor dx,dx
+    mov bx,[V_B1]
+    or bx,bx
+    jz .p2row
+    mov dl,[cs:bx+21]
+.p2row:
+    mov bx,[V_B2]
+    or bx,bx
+    jz .rows
+    mov dh,[cs:bx+21]
+.rows:
+    mov al,dl
+    or al,dh
+    jnz .active
+    cmp byte [CTXACTIVE],0
+    je .return
+    ; Leaving a contextual fight restores canonical output even for identical
+    ; 2bpp sources. Unreferenced old slots cannot retain a character override.
+    mov byte [CTXACTIVE],0
+    mov bx,CTXMAP
+    mov cx,128
+.clear:
+    test byte [bx],0x0F
+    jz .clear_next
+    mov byte [bx],0x80
+.clear_next:
+    inc bx
+    loop .clear
+.return:
+    retf
+.active:
+    mov byte [CTXACTIVE],1
+    in al,4
+    xor ah,ah
+    shl ax,9
+    mov bp,ax
+    mov al,ch
+    xor ah,ah
+    shl ax,2
+    add ax,bp
+    mov si,ax
+    xor ch,ch
+    jcxz .return
+.sprite:
+    mov ax,[si]
+    mov bx,ax
+    and bx,0x1FF
+    sub bx,0x180
+    jb .next_sprite
+    and ah,0x0E
+    cmp ah,8
+    je .p1
+    cmp ah,10
+    jne .next_sprite
+    mov al,dh
+    jmp .assign
+.p1:
+    mov al,dl
+.assign:
+    mov ah,[CTXMAP+bx]
+    and ah,0x0F
+    cmp al,ah
+    je .next_sprite          ; retain a dirty mark set by an earlier same-slot reference
+    or al,0x80
+    mov [CTXMAP+bx],al
+.next_sprite:
+    add si,4
+    and si,0x1FF
+    or si,bp                ; circular active OAM range, including start=127
+    loop .sprite
+    retf
+
+context_init:
+    mov di,CTXMAP
+    mov ax,0x8080
+    mov cx,CONTEXT_MAP_SIZE/2
+    rep stosw
+    mov byte [es:CTXACTIVE],0
+    ret
+context_force:
+    mov di,CTXMAP
+    mov cx,CONTEXT_MAP_SIZE
+.mark:
+    or byte [es:di],0x80
+    inc di
+    loop .mark
+    ret
+%else
 %ifdef CTAB
     retf                    ; HYBRID+CTAB: fighters use per-pixel 4bpp classes, no band hack
 %endif
@@ -489,6 +594,7 @@ pct:
     xor ah,ah
     pop bx
     ret
+%endif                         ; CONTEXT replaces, rather than extends, the unused band routine
 
 %ifdef HYBRID
 ; ---- PROTOTYPE (T17): rolling resync of the 512 game tiles into 4bpp, map-aware for colour 0.
@@ -604,6 +710,16 @@ cphook:
     mov ds,ax               ; staging lives at SS:0500 (SS=0 observed)
     xor ax,ax
     mov es,ax
+%ifdef CONTEXT
+    cmp word [es:V_M],0xA55A
+    jne .reset_context
+    cmp byte [es:FIGHT],0
+    jne .own
+    call context_force
+    jmp .own
+.reset_context:
+    call context_init
+%else
     mov byte [es:FORCE],0
     cmp word [es:V_M],0xA55A ; copier may precede the colour hook: ownership is not valid yet
     jne .force
@@ -611,20 +727,29 @@ cphook:
     jne .own
 .force:
     mov byte [es:FORCE],1   ; first call after cphook did not own the slots: do not trust the equal-source skip
+%endif
 .own:mov byte [es:FIGHT],90
     xor bx,bx               ; tile index 0..127
     mov si,0x0500
 .t: mov di,bx
     shl di,4
     add di,0x3800
+%ifdef CONTEXT
+    test byte [es:CTXMAP+bx],0x80
+    jnz .chg
+%else
     cmp byte [es:FORCE],0
     jne .chg
+%endif
     push si
     mov cx,8
     repe cmpsw              ; ds:si (new) vs es:di (old 2bpp tile)
     pop si
     je .same
 .chg:
+%ifdef CONTEXT
+    and byte [es:CTXMAP+bx],0x0F
+%endif
 %ifdef CTAB
     push si                 ; changed tile: 16-bit content hash (rol 3 / xor over 8 words)
     xor dx,dx
@@ -657,7 +782,7 @@ cphook:
     add bp,cx
     shr bp,1                 ; mid index
 %ifdef FULLTILE
-    imul bx,bp,50
+    imul bx,bp,CTSTRIDE
 %else
     mov bx,bp
     shl bx,5
@@ -672,7 +797,7 @@ cphook:
     jmp .lb
 .lbd:mov bp,ax               ; first record with hash >= dx; verify the equal-hash run against the exact source bytes
 %ifdef FULLTILE
-    imul bx,bp,50
+    imul bx,bp,CTSTRIDE
 %else
     mov bx,bp
     shl bx,5
@@ -687,6 +812,14 @@ cphook:
     jcxz .plain
 .s: cmp dx,[cs:bp]
     jne .plain               ; sorted: the first non-equal hash ends the run
+%ifdef CONTEXT
+    mov al,[cs:bp+18]
+    cmp al,255               ; canonical fallback; specific contexts sort before it
+    je .source
+    cmp al,[es:CTXMAP+bx]
+    jne .next_record
+.source:
+%endif
     push es
     push si
     push di
@@ -701,6 +834,7 @@ cphook:
     pop si
     pop es
     je .found
+.next_record:
     add bp,CTSTRIDE
     loop .s
 %endif
@@ -714,7 +848,11 @@ cphook:
     jmp .n
 %ifdef CTAB
 .found:
+%ifdef CONTEXT
+    add bp,20
+%else
     add bp,18
+%endif
 %ifdef FULLTILE
     ; Matched exact source: copy precomputed 4bpp. Advance original staging tile.
     add si,16

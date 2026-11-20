@@ -78,11 +78,23 @@ def apply_color(R,survey=False,spec_path=None):
     if os.environ.get('PF_HYBRID')=='1' and os.environ.get('PF_CLASS_TABLE'):
         tb=open(os.environ['PF_CLASS_TABLE'],'rb').read()
         validate_table(tb)
-    code,_=asm.assemble('col',({'SHARDED':'1'} if shards else {}) | ({'FULLTILE':'1'} if tb and tb[:4]==b'CTB3' else {}) | ({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} | ({'CTAB':'1'} | ({'FPAL':'1'} if fp_path else {}) if tb else {}) if os.environ.get('PF_HYBRID')=='1' else {}))
+    context=bool(tb and tb[:4]==b'CTB4')
+    if context:
+        if not fp_path: raise ValueError('context tables require fighter palettes')
+        from class_table import HEADER, CONTEXT_RECORD
+        selectors={row[2] for blob in (shards or [tb]) for row in CONTEXT_RECORD.iter_unpack(blob[HEADER.size:-64])}
+        if selectors-{1,255}: raise ValueError('this build assigns only Gouki context 1')
+    code,_=asm.assemble('col',({'CONTEXT':'1'} if context else {}) | ({'SHARDED':'1'} if shards else {}) | ({'FULLTILE':'1'} if tb and tb[:4] in (b'CTB3',b'CTB4') else {}) | ({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} | ({'CTAB':'1'} | ({'FPAL':'1'} if fp_path else {}) if tb else {}) if os.environ.get('PF_HYBRID')=='1' else {}))
     slist=0x800 if os.environ.get('PF_HYBRID')=='1' else 0x600
     assert len(code)<slist
     spec=colorlib.load_spec(spec_path or colorlib.SPEC)
     bank,conf,n=colorlib.build_bank(code,spec,slist,fighter_palettes=fp,data_limit=CLASS_TABLE_BASE if tb else COLOUR_BANK_END)
+    if context:
+        bank=bytearray(bank)
+        # Byte 21 belongs to the unused band classifier in CTAB builds.
+        # Cache its context ID through the existing HUD-row lookup; palettes are unchanged.
+        for i, char in enumerate(spec['chars']):
+            bank[0xE00+i*24+21] = 1 if char['name']=='GOUKI' else 0
     for c in conf: print('colour conflict',c)
     print('colour scenes',n)
     b=COL_IDX<<16; R.b[b:b+0x10000]=bank
@@ -96,7 +108,7 @@ def apply_color(R,survey=False,spec_path=None):
             image=bytearray(bank)
             image[CLASS_TABLE_BASE:CLASS_TABLE_BASE+len(table)]=table
             R.b[address:address+0x10000]=image
-        print('colour shards',len(shards),'records',sum((len(table)-70)//50 for table in shards))
+        print('colour shards',len(shards),'records',sum(struct.unpack_from('<H',table,4)[0] for table in shards))
 # ------------------------------------------------------------------ font / encoding
 # Korean text is pre-rendered per line (proportional, Galmuri11 12px) and sliced into 8x16 cells.
 # Each unique cell bitmap gets a 2-byte code: lead 0xA0..0xFE (page), trail 1..254 (index).

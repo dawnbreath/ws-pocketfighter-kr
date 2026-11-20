@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from regress import MCP, digest
 from segment_frames import compose
 from sharded_colour_table import read_catalogue, catalogue_digest
+from colour_layout import CONTEXT_MAP_BASE, CONTEXT_MAP_SIZE
 
 
 def match_render(
@@ -53,7 +54,9 @@ def capture(args: argparse.Namespace) -> dict:
         raise ValueError("repeated two-frame taps require even durations")
     if args.settle_frames is not None and not 0 <= args.settle_frames <= 600:
         raise ValueError("settle override must be 0..600 frames")
-    rows, _ = read_catalogue(args.table)
+    rows, _ = read_catalogue(
+        args.table, context=1 if args.character.lower() == "gouki" else 0
+    )
     table = {raw: output for _, raw, output in rows}
     palette_name = {"chunli": "CHUN-LI", "leilei": "LEI-LEI"}.get(
         args.character, args.character.upper()
@@ -187,6 +190,9 @@ def capture(args: argparse.Namespace) -> dict:
                 if args.read_colour_buffer:
                     f["colour_vram_base"] = 0x7000
                     f["colour_vram"] = read(0x7000, 4096)
+                if getattr(args, "read_context_map", False):
+                    f["context_map_base"] = CONTEXT_MAP_BASE
+                    f["context_map"] = read(CONTEXT_MAP_BASE, CONTEXT_MAP_SIZE)
                 px, owner, sprites = compose(f, 4)
                 expected = np.zeros((144, 224, 3), dtype=np.uint8)
                 for sprite in sprites:
@@ -287,6 +293,11 @@ if __name__ == "__main__":
         help="Read the fighter 4bpp mirror for hidden-tile verification; no writes.",
     )
     p.add_argument("--frames", nargs="+", type=int, default=list(range(2, 45, 2)))
+    p.add_argument(
+        "--read-context-map",
+        action="store_true",
+        help="Read the scoped CTB4 owner map for native verification; no writes.",
+    )
     p.add_argument(
         "--motion",
         choices=["walk", "dash", "dash-repeat", "attack", "low-air", "idle"],

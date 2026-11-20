@@ -1,4 +1,4 @@
-"""CTB2 group planes / CTB3 full colours, with exact source verification."""
+"""CTB2 group planes / CTB3 full colours / CTB4 character-specific full colours."""
 
 from __future__ import annotations
 import argparse
@@ -10,6 +10,7 @@ import zlib
 HEADER = struct.Struct("<4sH")
 RECORD = struct.Struct("<H16s16s")
 FULL_RECORD = struct.Struct("<H16s32s")
+CONTEXT_RECORD = struct.Struct("<H16sBB32s")
 from colour_layout import CLASS_TABLE_BASE, COLOUR_BANK_END
 
 MAX_SIZE = COLOUR_BANK_END - CLASS_TABLE_BASE
@@ -31,9 +32,13 @@ def validate_table(blob: bytes) -> None:
             f"CTB2/CTB3 must fit color-bank {CLASS_TABLE_BASE:04X}..FFFF and include 64 palette bytes"
         )
     magic, count = HEADER.unpack_from(blob)
-    record = FULL_RECORD if magic == b"CTB3" else RECORD
+    record = (
+        CONTEXT_RECORD
+        if magic == b"CTB4"
+        else FULL_RECORD if magic == b"CTB3" else RECORD
+    )
     if (
-        magic not in (b"CTB2", b"CTB3")
+        magic not in (b"CTB2", b"CTB3", b"CTB4")
         or len(blob) != HEADER.size + count * record.size + 64
     ):
         raise ValueError(
@@ -41,8 +46,16 @@ def validate_table(blob: bytes) -> None:
         )
     seen = set()
     for index in range(count):
-        digest, raw, mask = record.unpack_from(blob, HEADER.size + index * record.size)
-        if magic == b"CTB3":
+        values = record.unpack_from(blob, HEADER.size + index * record.size)
+        if magic == b"CTB4":
+            digest, raw, context, reserved, mask = values
+            if context not in (*range(1, 16), 255) or reserved:
+                raise ValueError("invalid context selector/reserved byte")
+            identity = (raw, context)
+        else:
+            digest, raw, mask = values
+            identity = raw
+        if magic in (b"CTB3", b"CTB4"):
             for y in range(8):
                 if (raw[2 * y] | raw[2 * y + 1]) != (
                     mask[4 * y] | mask[4 * y + 1] | mask[4 * y + 2] | mask[4 * y + 3]
@@ -50,11 +63,19 @@ def validate_table(blob: bytes) -> None:
                     raise ValueError("full tile must preserve source transparency")
         if hash16(raw) != digest:
             raise ValueError("incorrect source hash")
-        if raw in seen:
+        if identity in seen:
             raise ValueError(
                 "duplicate source tile: unresolved context/semantic ambiguity"
             )
-        seen.add(raw)
+        seen.add(identity)
+    if magic == b"CTB4" and any((raw, 255) not in seen for raw, _ in seen):
+        raise ValueError("context variants require a canonical fallback record")
+    if magic == b"CTB4":
+        rows = list(CONTEXT_RECORD.iter_unpack(blob[HEADER.size : -64]))
+        if rows != sorted(rows):
+            raise ValueError(
+                "context records must sort specific selectors before fallback"
+            )
     if any(color > 0xFFF for (color,) in struct.iter_unpack("<H", blob[-64:])):
         raise ValueError("palette entries must be RGB444")
 

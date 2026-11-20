@@ -17,7 +17,13 @@ import numpy as np
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1])]
 from class_table import hash16
-from sharded_colour_table import read_catalogue, write_shards, catalogue_digest
+from sharded_colour_table import (
+    read_catalogue,
+    write_shards,
+    write_context_shards,
+    catalogue_digest,
+    read_context_overrides,
+)
 from compact_colour_table import fallback_output
 from segment_frames import compose
 from seed_recipe import crop_md5
@@ -51,6 +57,8 @@ def build(
     out: Path,
     accept_reference_tiles: bool = False,
     family_module: ModuleType = roster_colours,
+    context: int = 0,
+    protection_manifests: list[Path] | None = None,
 ) -> dict:
     spec = json.loads(manifest.read_text())
     rom = source_rom.read_bytes()
@@ -66,11 +74,42 @@ def build(
         for i, name in enumerate(names)
     }
     old_rows, footer = read_catalogue(baseline)
+    retained_contexts = read_context_overrides(baseline)
     protected, _ = read_catalogue(fallback)
     original = {s: o for _, s, o in old_rows}
     old = {**original, **{s: o for _, s, o in protected}}
     if any(o != fallback_output(s) for _, s, o in protected):
         raise ValueError("fallback reference contains nonidentity output")
+    canonical = dict(old)
+    protected_sources = set()
+    if context:
+        if (
+            context != 1
+            or set(family_module.RECIPES) != {"GOUKI"}
+            or not protection_manifests
+        ):
+            raise ValueError(
+                "context 1 requires the Gouki family and retained-source manifests"
+            )
+        for path in protection_manifests:
+            previous = json.loads(path.read_text())
+            for receipt in previous["stop_receipts"]:
+                if not json.loads(Path(receipt).read_text())["stop"]["stopped"]:
+                    raise ValueError("protected-source emulator stop unconfirmed")
+            for entry in previous["entries"]:
+                if entry["character"] != "GOUKI":
+                    continue
+                cap = json.loads(Path(entry["capture"]).read_text())
+                frame = cap["frames"][entry["frame"]]
+                full, _, sprites = compose(frame, 4)
+                if crop_md5(full)[0] != entry["pose"]:
+                    raise ValueError("protected source drawing mismatch")
+                protected_sources.update(s["raw"] for s in sprites if s["side"] == 4)
+        if not protected_sources:
+            raise ValueError("no retained Gouki sources")
+        actor = {s: o for _, s, o in read_catalogue(baseline, context)[0]}
+        old = {s: actor.get(s, fallback_output(s)) for s in protected_sources}
+        old.update((retained_contexts or {}).get(context, {}))
     votes = {}
     drawings = []
     seen = set()
@@ -169,12 +208,38 @@ def build(
         raise ValueError(
             f"{len(conflicts)} exact-tile constraints require explicit donor review"
         )
-    write_shards(list(records.items()), footer, out)
-    write_shards(
-        [(s, o) for s, o in old.items() if o == fallback_output(s)],
-        footer,
-        out / "fallback",
-    )
+    variants = {}
+    if context:
+        contexts = {key: dict(rows) for key, rows in (retained_contexts or {}).items()}
+        variants = contexts.setdefault(context, {})
+        for source, output in all_outputs.items():
+            if output != canonical.get(source, fallback_output(source)):
+                variants[source] = output
+            else:
+                variants.pop(source, None)
+        canonical_records = dict(original)
+        for rows in contexts.values():
+            for source in rows:
+                canonical_records.setdefault(
+                    source, canonical.get(source, fallback_output(source))
+                )
+        write_context_shards(list(canonical_records.items()), contexts, footer, out)
+        references = {s: o for _, s, o in protected}
+        for source in votes:
+            if canonical.get(source, fallback_output(source)) == fallback_output(
+                source
+            ):
+                references[source] = fallback_output(source)
+        write_shards(list(references.items()), footer, out / "fallback")
+    else:
+        written = write_shards(
+            list(records.items()), footer, out, contexts=retained_contexts
+        )
+        write_shards(
+            [(s, o) for s, o in old.items() if o == fallback_output(s)],
+            footer,
+            out / "fallback",
+        )
     labels = out / "labels"
     labels.mkdir()
     corrections = Counter()
@@ -226,6 +291,23 @@ def build(
         "corrected_pixels": dict(corrections),
         "scope": "ordered exact-source tile donors, immutable prior outputs; final labels require art review",
     }
+    if context:
+        report.update(
+            context=context,
+            context_variants=len(variants),
+            retained_actor_sources=len(protected_sources),
+            canonical_records=len(canonical_records),
+            records=len(canonical_records) + sum(len(v) for v in contexts.values()),
+            protection_manifests=[
+                {"path": str(p), "sha256": hashlib.sha256(p.read_bytes()).hexdigest()}
+                for p in protection_manifests
+            ],
+        )
+    elif retained_contexts is not None:
+        report.update(
+            records=sum(written["counts"]),
+            inherited_context_variants=sum(len(v) for v in retained_contexts.values()),
+        )
     (out / "report.json").write_text(json.dumps(report, indent=2))
     return report
 
@@ -235,11 +317,17 @@ if __name__ == "__main__":
     for name in ["manifest", "baseline", "fallback", "source_rom", "out"]:
         p.add_argument(name, type=Path)
     p.add_argument("--accept-reference-tiles", action="store_true")
-    p.add_argument("--family", choices=["basics", "motions"], default="basics")
+    p.add_argument(
+        "--family", choices=["basics", "motions", "gouki-context"], default="basics"
+    )
+    p.add_argument("--context", type=int, choices=[0, 1], default=0)
+    p.add_argument("--protect-manifest", type=Path, action="append")
     a = p.parse_args()
     family = roster_colours
     if a.family == "motions":
         import roster_motion_colours as family
+    elif a.family == "gouki-context":
+        import gouki_context_colours as family
     r = build(
         a.manifest,
         a.baseline,
@@ -248,5 +336,7 @@ if __name__ == "__main__":
         a.out,
         a.accept_reference_tiles,
         family,
+        a.context,
+        a.protect_manifest,
     )
     print({k: v for k, v in r.items() if k != "constraints"})
