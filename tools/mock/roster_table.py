@@ -318,7 +318,9 @@ if __name__ == "__main__":
         p.add_argument(name, type=Path)
     p.add_argument("--accept-reference-tiles", action="store_true")
     p.add_argument(
-        "--family", choices=["basics", "motions", "gouki-context"], default="basics"
+        "--family",
+        choices=["basics", "motions", "gouki-context", "low-air"],
+        default="basics",
     )
     p.add_argument("--context", type=int, choices=[0, 1], default=0)
     p.add_argument("--protect-manifest", type=Path, action="append")
@@ -328,6 +330,20 @@ if __name__ == "__main__":
         import roster_motion_colours as family
     elif a.family == "gouki-context":
         import gouki_context_colours as family
+    elif a.family == "low-air":
+        import roster_low_air_colours as family
+
+        from types import SimpleNamespace
+
+        family = SimpleNamespace(
+            __file__=family.__file__,
+            author=family.author,
+            RECIPES={
+                name: row
+                for name, row in family.RECIPES.items()
+                if (name == "GOUKI") == bool(a.context)
+            },
+        )
     r = build(
         a.manifest,
         a.baseline,

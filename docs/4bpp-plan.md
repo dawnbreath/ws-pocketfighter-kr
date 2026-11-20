@@ -1,5 +1,9 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T54 adds [50 observed crouch/air drawings across ten fighters](roster-low-air-colours.md),
+using the existing CTB4 runtime/palettes and preserving old outputs. Three
+source-visibility composites remain explicitly held; other moves remain open.
+
 T51 adds [35 basic drawings for the remaining ten fighters](roster-basic-colours.md).
 All twelve now have registered material palettes; unobserved moves remain open.
 
