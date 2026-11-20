@@ -39,7 +39,7 @@ and explicitly ordered exact-source donors constrain final NPZ labels; native
 agreement proves insertion, not final artistic approval. Gouki reuses context 1,
 freezing 473 retained actor sources before adding 18 variants.
 
-Final table: 4482 records (4307 canonical, 175 Gouki variants), with 1152 protected
+Final table: 4482 records (4307 canonical, 175 Gouki variants), with 1244 protected
 fallback references; largest partition 306/1091. No engine hook or VRAM change.
 
 ## Native regression and the deliberate opponent change
