@@ -319,7 +319,7 @@ if __name__ == "__main__":
     p.add_argument("--accept-reference-tiles", action="store_true")
     p.add_argument(
         "--family",
-        choices=["basics", "motions", "gouki-context", "low-air"],
+        choices=["basics", "motions", "gouki-context", "low-air", "followthrough"],
         default="basics",
     )
     p.add_argument("--context", type=int, choices=[0, 1], default=0)
@@ -330,6 +330,8 @@ if __name__ == "__main__":
         import roster_motion_colours as family
     elif a.family == "gouki-context":
         import gouki_context_colours as family
+    elif a.family == "followthrough":
+        import roster_followthrough_colours as family
     elif a.family == "low-air":
         import roster_low_air_colours as family
 

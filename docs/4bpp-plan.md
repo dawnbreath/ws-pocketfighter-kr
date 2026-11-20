@@ -1,5 +1,9 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T55 registers [44 further captured crouch/air drawings](roster-followthrough-colours.md):
+36 add colours and 8 use known tile combinations. The observed 101-hash cohort
+now has 94 registered drawings and 7 explicitly held hashes; unobserved moves remain open.
+
 T54 adds [50 observed crouch/air drawings across ten fighters](roster-low-air-colours.md),
 using the existing CTB4 runtime/palettes and preserving old outputs. Three
 source-visibility composites remain explicitly held; other moves remain open.
