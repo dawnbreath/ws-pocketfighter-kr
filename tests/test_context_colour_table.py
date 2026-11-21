@@ -17,9 +17,17 @@ from sharded_colour_table import (
     write_shards,
 )
 from colour_layout import CLASS_TABLE_BASE, CLASS_SHARD_BANK_BASE
+from fighter_contexts import active_contexts
 
 
 class ContextFormatTests(unittest.TestCase):
+    def test_owner_mapping_requires_a_present_assigned_selector(self):
+        self.assertEqual(active_contexts({1, 255}), {"GOUKI": 1})
+        self.assertEqual(active_contexts({1, 2, 255}), {"GOUKI": 1, "MORRIGAN": 2})
+        self.assertEqual(active_contexts({255}), {})
+        with self.assertRaises(ValueError):
+            active_contexts({3, 255})
+
     def test_variants_fall_back_and_do_not_change_canonical(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "table"
@@ -117,7 +125,7 @@ class ContextRuntimeTests(unittest.TestCase):
             },
         )
 
-    def machine(self, canonical=None, overrides=None):
+    def machine(self, canonical=None, overrides=None, owners=(1, 0)):
         from unicorn import UC_HOOK_INSN
         from unicorn.x86_const import UC_X86_INS_OUT, UC_X86_INS_IN
 
@@ -139,8 +147,7 @@ class ContextRuntimeTests(unittest.TestCase):
             b = bytearray(b"\xff" * 65536)
             b[: len(self.code)] = self.code
             b[CLASS_TABLE_BASE : CLASS_TABLE_BASE + len(table)] = table
-            b[0xE15] = 1
-            b[0xE2D] = 0
+            b[0xE15], b[0xE2D] = owners
             images[CLASS_SHARD_BANK_BASE + n] = bytes(b)
         u.mem_write(0x20000, images[CLASS_SHARD_BANK_BASE])
         self.ports = []
@@ -200,6 +207,24 @@ class ContextRuntimeTests(unittest.TestCase):
         self.assertEqual(bytes(u.mem_read(0x7000, 64)), solid(legacy.A, 2) * 2)
         self.assertEqual(len(self.ports), 2)
         self.assertEqual(bytes(u.mem_read(0x500, 2048)), source)
+
+    def test_both_character_contexts_distinguish_identical_source_on_two_sides(self):
+        u = self.machine(
+            overrides={
+                1: {legacy.A: solid(legacy.A, 0)},
+                2: {legacy.A: solid(legacy.A, 1)},
+            },
+            owners=(1, 2),
+        )
+        u.mem_write(0x500, legacy.A * 128)
+        u.mem_write(0x3800, legacy.A * 128)
+        u.mem_write(0xFD72, struct.pack("<HH", 0xE00, 0xE18))
+        self.oam(u, [(384, 4), (385, 5)])
+        self.assertEqual(bytes(u.mem_read(0x8300, 2)), b"\x81\x82")
+        self.call(u, 0x61000)
+        self.assertEqual(
+            bytes(u.mem_read(0x7000, 64)), solid(legacy.A, 0) + solid(legacy.A, 1)
+        )
 
     def test_second_side_and_wrapped_oam_use_the_new_count(self):
         u = self.machine()

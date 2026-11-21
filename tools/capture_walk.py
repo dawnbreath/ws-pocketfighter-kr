@@ -15,6 +15,7 @@ from regress import MCP, digest
 from segment_frames import compose
 from sharded_colour_table import read_catalogue, catalogue_digest
 from colour_layout import CONTEXT_MAP_BASE, CONTEXT_MAP_SIZE
+from fighter_contexts import ACTOR_CONTEXTS
 
 
 def match_render(
@@ -55,7 +56,7 @@ def capture(args: argparse.Namespace) -> dict:
     if args.settle_frames is not None and not 0 <= args.settle_frames <= 600:
         raise ValueError("settle override must be 0..600 frames")
     rows, _ = read_catalogue(
-        args.table, context=1 if args.character.lower() == "gouki" else 0
+        args.table, context=ACTOR_CONTEXTS.get(args.character.upper(), 0)
     )
     table = {raw: output for _, raw, output in rows}
     palette_name = {"chunli": "CHUN-LI", "leilei": "LEI-LEI"}.get(

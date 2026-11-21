@@ -1,5 +1,9 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T59 connects [three Morrigan body/effect sources](morrigan-effect-colours.md)
+through existing CTB4 selector 2 and three unused actor swatches. Body materials
+use actual Saturn reference; ground-puff colours remain a separate art proposal.
+
 T58 connects [four complete Ken/Sakura bodies](roster-occluded-colours.md)
 recovered from opponent-occluded composites. Hidden body pixels have separate
 RAM evidence; existing contact verification and runtime are reused.
