@@ -190,6 +190,7 @@ if __name__ == "__main__":
             "dash",
             "familiar",
             "occluded",
+            "morrigan-effects",
         ],
         default="basics",
     )
@@ -202,6 +203,8 @@ if __name__ == "__main__":
         import gouki_context_colours as family
     elif a.family == "occluded":
         import roster_occluded_colours as family
+    elif a.family == "morrigan-effects":
+        import morrigan_effect_colours as family
     elif a.family == "familiar":
         import tabasa_familiar_colours as family
     elif a.family == "dash":

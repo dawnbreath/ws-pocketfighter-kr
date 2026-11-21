@@ -26,6 +26,7 @@ from sharded_colour_table import (
 )
 from compact_colour_table import fallback_output
 from segment_frames import compose
+from fighter_contexts import CONTEXT_ACTORS
 from seed_recipe import crop_md5
 import roster_colours
 
@@ -86,13 +87,14 @@ def build(
     canonical = dict(old)
     protected_sources = set()
     if context:
+        actor_name = CONTEXT_ACTORS.get(context)
         if (
-            context != 1
-            or set(family_module.RECIPES) != {"GOUKI"}
+            actor_name is None
+            or set(family_module.RECIPES) != {actor_name}
             or not protection_manifests
         ):
             raise ValueError(
-                "context 1 requires the Gouki family and retained-source manifests"
+                "context requires its assigned actor family and retained-source manifests"
             )
         for path in protection_manifests:
             previous = json.loads(path.read_text())
@@ -100,7 +102,7 @@ def build(
                 if not json.loads(Path(receipt).read_text())["stop"]["stopped"]:
                     raise ValueError("protected-source emulator stop unconfirmed")
             for entry in previous["entries"]:
-                if entry["character"] != "GOUKI":
+                if entry["character"] != actor_name:
                     continue
                 cap = json.loads(Path(entry["capture"]).read_text())
                 frame = cap["frames"][entry["frame"]]
@@ -111,7 +113,7 @@ def build(
                     raise ValueError("protected source drawing mismatch")
                 protected_sources.update(s["raw"] for s in sprites if s["side"] == 4)
         if not protected_sources:
-            raise ValueError("no retained Gouki sources")
+            raise ValueError("no retained actor sources")
         actor = {s: o for _, s, o in read_catalogue(baseline, context)[0]}
         old = {s: actor.get(s, fallback_output(s)) for s in protected_sources}
         old.update((retained_contexts or {}).get(context, {}))
@@ -337,10 +339,11 @@ if __name__ == "__main__":
             "dash",
             "familiar",
             "occluded",
+            "morrigan-effects",
         ],
         default="basics",
     )
-    p.add_argument("--context", type=int, choices=[0, 1], default=0)
+    p.add_argument("--context", type=int, choices=[0, *CONTEXT_ACTORS], default=0)
     p.add_argument("--protect-manifest", type=Path, action="append")
     a = p.parse_args()
     family = roster_colours
@@ -350,6 +353,8 @@ if __name__ == "__main__":
         import gouki_context_colours as family
     elif a.family == "occluded":
         import roster_occluded_colours as family
+    elif a.family == "morrigan-effects":
+        import morrigan_effect_colours as family
     elif a.family == "familiar":
         import tabasa_familiar_colours as family
     elif a.family == "dash":
