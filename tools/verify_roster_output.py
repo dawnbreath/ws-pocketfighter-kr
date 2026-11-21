@@ -27,6 +27,7 @@ def check(
     report = json.loads((capture_root / "report.json").read_text())
     if report["status"] != "CAPTURED" or not report["stop"]["stopped"]:
         raise ValueError("native capture incomplete or stop unconfirmed")
+    visible_source = getattr(family_module, "VISIBLE_SOURCE", True)
     config = json.loads(palettes.read_text())
     recipes = {}
     seen = {}
@@ -101,9 +102,11 @@ def check(
             shot = np.array(
                 Image.open(root / f"{direction}-{tick:02}.png").convert("RGB")
             )
-            # Roster labels are authored with opponent occlusion retained.
-            # Contact families default to isolated P1, including hidden pixels.
-            result = verify_frame(f, shot, colors, family, visible_source=True)
+            # The family chooses visible or isolated source once; the contact
+            # verifier separates actual buffer pixels from visible screen pixels.
+            result = verify_frame(
+                f, shot, colors, family, visible_source=visible_source
+            )
             if result is None:
                 continue
             if required_context is not None:
@@ -133,7 +136,7 @@ def check(
             seen.setdefault(key, []).append(result)
             if key not in panes:
                 x, y, w, h = result["box"]
-                source = source_region(f, visible_source=True)[3]
+                source = source_region(f, visible_source=visible_source)[3]
                 panes[key] = (
                     Image.fromarray(shot[y : y + h, x : x + w]),
                     Image.fromarray(colors[author(source)]),
@@ -152,7 +155,11 @@ def check(
         "representative_pixels": sum(
             rows[0]["buffer_pixels"] for rows in seen.values()
         ),
-        "source_visibility": "visible P1; opponent occlusion retained as in roster export",
+        "source_visibility": (
+            "visible P1; opponent occlusion retained as in roster export"
+            if visible_source
+            else "isolated P1: full buffer proof; screenshot proof excludes occluded pixels"
+        ),
         "missing": missing,
         "poses": seen,
         "excluded": excluded,
@@ -182,6 +189,7 @@ if __name__ == "__main__":
             "followthrough",
             "dash",
             "familiar",
+            "occluded",
         ],
         default="basics",
     )
@@ -192,6 +200,8 @@ if __name__ == "__main__":
         import roster_motion_colours as family
     elif a.family == "gouki-context":
         import gouki_context_colours as family
+    elif a.family == "occluded":
+        import roster_occluded_colours as family
     elif a.family == "familiar":
         import tabasa_familiar_colours as family
     elif a.family == "dash":

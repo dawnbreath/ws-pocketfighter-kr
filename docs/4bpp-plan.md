@@ -1,5 +1,9 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T58 connects [four complete Ken/Sakura bodies](roster-occluded-colours.md)
+recovered from opponent-occluded composites. Hidden body pixels have separate
+RAM evidence; existing contact verification and runtime are reused.
+
 T57 connects [Tabasa’s toothed familiar form](tabasa-familiar-colours.md),
 identified in actual Saturn training footage. One complete source is verified;
 two related partial sources remain explicitly outside certification.

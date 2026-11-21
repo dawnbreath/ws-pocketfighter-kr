@@ -61,6 +61,9 @@ def build(
     protection_manifests: list[Path] | None = None,
 ) -> dict:
     spec = json.loads(manifest.read_text())
+    visible_source = getattr(family_module, "VISIBLE_SOURCE", True)
+    if spec.get("visible_source", True) != visible_source:
+        raise ValueError("manifest and recipe source visibility differ")
     rom = source_rom.read_bytes()
     rom_hash = hashlib.sha256(rom).hexdigest()
     for receipt in spec["stop_receipts"]:
@@ -101,7 +104,9 @@ def build(
                     continue
                 cap = json.loads(Path(entry["capture"]).read_text())
                 frame = cap["frames"][entry["frame"]]
-                full, _, sprites = compose(frame, 4)
+                full, _, sprites = compose(
+                    frame, 4, occluders=previous.get("visible_source", True)
+                )
                 if crop_md5(full)[0] != entry["pose"]:
                     raise ValueError("protected source drawing mismatch")
                 protected_sources.update(s["raw"] for s in sprites if s["side"] == 4)
@@ -130,7 +135,7 @@ def build(
             h = (((h << 3) | (h >> 13)) & 65535) ^ w
         if lookup.get(h) != who:
             raise ValueError("fighter HUD identity mismatch")
-        full, owner, sprites = compose(frame, 4)
+        full, owner, sprites = compose(frame, 4, occluders=visible_source)
         key, source = crop_md5(full)
         if key != entry["pose"] or (who, key) in seen:
             raise ValueError("duplicate or mismatched drawing")
@@ -291,6 +296,10 @@ def build(
         "corrected_pixels": dict(corrections),
         "scope": "ordered exact-source tile donors, immutable prior outputs; final labels require art review",
     }
+    if not visible_source:
+        report["source_visibility"] = (
+            "isolated P1; hidden pixels require native RAM proof"
+        )
     if context:
         report.update(
             context=context,
@@ -327,6 +336,7 @@ if __name__ == "__main__":
             "followthrough",
             "dash",
             "familiar",
+            "occluded",
         ],
         default="basics",
     )
@@ -338,6 +348,8 @@ if __name__ == "__main__":
         import roster_motion_colours as family
     elif a.family == "gouki-context":
         import gouki_context_colours as family
+    elif a.family == "occluded":
+        import roster_occluded_colours as family
     elif a.family == "familiar":
         import tabasa_familiar_colours as family
     elif a.family == "dash":
