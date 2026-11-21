@@ -23,7 +23,7 @@ class HybridMapTests(unittest.TestCase):
                 "COL_ASM", str(Path(__file__).resolve().parents[1] / "src/col.asm")
             )
         ).read_text()
-        routine = source.split("\nscanmap:\n", 1)[1].split("%endif", 1)[0]
+        routine = source.split("\nscanmap:\n", 1)[1].split("\ntimes 0x500-", 1)[0]
         header = (
             "bits 16\ncpu 186\norg 0x1000\nmov si,0x2000\ncall scanmap\nhlt\nscanmap:\n"
         )
