@@ -1,5 +1,7 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T66 colours [ten standing attack drawings for Ibuki, Sakura and Morrigan](roster-attack-colours.md) and checks the earlier wrist drawings.
+
 T65 colours [fifteen movement drawings across six fighters](roster-movement-colours.md) on the T64 engine.
 
 T64 colours [five complete Ryu movement drawings](ryu-movement-colours.md) and verifies representative native output for all twelve fighters.

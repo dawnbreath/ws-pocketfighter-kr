@@ -344,6 +344,7 @@ if __name__ == "__main__":
             "tabasa-attacks",
             "ryu-movement",
             "roster-movement",
+            "roster-attacks",
         ],
         default="basics",
     )
@@ -359,6 +360,10 @@ if __name__ == "__main__":
         import roster_occluded_colours as family
     elif a.family == "roster-movement":
         from roster_movement_colours import for_context
+
+        family = for_context(a.context)
+    elif a.family == "roster-attacks":
+        from roster_attack_colours import for_context
 
         family = for_context(a.context)
     elif a.family == "ryu-movement":
