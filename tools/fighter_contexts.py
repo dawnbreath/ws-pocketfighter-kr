@@ -1,6 +1,6 @@
 """Build-time ownership for the existing CTB4 runtime selectors."""
 
-ACTOR_CONTEXTS = {"GOUKI": 1, "MORRIGAN": 2}
+ACTOR_CONTEXTS = {"GOUKI": 1, "MORRIGAN": 2, "TABASA": 3}
 CONTEXT_ACTORS = {context: actor for actor, context in ACTOR_CONTEXTS.items()}
 
 
