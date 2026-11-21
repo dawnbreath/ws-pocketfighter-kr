@@ -17,7 +17,7 @@
 | T10 | Original-ROM tile-copy catalogue | Codex | requested sites catalogued; RAM relocation confirmed; reviewed+merged by Claude | codex/T10-copy-routines | full dynamic ownership/lifetimes and production conversion unproven |
 | T12 | Runtime fighter capture → region proposals → conflict masks | Codex | tools verified on Chun-Li/Zangief, 256 samples each; conflict evidence + exact ROM candidate mapping verified; semantic masks NOT engine-ready | codex/T12-runtime-regions | pose review and unresolved pixels; production engine integration remains |
 
-| T15 | Architecture consultation + component/pixel review workflow | Codex | six questions answered; marks connected and verified; 12 reference part lists | codex/T12-component-marks | all-pose/stage coverage, final palettes and VRAM lifetime proof pending |
+| T15 | Architecture consultation + component/pixel review workflow | Codex | issue #20 closed with measured tile-slot reuse for all 12 fighters; six answers, verified component marks and 12 reference part lists | codex/T12-component-marks | all-pose/stage coverage, final palettes and VRAM lifetime proof pending |
 
 Update this table in the PR that changes a task’s state.
 | T17 | 4bpp hybrid prototype: rolling resync + map-aware opaque expansion + copier hook + class table (PF_HYBRID=1 [PF_CLASS_TABLE], default build unchanged) | Codex | Codex: optional per-fighter CTB2 palette selection connected; startup fix verified; all-mode safety still open | codex/T17-fighter-palettes | class tables for all poses (T18), layer isolation, calibrated cost |

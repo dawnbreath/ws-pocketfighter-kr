@@ -21,3 +21,11 @@ The T62 cartridge was cold-booted to its own states. The six new drawings matche
 The older Tabasa controls passed on the new cartridge, including two low/air drawings and the toothed familiar. The four Chun-Li and three Zangief controls matched 6,504 body pixels. All ten cold and follow-up screens matched T61, as did the three checked character selection screens. For wider coverage, 14,511 prior P1 tile and RGB checks on 607 stored samples preserved the output of 189 registered drawings.
 
 The 27 context, shard, composition and palette tests passed. The IPS applied to original SHA-256 `b47c8692ed9ab0c1ee598ae32126d30daef7f8bc8948c33d6919dd4c7505905e` reproduces the 4 MiB T62 ROM with SHA-256 `3d0ddd20de35dc3cbf9edd60fd0d0d6017153867dc24802962cf09826ea232b4`. Physical hardware timing and the lower VRAM font area remain unverified.
+
+## Remaining Ryu transition
+
+A single uninterrupted breakpoint sequence on the T54 Ryu–Ibuki state places OAM publication before the original wait at 4000:20AE. Using the emulated CPU timestamps and frame counter with 159 lines of 256 clocks, the wait has 31,505 clocks before IRQ entry. The existing two-map classifier alone takes 45,924 clocks up to its final return sequence. The colour IRQ takes 53,258 clocks in total. After it returns, fighter conversion takes 21,963 clocks to reach the original copier. The copy returns on line 134. This measures emulated execution on the captured fight.
+
+The original cartridge reaches the same wait and copier on a Ryu–Chun-Li control. Its IRQ returns and the copier starts on line 148; copying ends on line 3 after vertical wrap. The different opponent and simulation history limit the visual comparison. A separate 650-frame original sequence did not encounter either flanking drawing or the split key.
+
+Moving the unmodified map classifier into the measured idle wait would exceed that window by 14,419 clocks. The next engine task must preserve background transparency classification and publish fighter tiles in time for the corresponding LCD geometry. The last validated colour candidate includes the existing scheduling behaviour.
