@@ -193,6 +193,7 @@ if __name__ == "__main__":
             "morrigan-effects",
             "ibuki-streak",
             "tabasa-attacks",
+            "ryu-movement",
         ],
         default="basics",
     )
@@ -205,6 +206,8 @@ if __name__ == "__main__":
         import gouki_context_colours as family
     elif a.family == "occluded":
         import roster_occluded_colours as family
+    elif a.family == "ryu-movement":
+        import ryu_movement_colours as family
     elif a.family == "tabasa-attacks":
         import tabasa_attack_colours as family
     elif a.family == "ibuki-streak":
