@@ -194,6 +194,7 @@ if __name__ == "__main__":
             "ibuki-streak",
             "tabasa-attacks",
             "ryu-movement",
+            "roster-movement",
         ],
         default="basics",
     )
@@ -206,6 +207,10 @@ if __name__ == "__main__":
         import gouki_context_colours as family
     elif a.family == "occluded":
         import roster_occluded_colours as family
+    elif a.family == "roster-movement":
+        from roster_movement_colours import for_context
+
+        family = for_context(a.require_context or 0)
     elif a.family == "ryu-movement":
         import ryu_movement_colours as family
     elif a.family == "tabasa-attacks":
