@@ -1,7 +1,9 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T61 connects [Ibuki’s dash streak](ibuki-dash-streak.md) and traces the original VBlank wait between OAM publication and fighter copying. Four source cases remain.
+
 T60 is [paused for frame-transition analysis](roster-frame-transition-handoff.md).
-The last verified colour ROM remains T59; no new T60 insertion is claimed.
+T60 produced no new ROM. T61 carries the subsequent colour candidate.
 
 T59 connects [three Morrigan body/effect sources](morrigan-effect-colours.md)
 through existing CTB4 selector 2 and three unused actor swatches. Body materials
