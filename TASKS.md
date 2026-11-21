@@ -118,3 +118,5 @@ Update this table in the PR that changes a task’s state.
 | T65 | Movement colours for Ken, Dan, Felicia, Lei-Lei, Gouki and Tabasa | Codex | 15 drawings, 44 native matches, 12,167 representative pixels. All twelve fighters checked, 28 own-ROM states restored, both IPS paths and rebuild verified. | codex/T65-roster-movement-colours | Five dynamic screen pairs differ outside P1 and one cold frame differs by five pixels. Additional actions and hardware timing remain open. |
 
 | T66 | Standing attack colours for Ibuki, Sakura and Morrigan | Codex | 10 drawings, 44 native matches, 8,939 representative pixels. All ten screen pairs identical outside P1. Twelve fighters and seven wrist drawings checked. | codex/T66-roster-attacks | Additional move coverage and hardware timing open |
+
+| T67 | Standing attacks and recovery across the eight remaining fighters | Codex | Eleven new drawings across five fighters, 95 native matches, 9,615 representative pixels. Nine cold screens exact; first battle differed by eight pixels. | codex/T67-roster-attacks | Additional move coverage and hardware timing open |

@@ -6,8 +6,10 @@ import hashlib
 from types import SimpleNamespace
 
 import numpy as np
-from fighter_contexts import ACTOR_CONTEXTS
 from roster_dash_colours import paint_materials
+
+# T65 exported Ken in the canonical pass. Keep historical manifests replayable.
+MOVEMENT_CONTEXTS = {"GOUKI": 1, "TABASA": 3}
 
 REGIONS = {
     "DAN": {
@@ -275,7 +277,7 @@ def author(character: str, source: np.ndarray) -> np.ndarray:
 def for_context(context: int) -> SimpleNamespace:
     recipes = {
         name: {"poses": tuple(poses)} for name, poses in REGIONS.items()
-        if ACTOR_CONTEXTS.get(name, 0) == context
+        if MOVEMENT_CONTEXTS.get(name, 0) == context
     }
     if not recipes:
         raise ValueError("no movement drawings for this context")
