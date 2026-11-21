@@ -191,6 +191,7 @@ if __name__ == "__main__":
             "familiar",
             "occluded",
             "morrigan-effects",
+            "ibuki-streak",
         ],
         default="basics",
     )
@@ -203,6 +204,8 @@ if __name__ == "__main__":
         import gouki_context_colours as family
     elif a.family == "occluded":
         import roster_occluded_colours as family
+    elif a.family == "ibuki-streak":
+        import ibuki_dash_streak as family
     elif a.family == "morrigan-effects":
         import morrigan_effect_colours as family
     elif a.family == "familiar":
