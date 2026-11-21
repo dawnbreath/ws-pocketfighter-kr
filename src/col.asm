@@ -38,10 +38,10 @@ org 0x0000
 %define CTSTRIDE 34
 %endif
 %define CTABA  CLASS_TABLE_BASE            ; class table inside the colour bank (CS=0x2000); distinct from the VRAM flag array at DS:0x8000
-%define RSY    0x8200            ; HYBRID prototype: frames left of the rolling 2bpp->4bpp resync
-%define FIGHT  0x8204            ; HYBRID: >0 while the fighter-tile copier hook is active (slots 0x180-0x1FF are owned by cphook)
+%define RSY    RESYNC_LEFT            ; HYBRID prototype: frames left of the rolling 2bpp->4bpp resync
+%define FIGHT  FIGHT_ACTIVITY            ; HYBRID: >0 while the fighter-tile copier hook is active (slots 0x180-0x1FF are owned by cphook)
 %define FORCE  0x8205            ; HYBRID: 1 = cphook converts every staging tile on this call (first call after it did not own the slots)
-%define RSC    0x8202            ; HYBRID prototype: next tile index to resync
+%define RSC    RESYNC_CURSOR            ; HYBRID prototype: next tile index to resync
 %define OAMBAK 0xFD4A
 %define GA     0xFD30
 %define GB     0xFD40
@@ -607,7 +607,15 @@ pct:
 rsyn:
     cmp byte [FIGHT],0
     je .nf
+    js .requested           ; the fight loop has published OAM and is waiting for this VBlank
     dec byte [FIGHT]
+    jmp short .nf
+.requested:
+    and byte [FIGHT],0x7F   ; consume once, preserving the old ownership expiry rule
+    jz .upload
+    dec byte [FIGHT]
+.upload:
+    call 0x4000:0x02A4      ; existing bank-saving 4bpp hook and atomic 2bpp copier
 .nf:cmp byte [RSY],0
     je .rd
     dec byte [RSY]

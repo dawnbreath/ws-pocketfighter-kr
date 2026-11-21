@@ -9,3 +9,7 @@
 ; CTB4 workspace, outside the 4bpp mirror and rolling-resync flags.
 %define CONTEXT_MAP_BASE 0x8300
 %define CONTEXT_MAP_SIZE 0x80
+; Fighter owner lease, 0..90. Bit 7 requests the next VBlank transfer.
+%define FIGHT_ACTIVITY 0x8204
+%define RESYNC_LEFT 0x8200
+%define RESYNC_CURSOR 0x8202

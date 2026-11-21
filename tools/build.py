@@ -46,6 +46,12 @@ def apply_engine(R):
     R.patch(0x1403C4,'b800108ed8',far(0x5000,S('colstub')),'vblank colour hook')
     if os.environ.get('PF_HYBRID')=='1':
         R.patch(0x1402A4,'ea20010000',far(0x5000,S('cpstub'),opcode=0xEA),'copier tail-jump trampoline')
+        # Only the fight loop has the paired wait and fighter upload.
+        sync, _ = asm.assemble('fight_sync')
+        R.put_free(0x14FD22,sync,'fight VBlank transfer request')
+        wait_and_copy = far(0x4000, 0xFD22) + bytes.fromhex('eb03909090')
+        R.patch(0x1420AE, '9ad70000409aa4020040', wait_and_copy,
+                'synchronize fighter mirrors with published OAM')
         # Preserve the original relocation size and far-call path. SP is the
         # source pointer only inside an interrupt-masked fixed-size copy.
         copier,_=asm.assemble('copier')

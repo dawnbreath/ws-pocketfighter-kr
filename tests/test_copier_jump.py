@@ -18,10 +18,10 @@ except ImportError:
 class RecordingRom:
     def __init__(self) -> None:
         self.patches = {}
-        self.code = b""
+        self.writes = {}
 
     def put_free(self, offset: int, code: bytes, why: str) -> None:
-        self.code = code
+        self.writes[offset] = code
 
     def patch(self, offset: int, expect: str, new: bytes, why: str) -> None:
         self.patches[offset] = new
@@ -46,7 +46,7 @@ class CopierTests(unittest.TestCase):
         # it tests ownership of the existing return frame, not copier throughput.
         u.mem_write(0x61000, bytes.fromhex("9aa4020040f4"))
         u.mem_write(0x402A4, self.rom.patches[0x1402A4])
-        u.mem_write(0x5FF34, self.rom.code)
+        u.mem_write(0x5FF34, self.rom.writes[0x15FF34])
         u.mem_write(0x20000, self.color)
         u.mem_write(0x120, b"\xcb")
         staging = bytes([0x55, 0xAA] * 1024)
@@ -120,6 +120,57 @@ class CopierTests(unittest.TestCase):
     def test_equal_tiles_preserve_destination_and_return(self) -> None:
         self.run_hook(False)
 
+    def test_fight_wait_dispatch_and_return(self) -> None:
+        # Signal the original VBlank counter when the assembled wait enables IRQs.
+        # The ordinary path runs the real atomic copier with its original stack.
+        for remaining, cursor in ((0, 0), (1, 32), (1, 0)):
+            with self.subTest(remaining=remaining, cursor=cursor):
+                queued = remaining > 0 and cursor == 0
+                u = Uc(UC_ARCH_X86, UC_MODE_16)
+                u.mem_map(0, 0x100000)
+                u.mem_write(0x420AE, self.rom.patches[0x1420AE] + b"\xf4")
+                u.mem_write(0x4FD22, self.rom.writes[0x14FD22])
+                u.mem_write(0x400D7, bytes.fromhex("39c9cb"))  # equal CMP, RETF
+                u.mem_write(0x402A4, bytes.fromhex("ea20010000"))
+                u.mem_write(0x120, self.rom.patches[0x1402C0])
+                u.mem_write(0x8200, bytes((remaining, 0, cursor, 0, 90)))
+                u.mem_write(0x11020, b"\x55\x55")
+                u.mem_write(0x1106A, b"\x55\x55")
+                regs = {
+                    UC_X86_REG_CS: 0x4000, UC_X86_REG_SP: 0xE000,
+                    UC_X86_REG_DS: 0x1234, UC_X86_REG_ES: 0x2345,
+                    UC_X86_REG_BX: 0x3333, UC_X86_REG_BP: 0x5555,
+                    UC_X86_REG_SI: 0x7777, UC_X86_REG_DI: 0x8888,
+                    UC_X86_REG_CX: 1, UC_X86_REG_EFLAGS: 0x603,
+                }
+                for reg, value in regs.items():
+                    u.reg_write(reg, value)
+                visits = []
+
+                def trace(uc, address, size, _):
+                    if address in (0x400D7, 0x120, 0x420B8):
+                        visits.append(address)
+                    if bytes(uc.mem_read(address, size)) == bytes.fromhex("390e2010"):
+                        self.assertTrue(uc.reg_read(UC_X86_REG_EFLAGS) & 0x200)
+                        self.assertEqual(bytes(uc.mem_read(0x8204, 1)), b"\xda")
+                        self.assertEqual(bytes(uc.mem_read(0x11020, 2)), b"\0\0")
+                        uc.mem_write(0x11020, b"\x01\x00")
+                        visits.append("interrupt")
+                    if address == 0x420B8:
+                        uc.emu_stop()
+
+                u.hook_add(UC_HOOK_CODE, trace)
+                u.emu_start(0x420AE, 0xFFFFF, count=3000)
+                self.assertEqual(visits, (["interrupt"] if queued else [0x400D7, 0x120]) + [0x420B8])
+                if queued:
+                    self.assertEqual(bytes(u.mem_read(0x1106A, 2)), b"\0\0")
+                else:
+                    self.assertEqual(bytes(u.mem_read(0x8204, 1)), b"\x5a")
+                regs.update({UC_X86_REG_AX: 32, UC_X86_REG_CX: 0,
+                             UC_X86_REG_DX: 0xE000 - 10, UC_X86_REG_EFLAGS: 0x646})
+                for reg, value in regs.items():
+                    self.assertEqual(u.reg_read(reg), value)
+
     def test_atomic_template_is_hybrid_only(self) -> None:
         import build
 
@@ -130,3 +181,4 @@ class CopierTests(unittest.TestCase):
             build.apply_engine(plain)
         self.assertNotIn(0x1402C0, plain.patches)
         self.assertNotIn(0x1402A4, plain.patches)
+        self.assertNotIn(0x1420AE, plain.patches)
