@@ -1,5 +1,7 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T62 connects [Tabasa’s attacks and backstep](tabasa-attack-colours.md). Ryu’s frame transition is the remaining T60 case.
+
 T61 connects [Ibuki’s dash streak](ibuki-dash-streak.md) and traces the original VBlank wait between OAM publication and fighter copying. Four source cases remain.
 
 T60 is [paused for frame-transition analysis](roster-frame-transition-handoff.md).
