@@ -26,8 +26,9 @@ class ContextFormatTests(unittest.TestCase):
         self.assertEqual(active_contexts({1, 2, 255}), {"GOUKI": 1, "MORRIGAN": 2})
         self.assertEqual(active_contexts({255}), {})
         self.assertEqual(active_contexts({3, 255}), {"TABASA": 3})
+        self.assertEqual(active_contexts({4, 255}), {"KEN": 4})
         with self.assertRaises(ValueError):
-            active_contexts({4, 255})
+            active_contexts({5, 255})
 
     def test_variants_fall_back_and_do_not_change_canonical(self):
         with tempfile.TemporaryDirectory() as directory:
