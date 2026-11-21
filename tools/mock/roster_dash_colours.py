@@ -878,8 +878,12 @@ def author(character: str, source: np.ndarray) -> np.ndarray:
     key = hashlib.md5(source.tobytes() + bytes(source.shape)).hexdigest()
     if key not in REGIONS.get(character, {}):
         raise ValueError("unsupported roster dash drawing")
+    return paint_materials(source, REGIONS[character][key])
+
+
+def paint_materials(source: np.ndarray, regions: list) -> np.ndarray:
     out = source.astype(np.int8).copy()
-    for material, points in REGIONS[character][key]:
+    for material, points in regions:
         chosen = selection(source.shape, points) & (source > 0)
         out[chosen] = material if material in (4, 12) else material * 4 + source[chosen]
     return out
