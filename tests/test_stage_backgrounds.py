@@ -107,6 +107,32 @@ class StageBackgroundTests(unittest.TestCase):
         rows = fit_palettes(tiles, np.zeros((4, 4, 3)), np.zeros(4), mass, fixed)
         np.testing.assert_array_equal(rows[2, 5], [2, 4, 9])
 
+    def test_foreground_guest_accents_override_feathered_scenery(self):
+        target = np.zeros((8, 8, 3), dtype="u1")
+        tones = np.full((8, 8), 4, dtype="u1")
+        blue = Image.new("RGBA", (8, 8), (0, 0, 255, 255))
+        red = Image.new("RGBA", (2, 2), (255, 0, 0, 255))
+        records = [
+            {"name": "window", "ws": [0, 0, 8, 8], "detail": [0, 0, 8, 8]},
+            {
+                "name": "guest",
+                "ws": [3, 3, 5, 5],
+                "frame": 0,
+                "row": 1,
+                "swatches": ["DDD"],
+                "accents": [["DDD", 1, 0, 2]],
+            },
+        ]
+        weights, fixed = spectator_colours(blue, {0: red}, records, tones, target)
+        np.testing.assert_array_equal(target[0, 0], [0, 0, 5])
+        np.testing.assert_array_equal(target[2, 2], [0, 0, 15])
+        np.testing.assert_array_equal(target[3, 3], [15, 0, 0])
+        np.testing.assert_array_equal(target[4, 3:5], [fixed[1, 5]] * 2)
+        self.assertGreater(weights[4, 3], weights[3, 3])
+        records[1]["accents"][0][3] = 3
+        with self.assertRaisesRegex(ValueError, "invalid colour accent"):
+            spectator_colours(blue, {0: red}, records, tones, target)
+
     def test_reference_tint_keeps_native_contrast(self):
         tones = np.ones((16, 16), dtype="u1") * 3
         tones[6:10, 6:10] = 1

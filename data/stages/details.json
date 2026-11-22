@@ -1,0 +1,75 @@
+[
+  [
+    {"name":"counter bottles","ws":[125,113,175,144],"detail":[122,117,164,150]},
+    {"name":"left wall lantern","ws":[47,95,70,137],"detail":[48,101,70,140]},
+    {"name":"right brass speaker","ws":[186,98,211,127],"detail":[182,102,208,131]},
+    {"name":"bar stools","ws":[104,163,160,179],"detail":[97,158,159,179]},
+    {"name":"cash register frame","ws":[246,125,282,150],"detail":[246,129,282,151]},
+    {"name":"left wall plaque","ws":[2,97,36,128],"detail":[3,104,37,132]},
+    {"name":"bartop taps","ws":[127,150,140,158],"detail":[127,148,139,158]},
+    {"name":"booth legs","ws":[193,149,230,170],"detail":[194,150,226,169]}
+  ],
+  [
+    {"name":"rooftop mascot","ws":[116,29,153,64],"detail":[124,42,161,75]},
+    {"name":"backlit tree","ws":[77,111,113,165],"detail":[76,116,113,166]},
+    {"name":"wrapped presents","ws":[77,156,111,173],"detail":[77,157,111,173]},
+    {"name":"archway window","ws":[237,127,283,169],"detail":[236,130,276,170]},
+    {"name":"bridge rail","ws":[229,86,282,110],"detail":[230,77,278,102]},
+    {"name":"window shelf toys","ws":[137,152,166,171],"detail":[132,147,156,172]}
+  ],
+  [
+    {"name":"lift chair","ws":[154,34,185,71],"detail":[153,39,184,72]},
+    {"name":"upper lift cable","ws":[177,55,206,89],"detail":[179,57,202,86]},
+    {"name":"left lift tower","ws":[52,53,85,96],"detail":[50,57,85,95]},
+    {"name":"ski lodge roof","ws":[18,132,101,170],"detail":[16,133,100,161]},
+    {"name":"lodge gable","ws":[13,143,48,181],"detail":[14,138,48,170]},
+    {"name":"evergreen trees","ws":[260,103,287,149],"detail":[258,103,285,144]},
+    {"name":"igloo opening","ws":[194,146,232,181],"detail":[191,138,228,174]}
+  ],
+  [
+    {"name":"palm crown","ws":[0,34,42,84],"detail":[21,36,72,80]},
+    {"name":"straw awning","ws":[70,77,151,116],"detail":[76,81,150,115]},
+    {"name":"hut steps","ws":[65,145,110,184],"detail":[71,143,114,177]},
+    {"name":"elephant forehead","ws":[144,116,205,150],"detail":[146,116,202,146]},
+    {"name":"elephant mouth","ws":[103,146,155,185],"detail":[107,143,154,179]},
+    {"name":"palm fruit","ws":[218,110,251,145],"detail":[213,110,245,147]},
+    {"name":"pier board ends","ws":[193,182,280,200],"detail":[194,174,288,205]},
+    {"name":"hut floats","ws":[71,138,99,152],"detail":[81,135,102,150]}
+  ],
+  [
+    {"name":"dragon head","ws":[170,116,213,150],"detail":[160,119,203,149]},
+    {"name":"dragon neck and scales","ws":[164,143,189,167],"detail":[154,142,180,170]},
+    {"name":"stall curtain","ws":[52,105,107,130],"detail":[43,109,99,131]},
+    {"name":"round lantern","ws":[9,116,37,144],"detail":[7,118,29,144]},
+    {"name":"gate cap and bell","ws":[221,57,272,109],"detail":[211,63,262,112]},
+    {"name":"tile pavement","ws":[107,181,203,200],"detail":[109,175,192,197]}
+  ],
+  [
+    {"name":"furnace mouth","ws":[125,142,164,178],"detail":[117,143,155,176]},
+    {"name":"copper flue","ws":[138,69,161,143],"detail":[126,66,156,129]},
+    {"name":"book spines","ws":[201,69,249,116],"detail":[203,65,275,123]},
+    {"name":"curtained alcove","ws":[227,117,282,165],"detail":[225,121,279,167]},
+    {"name":"left cabinet","ws":[28,120,60,174],"detail":[20,124,53,174]},
+    {"name":"chair frame","ws":[96,149,116,180],"detail":[87,150,108,178]},
+    {"name":"ceiling diagrams","ws":[23,25,91,62],"detail":[26,21,84,57]},
+    {"name":"right candlestick","ws":[267,147,286,180],"detail":[264,150,283,180]}
+  ],
+  [
+    {"name":"cliff face","ws":[13,38,56,98],"detail":[4,35,49,94]},
+    {"name":"distant castle","ws":[101,51,137,94],"detail":[100,70,136,110]},
+    {"name":"carriage turret","ws":[184,71,227,125],"detail":[198,64,238,126]},
+    {"name":"carriage wheel","ws":[204,139,244,182],"detail":[202,140,249,180]},
+    {"name":"left rock arch","ws":[49,112,102,175],"detail":[48,116,103,174]},
+    {"name":"hanging lamp bracket","ws":[172,92,206,122],"detail":[170,99,205,127]},
+    {"name":"fissured paving","ws":[111,181,188,204],"detail":[111,179,200,208]}
+  ],
+  [
+    {"name":"chandelier","ws":[102,47,155,92],"detail":[101,54,154,94]},
+    {"name":"blue arched window","ws":[160,49,192,117],"detail":[158,53,192,116]},
+    {"name":"gold arched window","ws":[129,87,159,131],"detail":[128,89,159,128]},
+    {"name":"red sofa","ws":[110,126,163,159],"detail":[110,123,161,157]},
+    {"name":"stained glass","ws":[165,124,199,161],"detail":[163,120,197,156]},
+    {"name":"stair carpet","ws":[57,116,107,165],"detail":[57,115,107,159]},
+    {"name":"curtain folds","ws":[12,74,57,155],"detail":[7,72,56,149]}
+  ]
+]

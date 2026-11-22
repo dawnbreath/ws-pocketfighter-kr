@@ -126,7 +126,7 @@ def spectator_colours(
     tones: np.ndarray,
     target: np.ndarray,
 ) -> tuple[np.ndarray, dict[tuple[int, int], list[int]]]:
-    """Register each cameo independently of the scenery and its parallax."""
+    """Register scenery details first, then paint the guests in front of them."""
     height, width = tones.shape
     # Preserve the handheld's linework inside each local colour sample.
     mono = Image.fromarray((tones * 36).astype("u1"))
@@ -139,21 +139,23 @@ def spectator_colours(
         x, y, right, bottom = figure["ws"]
         if not (0 <= x < right <= width and 0 <= y < bottom <= height):
             raise ValueError(f"invalid WS bounds for {figure['name']}")
+        is_prop = "detail" in figure
         if "frame" in figure:
             source = frames[figure["frame"]]
         else:
             box = [
                 v * scale
                 for v, scale in zip(
-                    figure["background"],
+                    figure["detail"] if is_prop else figure["background"],
                     (reference.width / width, reference.height / height) * 2,
                 )
             ]
             source = reference.crop(tuple(round(v) for v in box))
         size = (right - x, bottom - y)
-        sample = np.asarray(source.resize(size, Image.Resampling.NEAREST), dtype=float)
+        filter_mode = Image.Resampling.BOX if is_prop else Image.Resampling.NEAREST
+        sample = np.asarray(source.resize(size, filter_mode), dtype=float)
         weights = importance[y:bottom, x:right]
-        weights[sample[..., 3] > 0] = 12
+        weights[sample[..., 3] > 0] = 4 if is_prop else 12
         if "swatches" in figure:
             row = figure["row"]
             for slot, colour in enumerate(figure["swatches"], 5):
@@ -161,6 +163,20 @@ def spectator_colours(
             weights[sample[..., 3] > 0] = 40
         alpha = sample[..., 3:] / 255
         rgb = sample[..., :3] + 0.38 * detail[y:bottom, x:right, None]
+        if is_prop:
+            # Keep small WS strokes. Reduce the Saturn luminance edges that would
+            # otherwise draw the same outline again a pixel or two away.
+            light = Image.fromarray(sample[..., :3].astype("u1")).convert("L")
+            relief = np.asarray(light, dtype=float) - np.asarray(
+                light.filter(ImageFilter.GaussianBlur(1.25))
+            )
+            contrast = 0.85 * detail[y:bottom, x:right] - 0.65 * relief
+            rgb = sample[..., :3] + contrast[..., None]
+            iy, ix = np.indices((bottom - y, right - x))
+            edge = np.minimum.reduce(
+                [iy + 1, bottom - y - iy, ix + 1, right - x - ix]
+            )
+            alpha *= np.minimum(edge / 3, 1)[..., None]
         if "frame" in figure:
             # The ports redraw moving guests in different poses. Transfer their
             # colours while keeping the WS drawing's own light/dark structure.
@@ -170,8 +186,25 @@ def spectator_colours(
             if occupied.any():
                 shift = light[occupied].mean() - native[occupied].mean()
                 rgb = sample[..., :3] + 0.8 * (native + shift - light)[..., None]
+        if "background" in figure and "swatches" in figure:
+            # Retain identifying colours in the sampled guest even when nearby
+            # scenery competes for the same per-tile palette.
+            snapped = np.rint(sample[..., :3] / 17).astype("u1")
+            for colour in figure["swatches"]:
+                exact = (snapped == rgb444(colour)).all(axis=-1) & (alpha[..., 0] > 0)
+                rgb[exact] = np.array(rgb444(colour)) * 17
+                weights[exact] = 180
         old = target[y:bottom, x:right]
         old[:] = np.rint(np.clip(rgb / 17, 0, 15) * alpha + old * (1 - alpha))
+        for colour, line, start, end in figure.get("accents", ()):
+            if not (
+                0 <= line < size[1]
+                and 0 <= start < end <= size[0]
+                and colour in figure["swatches"]
+            ):
+                raise ValueError(f"invalid colour accent for {figure['name']}")
+            old[line, start:end] = rgb444(colour)
+            weights[line, start:end] = 160
     return importance, fixed
 
 
@@ -482,10 +515,11 @@ def install(rom, assemble, far):
         raise ValueError("expected eight battle stages")
     sources = stage_files(reference_track())
     spectators = json.loads(MATERIALS.with_name("spectators.json").read_text())
-    if len(spectators) != len(stages):
-        raise ValueError("expected a spectator list for each stage")
+    details = json.loads(MATERIALS.with_name("details.json").read_text())
+    if len(spectators) != len(stages) or len(details) != len(stages):
+        raise ValueError("expected scenery and spectator lists for each stage")
     for number, spec in enumerate(stages):
-        figures = spectators[number]
+        figures = details[number] + spectators[number]
         frames = stage_actors(
             sources[number], {f["frame"] for f in figures if "frame" in f}
         )

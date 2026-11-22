@@ -144,3 +144,5 @@ Update this table in the PR that changes a task’s state.
 | T78 | Saturn stage palette refinement | Codex | All eight static maps improved against the registered Saturn references. Sixteen emulator pairs and eight restored combat states. | codex/T78-stage-palette-fit | Per-stage measurements in docs/stage-backgrounds.md. |
 
 | T79 | Saturn background spectators and left/right camera patterns | Codex | review candidate. Cammy/Honda and 43 visible registered regions verified in 24 native LCD captures across eight stages. Upper-right balcony checked in cartridge map. Six patches decoded and eight combat states restored. | codex/T79-stage-spectators | Physical hardware and appearance through every pose remain open. See docs/stage-backgrounds.md. |
+
+| T80 | Saturn scenery details and bartender | Codex | Review candidate. 57 regions verified across eight stages, with all 32 bartender accents and all ten colours on each named bar guest visible in combat. Eight battle states restored. | codex/T80-stage-details | Physical hardware and exhaustive animation coverage remain open. See docs/stage-backgrounds.md. |
