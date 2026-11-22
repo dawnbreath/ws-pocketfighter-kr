@@ -1,0 +1,53 @@
+[
+  [
+    {"name":"upper balcony rails","ws":[197,52,248,87],"detail":[200,61,246,88]},
+    {"name":"counter footrail","ws":[84,172,187,183],"detail":[77,171,186,183]}
+  ],
+  [
+    {"name":"left roof panels","ws":[66,66,111,100],"detail":[63,60,111,112]},
+    {"name":"roof corner cap","ws":[202,56,224,92],"detail":[207,53,224,102]},
+    {"name":"left bridge opening","ws":[1,118,36,165],"detail":[7,124,40,167]},
+    {"name":"right arch keystone","ws":[219,113,241,142],"detail":[216,113,244,145]}
+  ],
+  [
+    {"name":"right lift pylon","ws":[214,27,251,139],"detail":[207,24,248,126]},
+    {"name":"right lift chair","ws":[199,41,259,69],"detail":[196,45,259,71]},
+    {"name":"red pylon padding","ws":[239,139,267,183],"detail":[236,134,265,173]},
+    {"name":"left cabin windows","ws":[46,154,83,173],"detail":[46,148,80,166]},
+    {"name":"snowbank beside igloo","ws":[258,167,287,192],"detail":[255,160,284,181]}
+  ],
+  [
+    {"name":"mast above hut","ws":[155,30,183,102],"detail":[154,28,182,104]},
+    {"name":"left palm trunk","ws":[4,86,32,142],"detail":[11,84,43,150]},
+    {"name":"pier crossbeam","ws":[1,143,63,157],"detail":[5,140,70,153]},
+    {"name":"right handrail","ws":[248,165,288,180],"detail":[238,159,287,175]},
+    {"name":"pier supports","ws":[20,181,60,207],"detail":[23,173,62,198]}
+  ],
+  [
+    {"name":"red gate post","ws":[230,108,252,175],"detail":[227,107,264,167]},
+    {"name":"left shop eaves","ws":[1,74,48,117],"detail":[2,80,53,120]},
+    {"name":"gate side canopy","ws":[260,98,288,127],"detail":[248,101,284,131]},
+    {"name":"stone wall","ws":[192,149,227,171],"detail":[182,148,219,169]}
+  ],
+  [
+    {"name":"right ceiling drawings","ws":[163,24,232,58],"detail":[164,33,228,69]},
+    {"name":"arched wall niche","ws":[61,108,88,138],"detail":[53,113,79,141]},
+    {"name":"library ladder","ws":[196,118,219,169],"detail":[193,124,223,175]},
+    {"name":"flue cap","ws":[140,43,167,70],"detail":[129,39,154,64]}
+  ],
+  [
+    {"name":"overhanging roots","ws":[48,21,95,92],"detail":[47,31,97,100]},
+    {"name":"upper right cavern wall","ws":[237,23,284,78],"detail":[236,24,282,87]},
+    {"name":"moon rim","ws":[134,65,179,103],"detail":[126,81,188,115]},
+    {"name":"wagon skull crest","ws":[256,82,287,124],"detail":[248,91,288,131]},
+    {"name":"wagon body","ws":[228,122,262,148],"detail":[216,119,259,141]},
+    {"name":"stone at cavern entrance","ws":[4,133,42,169],"detail":[4,133,43,169]}
+  ],
+  [
+    {"name":"upper oval window","ws":[196,15,247,67],"detail":[193,19,247,73]},
+    {"name":"small upper window","ws":[147,19,186,53],"detail":[143,23,184,61]},
+    {"name":"narrow landing window","ws":[103,92,124,124],"detail":[103,92,125,123]},
+    {"name":"courtyard carriage","ws":[237,123,284,165],"detail":[247,119,288,167]},
+    {"name":"courtyard gate pillar","ws":[202,112,229,166],"detail":[195,120,226,172]}
+  ]
+]

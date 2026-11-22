@@ -11,6 +11,7 @@ from stage_backgrounds import (
     encode_tile,
     fit_palettes,
     pack_static_cells,
+    refine_scenery,
     registered_colours,
     spectator_colours,
     stage_pattern_sources,
@@ -132,6 +133,29 @@ class StageBackgroundTests(unittest.TestCase):
         records[1]["accents"][0][3] = 3
         with self.assertRaisesRegex(ValueError, "invalid colour accent"):
             spectator_colours(blue, {0: red}, records, tones, target)
+
+    def test_scenery_fit_preserves_flipped_shared_tiles_and_protected_pixels(self):
+        mapped = np.array([[0x2040, 0x6040, 0x2041]], dtype="<u2")
+        displayed = np.ones((1, 3, 8, 8), dtype="u1")
+        palettes = np.zeros((4, 16, 3), dtype="u1")
+        palettes[:, 1:] = [0, 0, 15]
+        palettes[0, 2] = [4, 0, 12]
+        palettes[1, 2] = [15, 0, 0]
+        packed = bytearray(encode_tile(displayed[0, 0]) * 2)
+        tones = np.zeros((8, 24), dtype="u1")
+        reference = Image.new("RGBA", (24, 8), (255, 0, 0, 255))
+        regions = [
+            {"name": "rail", "ws": [0, 0, 8, 8], "detail": [0, 0, 8, 8]},
+            {"name": "gate", "ws": [16, 0, 24, 8], "detail": [16, 0, 24, 8]},
+        ]
+        refine_scenery(reference, tones, regions, [{"ws": [18, 2, 20, 4]}],
+                      mapped, displayed, palettes, packed)
+        np.testing.assert_array_equal(mapped, [[0x2040, 0x6040, 0x2241]])
+        np.testing.assert_array_equal(displayed[0, :2], 1)
+        np.testing.assert_array_equal(displayed[0, 2, 2:4, 2:4], 1)
+        self.assertEqual(displayed[0, 2, 5, 5], 2)
+        self.assertEqual(packed[:32], encode_tile(displayed[0, 0]))
+        self.assertEqual(packed[32:], encode_tile(displayed[0, 2]))
 
     def test_reference_tint_keeps_native_contrast(self):
         tones = np.ones((16, 16), dtype="u1") * 3
