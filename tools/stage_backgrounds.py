@@ -384,12 +384,80 @@ def stage_pattern_sources(
     return sources
 
 
+def refine_scenery(
+    reference: Image.Image,
+    tones: np.ndarray,
+    insets: list[dict],
+    protected: list[dict],
+    mapped: np.ndarray,
+    displayed: np.ndarray,
+    palettes: np.ndarray,
+    packed: bytearray,
+) -> None:
+    """Paint local details without changing colours outside their bounds."""
+    height, width = mapped.shape
+    palettes = palettes.astype(np.int16, copy=False)
+    banks = (mapped >> 9) & 3
+    original = palettes[banks[:, :, None, None], displayed]
+    target = original.transpose(0, 2, 1, 3, 4).reshape(*tones.shape, 3).copy()
+    coverage, _ = spectator_colours(reference, {}, insets, tones, target)
+    for region in protected:
+        x, y, right, bottom = region["ws"]
+        coverage[y:bottom, x:right] = 0
+    active = (coverage > 1).reshape(height, 8, width, 8).transpose(0, 2, 1, 3)
+    target = target.reshape(height, 8, width, 8, 3).transpose(0, 2, 1, 3, 4)
+    ids = mapped & 511
+    for tile in np.unique(ids[active.any(axis=(2, 3))]):
+        ys, xs = np.nonzero(ids == tile)
+        # Put all users of a shared pattern in pattern-space coordinates.
+        groups = [
+            (
+                y, x,
+                slice(None, None, -1 if mapped[y, x] & 0x8000 else 1),
+                slice(None, None, -1 if mapped[y, x] & 0x4000 else 1),
+            )
+            for y, x in zip(ys, xs)
+        ]
+        base = displayed[groups[0]].copy()
+        goal = np.stack([target[g] for g in groups])
+        before = np.stack([original[g] for g in groups])
+        paint = np.stack([active[g] for g in groups])
+        # A single-use pattern may select another row. For shared patterns,
+        # keep the latched rows and fit one set of indices to every occurrence.
+        rows = banks[ys, xs]
+        alternatives = [rows]
+        if len(rows) == 1:
+            alternatives.extend([r] for r in range(4) if r != rows[0])
+        best = np.abs(before - goal)[paint].sum()
+        for choice in alternatives:
+            lut = palettes[choice, 1:][:, None, None, :, :]
+            error = np.abs(lut - goal[..., None, :]).sum(axis=-1)
+            locked = (~paint[..., None]) & (lut != before[..., None, :]).any(axis=-1)
+            cost = np.where(paint[..., None], error, 0).sum(axis=0)
+            cost[locked.any(axis=0)] = 1 << 30
+            slots = cost.argmin(axis=-1)
+            minimum = cost.min(axis=-1)
+            loss = minimum.sum()
+            if loss >= best:
+                continue
+            best = loss
+            # Equal-error colours can occur in multiple opaque palette slots.
+            same = np.take_along_axis(cost, (base - 1)[..., None], axis=-1)[..., 0]
+            indices = np.where(same == minimum, base, slots + 1)
+            start = (int(tile) - FIRST_TILE) * 32
+            packed[start : start + 32] = encode_tile(indices)
+            mapped[ys, xs] = (mapped[ys, xs] & 0xF9FF) | (np.array(choice) << 9)
+            for y, x, flip_y, flip_x in groups:
+                displayed[y, x] = indices[flip_y, flip_x]
+
+
 def compile_stage(
     original: bytes,
     number: int,
     spec: dict,
     reference: Image.Image,
     figures: tuple[list[dict], dict[int, Image.Image]] | None = None,
+    insets: list[dict] | None = None,
 ) -> tuple[int, np.ndarray, bytes, Image.Image]:
     address = 0x140000 + word(original, DESCRIPTORS + number * 2)
     desc = original[address : address + 38]
@@ -476,6 +544,12 @@ def compile_stage(
                 palettes[bank, slot] = np.rint(
                     np.average(samples, axis=0, weights=weights[mask])
                 )
+    if insets:
+        refine_scenery(
+            reference, tones, insets, figures[0] if figures else [],
+            mapped, displayed_indices, palettes, packed,
+        )
+        banks = ((mapped >> 9) & 15)[:, :, None, None]
     rendered = (palettes[banks, displayed_indices] * 17).astype("u1")
     # One table per effective brightness. The unmodified palette-zero port and
     # shade LUT supply the brightness key, including the game's dim/flash modes.
@@ -516,7 +590,8 @@ def install(rom, assemble, far):
     sources = stage_files(reference_track())
     spectators = json.loads(MATERIALS.with_name("spectators.json").read_text())
     details = json.loads(MATERIALS.with_name("details.json").read_text())
-    if len(spectators) != len(stages) or len(details) != len(stages):
+    insets = json.loads(MATERIALS.with_name("scenery-insets.json").read_text())
+    if any(len(group) != len(stages) for group in (spectators, details, insets)):
         raise ValueError("expected scenery and spectator lists for each stage")
     for number, spec in enumerate(stages):
         figures = details[number] + spectators[number]
@@ -529,6 +604,7 @@ def install(rom, assemble, far):
             spec,
             reference_image(sources[number], number),
             (figures, frames),
+            insets[number],
         )
         address = (STAGE_BANK << 16) + number * BLOCK
         if rom.b[address : address + BLOCK] != b"\xff" * BLOCK:

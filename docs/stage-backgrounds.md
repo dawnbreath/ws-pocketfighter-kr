@@ -94,3 +94,24 @@ The table measures mean absolute channel error (0–255) on the compiled maps ag
 All 32 marked bartender pixels showed their intended Saturn RGB444 colour at entry and at both camera extremes. At entry the error on Cammy's 504 exposed pixels fell from 18.75 to 16.27, and on Honda's 996 from 14.83 to 8.04. T80 displayed all ten specified colours for each guest at all three camera positions. A recount of the T79 entry LCD against the current ten-colour lists found eight on Honda and ten on Cammy.
 
 The HUD map, fighter palettes and fighter tile mirror matched T79 on all 16 paired entry/combat states. Eight combat saves restored the captured LCD. Title, menu and three Korean story captures matched T79 pixel for pixel. Stage graphics, stage maps and the cartridge checksum account for all changed ROM bytes. The suite passed 111 tests. Six verified xdelta/IPS patches from the Japanese original, T77 and T79 produced T80 SHA-256 `17932ddd17dd24476c645a54bc92f55f78bba64c89e47fb8bf8d2f4850ec012f`. These measurements cover the listed regions and camera positions in Mednafen. Physical hardware and exhaustive animation coverage remain open.
+
+## T81 remaining scenery
+
+T81 registers 35 additional scenery details with the Japanese Saturn stage art. The list in `data/stages/scenery-insets.json` uses the same world coordinates and exclusive rectangle bounds as the earlier registrations.
+
+| Stage | New regions | Examples |
+|---|---:|---|
+| Bar | 2 | Upper balcony rails and counter footrail |
+| Toy shop | 4 | Roof corner and bridge arches |
+| Ski slopes | 5 | Right chairlift, red pylon padding and snowbank |
+| Beach house | 5 | Mast, palm trunk and pier timbers |
+| Chinatown | 4 | Gate post, shop eaves and side canopy |
+| Furnace hall | 4 | Ceiling drawings, wall niche and library ladder |
+| Moonlit cavern | 6 | Overhanging roots, wagon skull crest and body |
+| Mansion | 5 | Upper oval window, smaller windows and courtyard carriage |
+
+The build fits indices within the existing stage palettes after the main colour fit. When a flipped or repeated tile is shared, its users must all retain the original colours on protected pixels. A tile used once can select another palette row that meets the same constraint. The packed tile inventory, brightness tables and upload sizes are identical to T80. Across the eight full maps 17,382 pixels changed. All 432,865 pixels outside the eligible regions, including all previously registered guests and props, matched T80 exactly. Over the 46,367 eligible pixels the area-weighted mean absolute channel error against the registered Saturn crops went from 33.23 to 24.03 (0–255 scale). All 35 regions improved on the full maps.
+
+For each stage we captured the top of the scenery 84 frames after the stage loader entry, the standing entry view, active combat on the left and combat on the right. The 32 paired Mednafen captures had 28,880 changed LCD samples, all at the coordinates of actual changes in the map. The scene checker matched 760,110 exposed background pixels and 1,204 native camera-cell occurrences. Of 107 jointly visible comparisons, 104 improved and three had equal error where only part of the object was exposed. Every region improved in at least one capture. The bartender's 32 accents and both ten-colour guest palettes matched T80 in the three bar combat/entry views.
+
+We restored all 17 delivered states (eight fights, eight intros and the right-side ski camera). The title, menu and three Korean story screens matched T80 pixel for pixel. All 16 paired entry/combat states had matching HUD maps, fighter palettes and fighter tile buffers. The test suite passed 112 tests. Two source builds produced SHA-256 `5081bfd05fceaacf5497cb81380ed134d889a9ae023b32280ce43a949b2c3448`. The original, T77 and T80 IPS and xdelta paths all reproduced those bytes. The gallery uses complete cartridge-map crops followed by paired emulator screenshots. Hardware and exhaustive animation coverage remain open.
