@@ -123,39 +123,56 @@ def fit_palettes(
     target: np.ndarray, primary: np.ndarray, initial: np.ndarray
 ) -> np.ndarray:
     """Quantize reference colours by tile, respecting the per-cell palette latch."""
-    groups = initial.copy()
     tiles = target.reshape(-1, 8, 8, 3)
-    for _ in range(3):
-        palettes = []
-        for bank in range(4):
-            pixels = tiles[groups == bank]
-            if not len(pixels):
-                pixels = tiles
-            strip = Image.fromarray((pixels * 17).reshape(-1, 8, 3))
-            reduced = strip.quantize(
-                colors=11, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE
-            )
-            colours = np.array(reduced.getpalette()[:33]).reshape(11, 3)
-            colours = np.rint(colours / 17).clip(0, 15).astype(int)
-            row = primary[bank]
-            palettes.append(np.array([*row[::-1], row[3], *colours]))
-        palettes = np.array(palettes)
-        # RGB444 limits the input alphabet to 4096 values.
-        grid = np.indices((16, 16, 16)).reshape(3, -1).T
-        costs = ((grid[:, None, None] - palettes[None, :, 1:]) ** 2 * [2, 3, 1]).sum(
+    groups = initial.ravel()
+    palettes = []
+    for bank, row in enumerate(primary):
+        sample = tiles[groups == bank]
+        if not len(sample):
+            sample = tiles
+        strip = Image.fromarray((sample * 17).reshape(-1, 8, 3))
+        seed = strip.quantize(colors=11, method=Image.Quantize.MEDIANCUT)
+        colours = np.array(seed.getpalette()[:33]).reshape(-1, 3)
+        colours = np.pad(colours, ((0, 11 - len(colours)), (0, 0)), mode="edge")
+        palettes.append([*row[::-1], row[3], *np.rint(colours / 17).astype(int)])
+    palettes = np.array(palettes)
+    # Only the 11 free colours can move. Indices 1..4 are also available
+    # to a static tile but their values are owned by live animation slots.
+    rgb = np.indices((16, 16, 16)).reshape(3, -1).T
+    keys = tiles.astype(int) @ [256, 16, 1]
+    previous_loss = None
+    for _ in range(32):
+        distances = ((rgb[:, None, None] - palettes[None, :, 1:]) ** 2 * [2, 3, 1]).sum(
             axis=-1
         )
-        keys = (
-            tiles[..., 0].astype(int) * 256
-            + tiles[..., 1].astype(int) * 16
-            + tiles[..., 2]
-        )
-        groups = costs.min(axis=-1)[keys].sum(axis=(1, 2)).argmin(axis=1)
+        cost = distances.min(axis=-1)
+        tile_cost = cost[keys].sum(axis=(1, 2))
+        groups = tile_cost.argmin(axis=1)
+        loss = tile_cost.min(axis=1).sum()
+        if loss == previous_loss:
+            break
+        previous_loss = loss
+        for bank in range(len(palettes)):
+            counts = np.bincount(keys[groups == bank].ravel(), minlength=len(rgb))
+            assigned = distances[:, bank].argmin(axis=1) + 1
+            residual = counts * cost[:, bank]
+            for slot in range(5, 16):
+                weights = counts * (assigned == slot)
+                if weights.any():
+                    palettes[bank, slot] = np.rint((weights @ rgb) / weights.sum())
+                elif residual.any():
+                    # Reuse a redundant slot for a frequently misrepresented colour.
+                    worst = residual.argmax()
+                    palettes[bank, slot] = rgb[worst]
+                    residual[worst] = 0
     return palettes
 
 
 def pack_static_cells(
-    pending: dict, palettes: np.ndarray, mapped: np.ndarray, rendered: np.ndarray
+    pending: dict,
+    palettes: np.ndarray,
+    mapped: np.ndarray,
+    displayed_indices: np.ndarray,
 ) -> bytearray:
     """Select extra colour variants where they buy the greatest error reduction.
 
@@ -212,12 +229,12 @@ def pack_static_cells(
                 dictionary[key] = FIRST_TILE + len(dictionary)
                 packed.extend(key)
             mapped[y, x] = 0x2000 | flip | int(pal) << 9 | dictionary[key]
-            actual = palettes[pal][pattern]
+            actual = pattern
             if flip & 0x8000:
                 actual = actual[::-1]
             if flip & 0x4000:
                 actual = actual[:, ::-1]
-            rendered[y, x] = actual * 17
+            displayed_indices[y, x] = actual
     return packed
 
 
@@ -294,10 +311,12 @@ def compile_stage(
         next(i for i, bank in enumerate(spec["banks"]) if name in bank)
         for name in names
     ]
-    palettes = fit_palettes(target, primary, np.array(owner)[init_classes].ravel())
+    palettes = fit_palettes(
+        target[~animated], primary, np.array(owner)[init_classes[~animated]]
+    )
     mapped = entries.copy()
     pending = {}
-    rendered = np.zeros_like(target, dtype="u1")
+    displayed_indices = cells.copy()
     for y, x in np.ndindex(entries.shape):
         cell = target[y, x].astype(int)
         # RGB444 error over the visible tile, with a heavier green luminance weight.
@@ -312,7 +331,6 @@ def compile_stage(
             errors = ((cols - cell) ** 2 * [2, 3, 1]).sum(axis=(1, 2, 3))
             pal = int(errors.argmin())
             mapped[y, x] = (int(entries[y, x]) & ~0x1E00) | pal << 9
-            rendered[y, x] = cols[pal] * 17
             continue
         distances[..., 0] = 8192  # hardware index zero is transparent
         pal = int(distances.min(axis=-1).sum(axis=(1, 2)).argmin())
@@ -323,7 +341,16 @@ def compile_stage(
         if flip & 0x4000:
             cell, indices = cell[:, ::-1], indices[:, ::-1]
         pending.setdefault(int(tile_ids[y, x]), []).append((y, x, flip, cell, indices))
-    packed = pack_static_cells(pending, palettes, mapped, rendered)
+    packed = pack_static_cells(pending, palettes, mapped, displayed_indices)
+    # Shared patterns can make a slot represent several originally distinct
+    # colours. Refit those slots using the indices the packed map actually draws.
+    banks = ((mapped >> 9) & 15)[:, :, None, None]
+    for bank in range(4):
+        for slot in range(5, 16):
+            samples = target[(banks == bank) & (displayed_indices == slot)]
+            if len(samples):
+                palettes[bank, slot] = np.rint(samples.mean(axis=0))
+    rendered = (palettes[banks, displayed_indices] * 17).astype("u1")
     # One table per effective brightness. The unmodified palette-zero port and
     # shade LUT supply the brightness key, including the game's dim/flash modes.
     nominal = [15, 13, 11, 9, 7, 5, 3, 0]

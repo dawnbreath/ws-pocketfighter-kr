@@ -140,3 +140,5 @@ Update this table in the PR that changes a task’s state.
 | T76 | Airborne roll, kick and jump transitions | Codex | Four drawings across Felicia, Gouki, Ken and Tabasa. Fifteen native samples, four screen pairs exact outside P1 and 17 restored states. | codex/T76-air-attacks | See docs/airborne-transitions.md for the matched input holds, Saturn references and remaining coverage. |
 
 | T77 | Saturn-matched battle backgrounds | Codex | All eight WS stage descriptors colourized, 184,164 visible background pixels checked across eight native captures, eight battle states restored. | codex/T77-stage-backgrounds | See docs/stage-backgrounds.md for disc input, source alignment, hardware limits and regression coverage. |
+
+| T78 | Saturn stage palette refinement | Codex | All eight static maps improved against the registered Saturn references. Sixteen emulator pairs and eight restored combat states. | codex/T78-stage-palette-fit | Per-stage measurements in docs/stage-backgrounds.md. |

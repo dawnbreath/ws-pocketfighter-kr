@@ -5,7 +5,12 @@ import unittest
 import numpy as np
 from PIL import Image
 
-from stage_backgrounds import encode_tile, pack_static_cells, registered_colours
+from stage_backgrounds import (
+    encode_tile,
+    fit_palettes,
+    pack_static_cells,
+    registered_colours,
+)
 
 
 class StageBackgroundTests(unittest.TestCase):
@@ -23,11 +28,20 @@ class StageBackgroundTests(unittest.TestCase):
         target = colours[pattern]
         pending = {9: [(0, 0, 0, target, pattern), (0, 1, 0x4000, target, pattern)]}
         mapped = np.zeros((1, 2), dtype="u2")
-        display = np.zeros((1, 2, 8, 8, 3), dtype="u1")
+        display = np.zeros((1, 2, 8, 8), dtype="u1")
         self.assertEqual(len(pack_static_cells(pending, palettes, mapped, display)), 32)
         self.assertEqual(mapped[0, 0], 0x2040)
         self.assertEqual(mapped[0, 1], 0x6040)
+        np.testing.assert_array_equal(display[0, 0], pattern)
         np.testing.assert_array_equal(display[0, 1], display[0, 0][:, ::-1])
+
+    def test_static_fit_keeps_animation_slots_and_handles_a_single_colour(self):
+        primary = np.arange(48).reshape(4, 4, 3) % 16
+        target = np.full((2, 8, 8, 3), [12, 0, 7], dtype="u1")
+        rows = fit_palettes(target, primary, np.array([0, 1]))
+        np.testing.assert_array_equal(rows[:, :4], primary[:, ::-1])
+        np.testing.assert_array_equal(rows[:, 4], primary[:, 3])
+        self.assertTrue(np.any(np.all(rows[:, 5:] == [12, 0, 7], axis=2)))
 
     def test_reference_tint_keeps_native_contrast(self):
         tones = np.ones((16, 16), dtype="u1") * 3

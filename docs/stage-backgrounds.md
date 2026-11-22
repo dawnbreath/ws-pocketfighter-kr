@@ -34,3 +34,24 @@ python tools/check_stage_frame.py out.ws states/ST00.mcs paired-ST00.png
 ```
 
 The T76 and T77 cold title, menu and three story captures were pixel-identical. The eight paired battle-entry samples had identical HUD name tiles, foreground maps and fighter palette rows. The complete fighter classifier and palette data matched T76 in all shards. Equal elapsed time from stage entry can produce a different fighter animation phase after the tile upload. Physical hardware timing and exhaustive visual coverage of effects are open. Image-text translation and fighter pose coverage remain tracked separately.
+
+## T78 palette fitting
+
+T78 uses the same eight Saturn references, landmarks, WonderSwan source patterns and stage loader as T77. The build assigns static tiles to the four hardware rows, alternately refitting the eleven available colours in each row and selecting a row for each tile. It then fits those colours to the actual indices left after repeated native patterns share a packed tile. The game uses the resulting ROM data directly.
+
+The table measures weighted squared error against the same registered RGB444 target used for T77. For each static pixel the weights on squared red, green and blue differences are 2, 3 and 1. It measures palette reproduction after registration. The animated slots have a separate four-shade constraint.
+
+| Stage | T77 full-map static error | T78 full-map static error | Reduction |
+| --- | ---: | ---: | ---: |
+| Bar | 141652 | 109667 | 22.6% |
+| Toy shop | 123309 | 117736 | 4.5% |
+| Ski slopes | 145249 | 116852 | 19.6% |
+| Beach house | 149946 | 133359 | 11.1% |
+| Chinatown | 190830 | 172784 | 9.5% |
+| Furnace hall | 128710 | 115672 | 10.1% |
+| Moonlit cavern | 146305 | 117723 | 19.5% |
+| Mansion | 136999 | 131067 | 4.3% |
+
+Emucap captured stage entry and combat for each of the eight stages. Across the 16 paired LCDs, 345,623 visible static background pixels matched their respective decoded cartridges. Their error against the registered target fell from 1,171,226 to 984,555. All 16 pairs improved. Another 23,581 visible animation-slot pixels passed the LCD check. The 810 animated map cells and their colours at every brightness level matched the T77 cartridge. The HUD map, fighter palette rows and fighter tile mirror matched T77 in every pair. Five cold title/menu/story screenshots matched pixel for pixel. All eight T78 combat snapshots restored their LCD.
+
+Build with the command above. T78 SHA-256 is `27fcd00bc9064b28b4fa6b13649ef0502111c303194936900772709d385042c1`. The original and T77 IPS and xdelta patches reproduced this hash. The suite passed 107 tests. Actual hardware timing and side-by-side checks of every animation frame remain open.
