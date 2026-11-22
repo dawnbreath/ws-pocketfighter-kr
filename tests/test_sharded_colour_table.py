@@ -103,6 +103,8 @@ class ShardRuntimeTests(unittest.TestCase):
         return bytes(u.mem_read(0x7000, 4096))
 
     def test_all_banks_collisions_misses_and_distinct_tiles(self):
+        from unicorn import UC_HOOK_MEM_WRITE
+
         rows = records() + [
             (legacy.A, solid(legacy.A, 2)),
             (legacy.B, solid(legacy.B, 3)),
@@ -113,10 +115,24 @@ class ShardRuntimeTests(unittest.TestCase):
             b"".join(legacy.C[i : i + 2] + b"\0\0" for i in range(0, 16, 2)),
         )
         u, _ = self.machine(rows)
+        tile_starts = []
+
+        def record_write(_machine, _access, address, _size, _value, _user):
+            slot, offset = divmod(address - 0x7000, 32)
+            if offset == 0:
+                tile_starts.append(slot)
+
+        u.hook_add(UC_HOOK_MEM_WRITE, record_write, begin=0x7000, end=0x7FFF)
         result = self.run_source(u, b"".join(s for s, _ in sequence))
         self.assertEqual(result, b"".join(o for _, o in sequence))
+        self.assertEqual(tile_starts[::2], list(range(64)))
+        self.assertEqual(tile_starts[1::2], list(range(127, 63, -1)))
         self.assertEqual(
-            self.ports, [CLASS_SHARD_BANK_BASE + (hash16(s) >> 12) for s, _ in sequence]
+            self.ports,
+            [
+                CLASS_SHARD_BANK_BASE + (hash16(sequence[slot][0]) >> 12)
+                for slot in tile_starts
+            ],
         )
 
     def test_unchanged_tiles_do_not_switch_banks(self):

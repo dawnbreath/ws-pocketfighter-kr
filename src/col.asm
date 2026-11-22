@@ -737,11 +737,11 @@ cphook:
     mov byte [es:FORCE],1   ; first call after cphook did not own the slots: do not trust the equal-source skip
 %endif
 .own:mov byte [es:FIGHT],90
-    xor bx,bx               ; tile index 0..127
-    mov si,0x0500
-.t: mov di,bx
-    shl di,4
-    add di,0x3800
+    xor bx,bx               ; start at the low end of the fighter slots
+.t: mov si,bx
+    shl si,4
+    lea di,[si+0x3800]
+    add si,0x0500
 %ifdef CONTEXT
     test byte [es:CTXMAP+bx],0x80
     jnz .chg
@@ -753,7 +753,7 @@ cphook:
     mov cx,8
     repe cmpsw              ; ds:si (new) vs es:di (old 2bpp tile)
     pop si
-    je .same
+    je .n
 .chg:
 %ifdef CONTEXT
     and byte [es:CTXMAP+bx],0x0F
@@ -872,15 +872,13 @@ cphook:
     add bp,18
 %endif
 %ifdef FULLTILE
-    ; Matched exact source: copy precomputed 4bpp. Advance original staging tile.
-    xchg si,bp               ; CS:SI = precomputed 4bpp tile, BP = staging source
+    mov si,bp               ; matched 4bpp tile in the selected shard
     mov cx,16
     push ds
     push cs
     pop ds                  ; matched output is in the selected ROM bank
     rep movsw
     pop ds
-    lea si,[bp+16]           ; next 2bpp staging tile
 %else
     mov cx,8
 .m: lodsw
@@ -893,11 +891,8 @@ cphook:
     stosw
     loop .m
 %endif
-    jmp .n
 %endif
-.same:
-    add si,16
-.n: inc bx
+.n: mov bl,[cs:bx+.next_slot] ; alternate ends so both fighters' top rows reach VRAM early
     cmp bx,128
     jb .t
 %ifdef CTAB
@@ -918,6 +913,21 @@ cphook:
     pop es
     pop ds
     retf
+; P1 and P2 allocate their rows inward from opposite ends. The successor of
+; low slot i is 127-i. That high slot leads back to i+1, except the last
+; pair (63,64), which ends the pass with the sentinel 128.
+.next_slot:
+%assign next_high 127
+%rep 64
+    db next_high
+%assign next_high next_high-1
+%endrep
+    db 128
+%assign next_low 63
+%rep 63
+    db next_low
+%assign next_low next_low-1
+%endrep
 %ifdef FPAL
 ; V_B1/V_B2 reuse the existing cached HUD-name lookup; row+22 is a ROM palette pointer.
 fighter_palettes:

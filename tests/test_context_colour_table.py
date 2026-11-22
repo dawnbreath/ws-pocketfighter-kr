@@ -302,7 +302,8 @@ class ContextRuntimeTests(unittest.TestCase):
             self.ports,
             [
                 CLASS_SHARD_BANK_BASE + (hash16(canonical[n % 16][0]) >> 12)
-                for n in range(128)
+                for pair in zip(range(64), range(127, 63, -1))
+                for n in pair
             ],
         )
 
