@@ -126,3 +126,5 @@ Update this table in the PR that changes a task’s state.
 | T69 | Close-range attack inputs across the roster | Codex | Nine new drawings, 83 native matches. All nine pairs exact outside P1. Ten cold screenshots exact and 22 states restored. | codex/T69-close-attacks | Other moves and hardware timing open |
 
 | T70 | Directional attacks across the roster | Codex | 31 drawings across 11 fighters, 163 native matches, 43 Zangief control screens and 44 restored states. Ten cold screens identical. | codex/T70-directional-attacks | See docs/roster-directional-attacks.md for Felicia timing and remaining move coverage. |
+
+| T71 | Directional attack and dash follow-throughs | Codex | Nine additional drawings across six fighters, 59 native matches and 22 restored states. The cold-run changes were 23 Ryu headband pixels. | codex/T71-battle-followthrough | See docs/directional-attack-recovery.md for battle comparisons and remaining coverage. |
