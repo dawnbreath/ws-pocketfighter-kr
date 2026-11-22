@@ -65,7 +65,7 @@ def apply_engine(R):
 # ------------------------------------------------------------------ colour
 import colorlib
 from class_table import validate_table
-from colour_layout import CLASS_TABLE_BASE, COLOUR_BANK_END
+from colour_layout import CLASS_PREFIX_BASE, CLASS_TABLE_BASE, COLOUR_BANK_END
 def apply_color(R,survey=False,spec_path=None):
     shard_path=os.environ.get("PF_CLASS_SHARDS")
     if shard_path and (os.environ.get("PF_HYBRID")!="1" or not os.environ.get("PF_FIGHTER_PALETTES") or os.environ.get("PF_CLASS_TABLE")):
@@ -91,11 +91,24 @@ def apply_color(R,survey=False,spec_path=None):
         selectors={row[2] for blob in (shards or [tb]) for row in CONTEXT_RECORD.iter_unpack(blob[HEADER.size:-64])}
         from fighter_contexts import active_contexts
         owners=active_contexts(selectors)
-    code,_=asm.assemble('col',({'CONTEXT':'1'} if context else {}) | ({'SHARDED':'1'} if shards else {}) | ({'FULLTILE':'1'} if tb and tb[:4] in (b'CTB3',b'CTB4') else {}) | ({'SURVEY':'1'} if survey else {}) | ({'BPP4':'1'} if os.environ.get('PF_BPP4')=='1' else {}) | ({'BPP4':'1','HYBRID':'1'} | ({'CTAB':'1'} | ({'FPAL':'1'} if fp_path else {}) if tb else {}) if os.environ.get('PF_HYBRID')=='1' else {}))
+    indices = []
+    if context and shards:
+        from sharded_colour_table import context_prefix_index
+        indices = [context_prefix_index(table) for table in shards]
+    hybrid = os.environ.get('PF_HYBRID') == '1'
+    flags = {
+        'PREFIX_INDEX': bool(indices), 'CONTEXT': context, 'SHARDED': bool(shards),
+        'FULLTILE': tb and tb[:4] in (b'CTB3', b'CTB4'), 'SURVEY': survey,
+        'BPP4': hybrid or os.environ.get('PF_BPP4') == '1', 'HYBRID': hybrid,
+        'CTAB': hybrid and tb, 'FPAL': hybrid and tb and fp_path,
+    }
+    code, _ = asm.assemble('col', {name: '1' for name, enabled in flags.items() if enabled})
     slist=0x800 if os.environ.get('PF_HYBRID')=='1' else 0x600
     assert len(code)<slist
     spec=colorlib.load_spec(spec_path or colorlib.SPEC)
     bank,conf,n=colorlib.build_bank(code,spec,slist,fighter_palettes=fp,data_limit=CLASS_TABLE_BASE if tb else COLOUR_BANK_END)
+    if indices and bank[CLASS_PREFIX_BASE:CLASS_PREFIX_BASE + len(indices[0])] != b'\xff' * len(indices[0]):
+        raise ValueError("fighter palette catalogue overlaps the shard prefix index")
     if context:
         bank=bytearray(bank)
         # Byte 21 belongs to the unused band classifier in CTAB builds.
@@ -105,6 +118,8 @@ def apply_color(R,survey=False,spec_path=None):
     for c in conf: print('colour conflict',c)
     print('colour scenes',n)
     b=COL_IDX<<16; R.b[b:b+0x10000]=bank
+    if indices:
+        R.b[b+CLASS_PREFIX_BASE:b+CLASS_PREFIX_BASE+len(indices[0])] = indices[0]
     if tb:
         R.b[b+CLASS_TABLE_BASE:b+CLASS_TABLE_BASE+len(tb)]=tb; print('class table',len(tb),'bytes at bank+'+hex(CLASS_TABLE_BASE))
     if shards:
@@ -113,6 +128,8 @@ def apply_color(R,survey=False,spec_path=None):
             address=(CLASS_SHARD_BANK_BASE-0xC0+n)<<16
             assert all(v==255 for v in R.b[address:address+0x10000]), 'shard bank is occupied'
             image=bytearray(bank)
+            if indices:
+                image[CLASS_PREFIX_BASE:CLASS_PREFIX_BASE+len(indices[n])] = indices[n]
             image[CLASS_TABLE_BASE:CLASS_TABLE_BASE+len(table)]=table
             R.b[address:address+0x10000]=image
         print('colour shards',len(shards),'records',sum(struct.unpack_from('<H',table,4)[0] for table in shards))
