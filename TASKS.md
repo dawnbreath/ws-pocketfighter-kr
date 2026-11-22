@@ -124,3 +124,5 @@ Update this table in the PR that changes a task’s state.
 | T68 | Crouching and airborne attacks across the roster | Codex | Twelve new drawings across six fighters, 163 native matches and 25 restored states. Nine of ten cold screens exact. | codex/T68-crouching-attacks | Other moves and physical hardware timing open |
 
 | T69 | Close-range attack inputs across the roster | Codex | Nine new drawings, 83 native matches. All nine pairs exact outside P1. Ten cold screenshots exact and 22 states restored. | codex/T69-close-attacks | Other moves and hardware timing open |
+
+| T70 | Directional attacks across the roster | Codex | 31 drawings across 11 fighters, 163 native matches, 43 Zangief control screens and 44 restored states. Ten cold screens identical. | codex/T70-directional-attacks | See docs/roster-directional-attacks.md for Felicia timing and remaining move coverage. |

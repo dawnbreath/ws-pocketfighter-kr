@@ -70,6 +70,7 @@ def capture(args: argparse.Namespace) -> dict:
         "idle": ["neutral"],
         "attack": ["a", "b"],
         "chain": ["a-b", "b-a"],
+        "quarter-circle": ["a", "b"],
     }.get(args.motion, ["left", "right"])
     requested = getattr(args, "directions", None)
     if requested is not None:
@@ -109,6 +110,7 @@ def capture(args: argparse.Namespace) -> dict:
                 "dash-repeat": "reload base; settle 180; repeated two-frame taps",
                 "walk": "reload base; settle 180; single continuous hold",
                 "idle": "reload base; settle 180; single no-input step",
+                "quarter-circle": "reload base; down3, down-right3, right plus attack",
                 "chain": "reload base; approach right20; first attack4-release4; second attack hold",
                 "attack": "reload base; settle 240; single attack hold",
                 "low-air": "reload base; settle 240; crouch12 or jump4-release8; action hold",
@@ -141,7 +143,13 @@ def capture(args: argparse.Namespace) -> dict:
                         "step",
                         {"count": r["settle_frames_after_load"], "unit": "frames"},
                     )
-                if args.motion == "chain":
+                if args.motion == "quarter-circle":
+                    events = [
+                        dict(buttons=["down"], press_frames=3, after_frames=0),
+                        dict(buttons=["down", "right"], press_frames=3, after_frames=0),
+                        dict(buttons=["right", direction], press_frames=duration, after_frames=0),
+                    ]
+                elif args.motion == "chain":
                     first, second = direction.split("-")
                     events = [
                         dict(buttons=["right"], press_frames=20, after_frames=0),
@@ -322,7 +330,7 @@ if __name__ == "__main__":
     )
     p.add_argument(
         "--motion",
-        choices=["walk", "dash", "dash-repeat", "attack", "low-air", "chain", "idle"],
+        choices=["walk", "dash", "dash-repeat", "attack", "low-air", "chain", "quarter-circle", "idle"],
         default="walk",
     )
     capture(p.parse_args())
