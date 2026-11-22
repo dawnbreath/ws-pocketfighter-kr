@@ -377,6 +377,7 @@ if __name__ == "__main__":
             "roster-attacks",
             "close-attacks",
             "directional-attacks",
+            "battle-recovery",
             "simultaneous-attacks",
             "directional-recovery",
             "low-air-attacks",
@@ -396,6 +397,10 @@ if __name__ == "__main__":
         import roster_occluded_colours as family
     elif a.family == "roster-movement":
         from roster_movement_colours import for_context
+
+        family = for_context(a.context)
+    elif a.family == "battle-recovery":
+        from roster_battle_recovery import for_context
 
         family = for_context(a.context)
     elif a.family == "simultaneous-attacks":
