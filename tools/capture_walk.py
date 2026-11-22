@@ -65,15 +65,12 @@ def capture(args: argparse.Namespace) -> dict:
     config = json.loads(args.palettes.read_text())
     pal = config["fighters"].get(palette_name, config["fallback"])
     colors = np.array([[int(n, 16) * 17 for n in word] for word in pal], dtype=np.uint8)
-    directions = (
-        ["crouch", "crouch-a", "crouch-b", "jump", "jump-a", "jump-b"]
-        if args.motion == "low-air"
-        else (
-            ["neutral"]
-            if args.motion == "idle"
-            else (["a", "b"] if args.motion == "attack" else ["left", "right"])
-        )
-    )
+    directions = {
+        "low-air": ["crouch", "crouch-a", "crouch-b", "jump", "jump-a", "jump-b"],
+        "idle": ["neutral"],
+        "attack": ["a", "b"],
+        "chain": ["a-b", "b-a"],
+    }.get(args.motion, ["left", "right"])
     requested = getattr(args, "directions", None)
     if requested is not None:
         if (
@@ -104,7 +101,7 @@ def capture(args: argparse.Namespace) -> dict:
         "mednafen_sha256": digest(args.mednafen),
         "state_sha256": digest(state),
         "settle_frames_after_load": (
-            240 if args.motion in ("dash", "attack", "low-air") else 180
+            240 if args.motion in ("dash", "attack", "low-air", "chain") else 180
         ),
         "input_protocol": (
             {
@@ -112,6 +109,7 @@ def capture(args: argparse.Namespace) -> dict:
                 "dash-repeat": "reload base; settle 180; repeated two-frame taps",
                 "walk": "reload base; settle 180; single continuous hold",
                 "idle": "reload base; settle 180; single no-input step",
+                "chain": "reload base; approach right20; first attack4-release4; second attack hold",
                 "attack": "reload base; settle 240; single attack hold",
                 "low-air": "reload base; settle 240; crouch12 or jump4-release8; action hold",
             }[args.motion]
@@ -143,7 +141,14 @@ def capture(args: argparse.Namespace) -> dict:
                         "step",
                         {"count": r["settle_frames_after_load"], "unit": "frames"},
                     )
-                if args.motion == "low-air":
+                if args.motion == "chain":
+                    first, second = direction.split("-")
+                    events = [
+                        dict(buttons=["right"], press_frames=20, after_frames=0),
+                        dict(buttons=[first], press_frames=4, after_frames=4),
+                        dict(buttons=[second], press_frames=duration, after_frames=0),
+                    ]
+                elif args.motion == "low-air":
                     airborne = direction.startswith("jump")
                     suffix = direction.split("-")[1:]
                     events = [
@@ -317,7 +322,7 @@ if __name__ == "__main__":
     )
     p.add_argument(
         "--motion",
-        choices=["walk", "dash", "dash-repeat", "attack", "low-air", "idle"],
+        choices=["walk", "dash", "dash-repeat", "attack", "low-air", "chain", "idle"],
         default="walk",
     )
     capture(p.parse_args())
