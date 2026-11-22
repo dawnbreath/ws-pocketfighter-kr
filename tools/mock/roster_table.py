@@ -117,6 +117,9 @@ def build(
         actor = {s: o for _, s, o in read_catalogue(baseline, context)[0]}
         old = {s: actor.get(s, fallback_output(s)) for s in protected_sources}
         old.update((retained_contexts or {}).get(context, {}))
+    retain_occluded = getattr(family_module, "RETAIN_OCCLUDED_VRAM", False)
+    native_outputs = {}
+    retained_pixels = {}
     votes = {}
     drawings = []
     seen = set()
@@ -147,9 +150,20 @@ def build(
         x0, y0 = int(xx.min()), int(yy.min())
         index = len(drawings)
         drawings.append((who, key, source, indices, x0, y0, owner, sprites))
+        if retain_occluded:
+            buffer = bytes.fromhex(frame["colour_vram"])
+            if frame.get("colour_vram_base") != 0x7000 or len(buffer) != 4096:
+                raise ValueError("requires complete native fighter colour buffer")
         for s in sprites:
             if s["side"] != 4:
                 continue
+            if retain_occluded:
+                slot = (s["word"] & 511) - 384
+                if not 0 <= slot < 128:
+                    raise ValueError("fighter tile outside colour buffer")
+                native_outputs.setdefault(s["raw"], set()).add(
+                    buffer[32 * slot : 32 * (slot + 1)]
+                )
             cells = votes.setdefault(s["raw"], [[] for _ in range(64)])
             for y in range(8):
                 for x in range(8):
@@ -185,13 +199,27 @@ def build(
                 and (source[2 * (i // 8)] | source[2 * (i // 8) + 1])
                 & (1 << (7 - i % 8))
             ]
-            if missing:
+            if missing and not retain_occluded:
                 raise ValueError(
                     f"unobserved opaque tile pixels: {hashlib.sha256(source).hexdigest()} {missing}"
                 )
             values = np.array(
                 [cell[0][0] if cell else 0 for cell in cells], dtype=np.uint8
             )
+            if missing:
+                # Self-overlap can hide a few opaque cells in every registered pose.
+                # Preserve the old colours only when the native captures confirm them.
+                prior = (retained_contexts or {}).get(context, {}).get(
+                    source, canonical.get(source, fallback_output(source))
+                )
+                previous = pixels(prior)[missing]
+                if not all(
+                    np.array_equal(pixels(blob)[missing], previous)
+                    for blob in native_outputs[source]
+                ):
+                    raise ValueError("native and baseline colours differ under overlap")
+                values[missing] = previous
+                retained_pixels[hashlib.sha256(source).hexdigest()] = missing
         for i, cell in enumerate(cells):
             disagree = [q for q in cell if q[0] != values[i]]
             if disagree:
@@ -298,6 +326,8 @@ def build(
         "corrected_pixels": dict(corrections),
         "scope": "ordered exact-source tile donors, immutable prior outputs; final labels require art review",
     }
+    if retain_occluded:
+        report["occluded_cells_retained_from_native"] = retained_pixels
     if not visible_source:
         report["source_visibility"] = (
             "isolated P1; hidden pixels require native RAM proof"
@@ -346,6 +376,7 @@ if __name__ == "__main__":
             "roster-movement",
             "roster-attacks",
             "close-attacks",
+            "directional-attacks",
             "low-air-attacks",
             "attack-recovery",
         ],
@@ -363,6 +394,10 @@ if __name__ == "__main__":
         import roster_occluded_colours as family
     elif a.family == "roster-movement":
         from roster_movement_colours import for_context
+
+        family = for_context(a.context)
+    elif a.family == "directional-attacks":
+        from roster_directional_attacks import for_context
 
         family = for_context(a.context)
     elif a.family == "close-attacks":
