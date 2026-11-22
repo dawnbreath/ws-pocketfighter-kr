@@ -588,7 +588,12 @@ def compile_stage(
                 )
     if insets or edges:
         protected = list(figures[0]) if figures else []
-        for regions, native in ((insets, None), (edges, tile_ids)):
+        # Later registrations can fill gaps while locking every earlier rectangle.
+        layers = {}
+        for region in edges or ():
+            layers.setdefault(region.get("layer", 0), []).append(region)
+        passes = [(insets, None)] + [(layers[key], tile_ids) for key in sorted(layers)]
+        for regions, native in passes:
             if regions:
                 refine_scenery(
                     reference, tones, regions, protected,
