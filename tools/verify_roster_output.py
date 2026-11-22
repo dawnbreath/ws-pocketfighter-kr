@@ -200,6 +200,7 @@ if __name__ == "__main__":
             "close-attacks",
             "directional-attacks",
             "battle-recovery",
+            "air-transitions",
             "simultaneous-attacks",
             "directional-recovery",
             "low-air-attacks",
@@ -224,6 +225,10 @@ if __name__ == "__main__":
         family = for_context(a.require_context or 0)
     elif a.family == "battle-recovery":
         from roster_battle_recovery import for_context
+
+        family = for_context(a.require_context or 0)
+    elif a.family == "air-transitions":
+        from roster_air_transitions import for_context
 
         family = for_context(a.require_context or 0)
     elif a.family == "simultaneous-attacks":
