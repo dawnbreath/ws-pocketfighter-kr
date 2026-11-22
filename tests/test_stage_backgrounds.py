@@ -12,6 +12,7 @@ from stage_backgrounds import (
     fit_palettes,
     pack_static_cells,
     refine_scenery,
+    reuse_native_variants,
     registered_colours,
     spectator_colours,
     stage_pattern_sources,
@@ -156,6 +157,27 @@ class StageBackgroundTests(unittest.TestCase):
         self.assertEqual(displayed[0, 2, 5, 5], 2)
         self.assertEqual(packed[:32], encode_tile(displayed[0, 0]))
         self.assertEqual(packed[32:], encode_tile(displayed[0, 2]))
+
+    def test_variant_reuse_respects_native_source_flip_and_protected_pixels(self):
+        patterns = np.ones((3, 8, 8), dtype="u1")
+        patterns[1, 1, 2] = 2
+        patterns[2] = 2
+        packed = bytearray().join(encode_tile(pattern) for pattern in patterns)
+        mapped = np.array([[0x6040, 0x2041, 0x2042, 0x6040]], dtype="<u2")
+        displayed = patterns[[0, 1, 2, 0]][None].copy()
+        palettes = np.zeros((4, 16, 3), dtype=np.int16)
+        palettes[:, 2] = [15, 0, 0]
+        target = np.broadcast_to([15, 0, 0], (1, 4, 8, 8, 3))
+        active = np.ones((1, 4, 8, 8), dtype=bool)
+        active[:, 1:3] = False
+        active[0, 3, 1, 5] = False
+        reuse_native_variants(
+            mapped, displayed, palettes, packed, np.array([[7, 7, 8, 7]]),
+            target, active,
+        )
+        np.testing.assert_array_equal(mapped, [[0x6041, 0x2041, 0x2042, 0x6040]])
+        np.testing.assert_array_equal(displayed[0, 0], patterns[1, :, ::-1])
+        np.testing.assert_array_equal(displayed[0, 3], patterns[0])
 
     def test_reference_tint_keeps_native_contrast(self):
         tones = np.ones((16, 16), dtype="u1") * 3
