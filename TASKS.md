@@ -150,3 +150,5 @@ Update this table in the PR that changes a task’s state.
 | T81 | Additional Saturn stage scenery | Codex | Review candidate. 35 regions across eight stages, 32 paired emulator views and 17 restored states. Protected T80 scenery and guests match pixel for pixel. | codex/T81-stage-scenery | Hardware and exhaustive animation coverage remain open. See docs/stage-backgrounds.md. |
 
 | T82 | Upper and outer stage scenery | Codex | Review candidate. 38 additional regions, 32 paired views and 17 restored states. Earlier registered scenery and all pixels outside the new eligible regions match T81. | codex/T82-stage-edges | Physical hardware and exhaustive animation coverage remain open. See docs/stage-backgrounds.md. |
+
+| T83 | Saturn battle backdrops | Codex | Review candidate. Registered 33 more areas across eight stages. Prior scenery matched T82 across all maps. Verified 32 paired LCDs and 17 state restores. | codex/T83-stage-backdrops | Hardware and exhaustive animation coverage remain open. See docs/stage-backgrounds.md. |

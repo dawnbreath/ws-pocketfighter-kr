@@ -138,3 +138,22 @@ The full maps have 38,762 changed pixels and preserve all 402,466 pixels outside
 The 32 T81/T82 Mednafen screenshot pairs cover the upper intro, standing entry and both horizontal camera extremes. The scene checker verified 760,110 exposed background pixels and 1,204 native camera-cell occurrences. All 59,535 changed LCD samples corresponded to differences in the decoded stage maps. All 38 regions improved in at least one actual capture. Of 122 object/view comparisons, 119 moved closer to Saturn and three partially exposed views had equal error.
 
 The HUD, fighter palettes and fighter tile buffers matched on all 16 paired entry/combat states. Title, menu and three Korean story screens matched T81 exactly. All 17 packaged states restored their LCD, including the right-side Chinatown state. The test suite passed 113 tests. All six original/T77/T81 IPS and xdelta paths produced SHA-256 `b8c578b77931e994e16aebb165455f90a922429ebfff837882c2ddea696894c7`. The gallery shows full cartridge-map crops and a paired Chinatown combat screenshot. Testing covered Mednafen and the recorded poses and camera positions.
+
+## T83 backdrops between registered scenery
+
+The second layer in `data/stages/scenery-edges.json` registers 33 additional areas on the eight stage maps. The offline builder fits the original regions first, then locks them while it fits later layers with the same tile inventory. Stage code, VRAM allocation and upload sizes are unchanged. The bar sign and toy shop billboard lettering lie outside the new areas.
+
+| Stage | Examples | Regions | Changed map pixels |
+|---|---|---:|---:|
+| Bar | Roof opening, overhead panels and left doorway | 4 | 4,210 |
+| Toy shop | Night sky around the billboard and east arcade | 4 | 2,123 |
+| Ski slopes | Aurora, western skyline and snow dome | 5 | 6,398 |
+| Beach house | Sky, western sea and front boardwalk | 4 | 1,711 |
+| Chinatown | Cloudbank, roofline and stone paving | 4 | 2,360 |
+| Furnace hall | Ceiling painting, open hall and rug | 4 | 7,524 |
+| Moonlit cavern | Cavern roof, gorge and carriage paving | 4 | 6,088 |
+| Mansion | Wall below the portrait, courtyard floor and sky | 4 | 1,325 |
+
+The decoded cartridge maps have 31,739 changed pixels. All 377,991 pixels outside the eligible areas match T82, including all prior spectator and scenery rectangles. Each of the 33 regions improved against its registered Saturn sample. On the 101,241 eligible pixels the mean absolute RGB channel difference fell from 18.90 to 13.93 on the 0–255 scale. During visual review the mansion sky registration was narrowed to exclude the curved building silhouette and the boardwalk registration was restricted to its upper plank. The gallery shows eight examples at a common scale per row and matched ski-stage LCDs.
+
+Across 32 paired Mednafen views, the stage checker matched 760,110 exposed background pixels to the cartridge. All 43,582 changed LCD pixels were at coordinates that changed in the decoded stage maps. Of 90 region/view observations, 85 moved closer to Saturn and five tied. The HUD, fighter tile buffer and fighter palette rows matched T82 in 16 entry/combat pairs. Title, menu and three Korean story screenshots matched on cold boot. All 17 delivered states restored the recorded LCD. The 113 repository tests passed and all six original/T77/T82 IPS and xdelta patches decoded to SHA-256 `33228f64ef7e4c6f2311232b0565180b42b60e5e05be3efc3901987fe4c7b6f6`. These comparisons cover the recorded scenes on the emulator.
