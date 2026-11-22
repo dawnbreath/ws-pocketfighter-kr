@@ -96,8 +96,12 @@ def apply_color(R,survey=False,spec_path=None):
         from sharded_colour_table import context_prefix_index
         indices = [context_prefix_index(table) for table in shards]
     hybrid = os.environ.get('PF_HYBRID') == '1'
+    from stage_backgrounds import reference_track
+    stages_requested = os.environ.get('PF_STAGE_BACKGROUNDS')
+    stages = bool(shards and fp and (stages_requested == '1' or
+                  (stages_requested is None and ('PF_SATURN_TRACK' in os.environ or reference_track().is_file()))))
     flags = {
-        'PREFIX_INDEX': bool(indices), 'CONTEXT': context, 'SHARDED': bool(shards),
+        'STAGE_BG': stages, 'PREFIX_INDEX': bool(indices), 'CONTEXT': context, 'SHARDED': bool(shards),
         'FULLTILE': tb and tb[:4] in (b'CTB3', b'CTB4'), 'SURVEY': survey,
         'BPP4': hybrid or os.environ.get('PF_BPP4') == '1', 'HYBRID': hybrid,
         'CTAB': hybrid and tb, 'FPAL': hybrid and tb and fp_path,
@@ -115,6 +119,9 @@ def apply_color(R,survey=False,spec_path=None):
         # Cache its context ID through the existing HUD-row lookup; palettes are unchanged.
         for i, char in enumerate(spec['chars']):
             bank[0xE00+i*24+21] = owners.get(char['name'],0)
+    if stages:
+        from stage_backgrounds import install
+        install(R, asm.assemble, far)
     for c in conf: print('colour conflict',c)
     print('colour scenes',n)
     b=COL_IDX<<16; R.b[b:b+0x10000]=bank

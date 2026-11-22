@@ -138,3 +138,5 @@ Update this table in the PR that changes a task’s state.
 | T75 | Fighter tile upload order | Codex | Both ends of the fighter slots refresh from the upper rows. No mixed opponent drawing in 15 Gouki holds, 12 fighters checked and 17 states restored. | codex/T75-battle-scanout | See docs/fighter-scanout.md for same-input timing differences and hardware coverage. |
 
 | T76 | Airborne roll, kick and jump transitions | Codex | Four drawings across Felicia, Gouki, Ken and Tabasa. Fifteen native samples, four screen pairs exact outside P1 and 17 restored states. | codex/T76-air-attacks | See docs/airborne-transitions.md for the matched input holds, Saturn references and remaining coverage. |
+
+| T77 | Saturn-matched battle backgrounds | Codex | All eight WS stage descriptors colourized, 184,164 visible background pixels checked across eight native captures, eight battle states restored. | codex/T77-stage-backgrounds | See docs/stage-backgrounds.md for disc input, source alignment, hardware limits and regression coverage. |

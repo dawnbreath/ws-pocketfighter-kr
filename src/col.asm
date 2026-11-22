@@ -693,15 +693,29 @@ scanop:
 scanmap:
     mov cx,1024
 .s: lodsw
+%ifdef STAGE_BG
+    test ah,0x20            ; bank 1 has no 2bpp shadow to classify
+    jnz .next
+    mov bx,ax
+    and bx,0x1FF
+    test ah,8               ; tilemap palette bit 2 marks a transparent row
+    mov al,1
+    jz .mark
+    inc al
+.mark:
+    or [bx+0x8000],al
+.next:
+%else
     mov bx,ax
     and bx,0x1FF
     shr ax,9
-    test al,4               ; palette bit 2, identical for SCR1/SCR2; palette 8/9 are opaque
+    test al,4
     jnz .tr
-.op:mov al,1
+    mov al,1
     jmp .o
 .tr:mov al,2
 .o: or [bx+0x8000],al
+%endif
     loop .s
     ret
 
@@ -931,6 +945,9 @@ cphook:
 %ifdef FPAL
 ; V_B1/V_B2 reuse the existing cached HUD-name lookup; row+22 is a ROM palette pointer.
 fighter_palettes:
+%ifdef STAGE_BG
+    call 0x7000:0xFF63         ; cached palette change, after normal scene colours
+%endif
     cmp word [IMG+36],0
     jne .active
     ret
