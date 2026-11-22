@@ -73,3 +73,24 @@ At camera X-scroll 224, 0 and 32, 24 Mednafen LCD captures matched 551,006 expos
 At stage entry, Cammy’s mean absolute RGB channel difference from the registered Saturn crop fell from 50.19 in T77 to 18.75 in T79 over 504 visible pixels. Honda’s fell from 48.38 to 14.83 over 996 pixels. Both figures displayed all ten fixed colours during entry and combat. All eight combat states restored, and the title, menu and three Korean story captures matched T78 pixel for pixel. The 16 entry/combat pairs had identical HUD maps and fighter palettes. Seven combat captures differed in fighter animation phase. In 32 subsequent frames per stage, all 488 fighter samples with matching native pattern buffers reproduced the same colour buffers as T78. The other 24 had no corresponding native pose within that window. Physical hardware was not tested.
 
 T79 SHA-256 is `73e4752c565d8277e2107e4234f60d2a9e050b99b85a42bc5cc638af5b63608f`. Both IPS and xdelta decoded to this hash from each of the original, T77 and T78 cartridges. The review bundle includes entry and right-camera bar states as well as one combat state per stage.
+
+## T80 scenery details and bartender
+
+The build registers 57 smaller regions from the Saturn scenery in `data/stages/details.json`. Both rectangles use 288×208 world coordinates with exclusive right and bottom edges. Area sampling transfers local colour. Native luminance supplies linework and a three-pixel edge blends each region into the surrounding drawing. Guests take precedence where rectangles overlap. For the bartender, `accents` holds local rows of the form [RGB444, y, first x, exclusive end x]. The tooth highlight, blue-gray tooth shadow, forehead and yellow fabric follow the WS pixels and use colours sampled from Saturn sprite frame 0.
+
+| Stage | Regions | Examples | T79 RGB error | T80 RGB error |
+|---|---:|---|---:|---:|
+| Bar | 8 | Bottles, wall lamp, stools | 38.31 | 25.07 |
+| Toy shop | 6 | Tree, wrapped presents, window shelf | 41.23 | 21.60 |
+| Ski slopes | 7 | Chairlift, lodge gable, igloo entrance | 34.48 | 18.68 |
+| Beach house | 8 | Awning, stairs, animal ornament | 43.88 | 19.87 |
+| Chinatown | 6 | Dragon, stall curtain, lantern | 34.98 | 19.40 |
+| Furnace hall | 8 | Furnace, flue, books, chairs | 28.46 | 15.25 |
+| Moonlit cavern | 7 | Castle, wheel, hanging lamp bracket | 39.98 | 17.76 |
+| Mansion | 7 | Chandelier, arched windows, sofa | 26.60 | 16.01 |
+
+The table measures mean absolute channel error (0–255) on the compiled maps against the locally registered, area-sampled Saturn images. Overlapping foreground guests, later prop rectangles and transparent Saturn pixels are excluded. In 24 Mednafen captures all 57 regions appeared at least in part. All 152 comparisons of the same exposed pixels across versions moved closer to their reference. The scene checker matched 551,006 exposed LCD pixels and 1,020 occurrences of native camera cells.
+
+All 32 marked bartender pixels showed their intended Saturn RGB444 colour at entry and at both camera extremes. At entry the error on Cammy's 504 exposed pixels fell from 18.75 to 16.27, and on Honda's 996 from 14.83 to 8.04. T80 displayed all ten specified colours for each guest at all three camera positions. A recount of the T79 entry LCD against the current ten-colour lists found eight on Honda and ten on Cammy.
+
+The HUD map, fighter palettes and fighter tile mirror matched T79 on all 16 paired entry/combat states. Eight combat saves restored the captured LCD. Title, menu and three Korean story captures matched T79 pixel for pixel. Stage graphics, stage maps and the cartridge checksum account for all changed ROM bytes. The suite passed 111 tests. Six verified xdelta/IPS patches from the Japanese original, T77 and T79 produced T80 SHA-256 `17932ddd17dd24476c645a54bc92f55f78bba64c89e47fb8bf8d2f4850ec012f`. These measurements cover the listed regions and camera positions in Mednafen. Physical hardware and exhaustive animation coverage remain open.
