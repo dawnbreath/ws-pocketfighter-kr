@@ -1,5 +1,7 @@
 # 4bpp conversion plan (goal: Saturn-level character colouring)
 
+T69 colours [nine drawings observed after close-range attack inputs](roster-close-attacks.md).
+
 T68 colours [twelve crouching and airborne attack drawings and bounds the fighter tile search](roster-low-air-attacks.md).
 
 T67 colours [eleven standing attack and recovery drawings across five more fighters](roster-attack-recovery.md).

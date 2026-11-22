@@ -196,6 +196,7 @@ if __name__ == "__main__":
             "ryu-movement",
             "roster-movement",
             "roster-attacks",
+            "close-attacks",
             "low-air-attacks",
             "attack-recovery",
         ],
@@ -212,6 +213,10 @@ if __name__ == "__main__":
         import roster_occluded_colours as family
     elif a.family == "roster-movement":
         from roster_movement_colours import for_context
+
+        family = for_context(a.require_context or 0)
+    elif a.family == "close-attacks":
+        from roster_close_attacks import for_context
 
         family = for_context(a.require_context or 0)
     elif a.family == "low-air-attacks":
