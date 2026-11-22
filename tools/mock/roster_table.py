@@ -364,6 +364,7 @@ if __name__ == "__main__":
             "basics",
             "motions",
             "gouki-context",
+            "gouki-guard",
             "low-air",
             "followthrough",
             "dash",
@@ -391,6 +392,8 @@ if __name__ == "__main__":
     family = roster_colours
     if a.family == "motions":
         import roster_motion_colours as family
+    elif a.family == "gouki-guard":
+        import gouki_guard_colours as family
     elif a.family == "gouki-context":
         import gouki_context_colours as family
     elif a.family == "occluded":

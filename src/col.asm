@@ -873,12 +873,14 @@ cphook:
 %endif
 %ifdef FULLTILE
     ; Matched exact source: copy precomputed 4bpp. Advance original staging tile.
-    add si,16
+    xchg si,bp               ; CS:SI = precomputed 4bpp tile, BP = staging source
     mov cx,16
-.m: mov ax,[cs:bp]
-    add bp,2
-    stosw
-    loop .m
+    push ds
+    push cs
+    pop ds                  ; matched output is in the selected ROM bank
+    rep movsw
+    pop ds
+    lea si,[bp+16]           ; next 2bpp staging tile
 %else
     mov cx,8
 .m: lodsw
