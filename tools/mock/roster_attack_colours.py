@@ -263,10 +263,14 @@ def author(character: str, source: np.ndarray) -> np.ndarray:
     key = hashlib.md5(source.tobytes() + bytes(source.shape)).hexdigest()
     if key not in REGIONS.get(character, {}):
         raise ValueError("unsupported roster attack drawing")
+    return paint_regions(source, REGIONS[character][key], RAMPS)
+
+
+def paint_regions(source: np.ndarray, regions: list, ramps: dict) -> np.ndarray:
     result = source.copy()
-    for material, points in REGIONS[character][key]:
+    for material, points in regions:
         mask = selection(source.shape, points) & (source > 0)
-        result[mask] = np.take(RAMPS[material], source[mask] - 1)
+        result[mask] = np.take(ramps[material], source[mask] - 1)
     return result
 
 
