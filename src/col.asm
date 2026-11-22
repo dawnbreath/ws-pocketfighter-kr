@@ -782,8 +782,18 @@ cphook:
     add di,0x7000
 %ifdef CTAB
     push bx                  ; Exact-source records sorted by hash16; build selects CTB2/CTB3 stride.
-    xor ax,ax                ; lower-bound binary search on the hash: ax = lo, cx = hi (record indices)
+%ifdef PREFIX_INDEX
+    ; DX retains the complete hash. The mapped shard supplies its high nibble.
+    xor bx,bx
+    mov bl,dh
+    and bl,15
+    shl bx,1
+    mov ax,[cs:bx+CLASS_PREFIX_BASE]    ; first possible record (inclusive)
+    mov cx,[cs:bx+CLASS_PREFIX_BASE+2]  ; first record in the next group
+%else
+    xor ax,ax
     mov cx,[cs:CTABA+4]
+%endif
 .lb:cmp ax,cx
     jae .lbd
     mov bp,ax

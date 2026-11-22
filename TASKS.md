@@ -120,3 +120,5 @@ Update this table in the PR that changes a task’s state.
 | T66 | Standing attack colours for Ibuki, Sakura and Morrigan | Codex | 10 drawings, 44 native matches, 8,939 representative pixels. All ten screen pairs identical outside P1. Twelve fighters and seven wrist drawings checked. | codex/T66-roster-attacks | Additional move coverage and hardware timing open |
 
 | T67 | Standing attacks and recovery across the eight remaining fighters | Codex | Eleven new drawings across five fighters, 95 native matches, 9,615 representative pixels. Nine cold screens exact; first battle differed by eight pixels. | codex/T67-roster-attacks | Additional move coverage and hardware timing open |
+
+| T68 | Crouching and airborne attacks across the roster | Codex | Twelve new drawings across six fighters, 163 native matches and 25 restored states. Nine of ten cold screens exact. | codex/T68-crouching-attacks | Other moves and physical hardware timing open |

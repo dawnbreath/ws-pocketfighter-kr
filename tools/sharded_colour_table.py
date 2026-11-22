@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import struct
+from itertools import accumulate
 from pathlib import Path
 from class_table import (
     HEADER,
@@ -21,6 +23,14 @@ def pack_shards(records: list[tuple[bytes, bytes]], palettes: bytes) -> list[byt
     for source, output in records:
         groups[hash16(source) >> 12].append((source, output))
     return [pack_full_table(group, palettes) for group in groups]
+
+
+def context_prefix_index(table: bytes) -> bytes:
+    """Pack record offsets for all sixteen second-nibble runs of a validated CTB4 shard."""
+    counts = [0] * 16
+    for hash_value, *_ in CONTEXT_RECORD.iter_unpack(table[HEADER.size:-64]):
+        counts[(hash_value >> 8) & 15] += 1
+    return struct.pack("<17H", 0, *accumulate(counts))
 
 
 def read_shards(root: Path) -> list[bytes]:

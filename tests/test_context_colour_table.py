@@ -10,17 +10,30 @@ import test_class_table as legacy
 from test_full_colour_table import solid
 from class_table import HEADER, CONTEXT_RECORD, validate_table
 from sharded_colour_table import (
+    context_prefix_index,
     write_context_shards,
     read_shards,
     read_catalogue,
     read_context_overrides,
     write_shards,
 )
-from colour_layout import CLASS_TABLE_BASE, CLASS_SHARD_BANK_BASE
+from colour_layout import CLASS_PREFIX_BASE, CLASS_TABLE_BASE, CLASS_SHARD_BANK_BASE
 from fighter_contexts import active_contexts
 
 
 class ContextFormatTests(unittest.TestCase):
+    def test_prefix_index_counts_empty_groups_and_context_variants(self):
+        sources = [bytes(14) + struct.pack("<H", h) for h in (0x2001, 0x22FF, 0x2FFF)]
+        outputs = [(source, solid(source, 1)) for source in sources]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write_context_shards(outputs, {2: {sources[1]: solid(sources[1], 2)}},
+                                 legacy.PAL, root / "table")
+            shards = read_shards(root / "table")
+        self.assertEqual(struct.unpack("<17H", context_prefix_index(shards[0])), (0,) * 17)
+        self.assertEqual(struct.unpack("<17H", context_prefix_index(shards[2])),
+                         (0, 1, 1) + (3,) * 13 + (4,))
+
     def test_owner_mapping_requires_a_present_assigned_selector(self):
         self.assertEqual(active_contexts({1, 255}), {"GOUKI": 1})
         self.assertEqual(active_contexts({1, 2, 255}), {"GOUKI": 1, "MORRIGAN": 2})
@@ -124,6 +137,7 @@ class ContextRuntimeTests(unittest.TestCase):
                 "FPAL": "1",
                 "SHARDED": "1",
                 "CONTEXT": "1",
+                "PREFIX_INDEX": "1",
             },
         )
 
@@ -148,6 +162,8 @@ class ContextRuntimeTests(unittest.TestCase):
         for n, table in enumerate(tables):
             b = bytearray(b"\xff" * 65536)
             b[: len(self.code)] = self.code
+            index = context_prefix_index(table)
+            b[CLASS_PREFIX_BASE:CLASS_PREFIX_BASE + len(index)] = index
             b[CLASS_TABLE_BASE : CLASS_TABLE_BASE + len(table)] = table
             b[0xE15], b[0xE2D] = owners
             images[CLASS_SHARD_BANK_BASE + n] = bytes(b)
