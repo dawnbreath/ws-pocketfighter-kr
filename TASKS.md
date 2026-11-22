@@ -136,3 +136,5 @@ Update this table in the PR that changes a task’s state.
 | T74 | Gouki guard and changed-tile transfer timing | Codex | Two registered drawings, 19 native matches, 15 restored states and 11/13 fixed-input screens matching T73 outside P1. | codex/T74-gouki-transitions | See docs/gouki-guard-transfer.md for the two residual holds, first cold battle LCD and hardware coverage. |
 
 | T75 | Fighter tile upload order | Codex | Both ends of the fighter slots refresh from the upper rows. No mixed opponent drawing in 15 Gouki holds, 12 fighters checked and 17 states restored. | codex/T75-battle-scanout | See docs/fighter-scanout.md for same-input timing differences and hardware coverage. |
+
+| T76 | Airborne roll, kick and jump transitions | Codex | Four drawings across Felicia, Gouki, Ken and Tabasa. Fifteen native samples, four screen pairs exact outside P1 and 17 restored states. | codex/T76-air-attacks | See docs/airborne-transitions.md for the matched input holds, Saturn references and remaining coverage. |
