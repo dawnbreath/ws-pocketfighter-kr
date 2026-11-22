@@ -134,3 +134,5 @@ Update this table in the PR that changes a task’s state.
 | T73 | Intermediate and late attack recovery | Codex | Nine further drawings across five fighters, 58 native matches and 22 restored states. All ten cold screens matched T72. | codex/T73-battle-recovery | See docs/battle-recovery-colours.md for timing comparisons and remaining coverage. |
 
 | T74 | Gouki guard and changed-tile transfer timing | Codex | Two registered drawings, 19 native matches, 15 restored states and 11/13 fixed-input screens matching T73 outside P1. | codex/T74-gouki-transitions | See docs/gouki-guard-transfer.md for the two residual holds, first cold battle LCD and hardware coverage. |
+
+| T75 | Fighter tile upload order | Codex | Both ends of the fighter slots refresh from the upper rows. No mixed opponent drawing in 15 Gouki holds, 12 fighters checked and 17 states restored. | codex/T75-battle-scanout | See docs/fighter-scanout.md for same-input timing differences and hardware coverage. |
