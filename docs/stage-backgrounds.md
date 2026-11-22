@@ -115,3 +115,26 @@ The build fits indices within the existing stage palettes after the main colour 
 For each stage we captured the top of the scenery 84 frames after the stage loader entry, the standing entry view, active combat on the left and combat on the right. The 32 paired Mednafen captures had 28,880 changed LCD samples, all at the coordinates of actual changes in the map. The scene checker matched 760,110 exposed background pixels and 1,204 native camera-cell occurrences. Of 107 jointly visible comparisons, 104 improved and three had equal error where only part of the object was exposed. Every region improved in at least one capture. The bartender's 32 accents and both ten-colour guest palettes matched T80 in the three bar combat/entry views.
 
 We restored all 17 delivered states (eight fights, eight intros and the right-side ski camera). The title, menu and three Korean story screens matched T80 pixel for pixel. All 16 paired entry/combat states had matching HUD maps, fighter palettes and fighter tile buffers. The test suite passed 112 tests. Two source builds produced SHA-256 `5081bfd05fceaacf5497cb81380ed134d889a9ae023b32280ce43a949b2c3448`. The original, T77 and T80 IPS and xdelta paths all reproduced those bytes. The gallery uses complete cartridge-map crops followed by paired emulator screenshots. Hardware and exhaustive animation coverage remain open.
+
+## T82 upper and outer scenery
+
+The 38 local registrations in `data/stages/scenery-edges.json` cover the bar roof and balcony supports, both toy shop walkways, the left chairlift and distant peaks, beach shop timbers and waterline, Chinatown's upper windows and paving, the clock case and fireplace base, cavern rocks and the mansion's curtain, portrait frame and stair edges.
+
+The native tile inventory constrains each registration. In an initial build the beach waterline retained every T81 pixel, and the left roof truss could change only 22 pixels, because the patterns were shared with protected scenery. The build can now select another packed pattern already used for the same native source with the destination cell's original flips. It chooses among the existing palette rows and rejects a candidate if any pixel outside the eligible area would change colour. This works at build time with the existing stage upload and brightness tables.
+
+| Stage | Regions | Changed map pixels |
+|---|---:|---:|
+| Bar | 5 | 10,789 |
+| Toy shop | 5 | 5,963 |
+| Ski slopes | 4 | 2,855 |
+| Beach house | 5 | 980 |
+| Chinatown | 6 | 6,271 |
+| Furnace hall | 5 | 3,511 |
+| Moonlit cavern | 2 | 1,696 |
+| Mansion | 6 | 6,697 |
+
+The full maps have 38,762 changed pixels and preserve all 402,466 pixels outside the eligible regions. On the 76,766 eligible pixels, mean absolute channel difference from the registered Saturn colours fell from 28.59 to 20.43 (0–255). Each region improved. The beach waterline accounted for 32 changed pixels. On the three combat/entry bar views all 32 bartender accents and both guests' ten selected colours matched T81.
+
+The 32 T81/T82 Mednafen screenshot pairs cover the upper intro, standing entry and both horizontal camera extremes. The scene checker verified 760,110 exposed background pixels and 1,204 native camera-cell occurrences. All 59,535 changed LCD samples corresponded to differences in the decoded stage maps. All 38 regions improved in at least one actual capture. Of 122 object/view comparisons, 119 moved closer to Saturn and three partially exposed views had equal error.
+
+The HUD, fighter palettes and fighter tile buffers matched on all 16 paired entry/combat states. Title, menu and three Korean story screens matched T81 exactly. All 17 packaged states restored their LCD, including the right-side Chinatown state. The test suite passed 113 tests. All six original/T77/T81 IPS and xdelta paths produced SHA-256 `b8c578b77931e994e16aebb165455f90a922429ebfff837882c2ddea696894c7`. The gallery shows full cartridge-map crops and a paired Chinatown combat screenshot. Testing covered Mednafen and the recorded poses and camera positions.

@@ -1,0 +1,56 @@
+[
+  [
+    {"name":"left roof truss","ws":[0,0,72,57],"detail":[0,21,85,72]},
+    {"name":"sloping roof over the bar","ws":[56,29,114,91],"detail":[57,40,119,92]},
+    {"name":"balcony support post","ws":[235,43,259,113],"detail":[234,53,256,113]},
+    {"name":"speaker canopy","ws":[180,82,214,101],"detail":[179,91,213,106]},
+    {"name":"floor edge","ws":[1,181,286,205],"detail":[10,178,278,200]}
+  ],
+  [
+    {"name":"fascia below billboard","ws":[112,85,208,103],"detail":[100,93,210,110]},
+    {"name":"left elevated walkway","ws":[0,93,55,115],"detail":[6,100,52,120]},
+    {"name":"right elevated walkway","ws":[237,76,288,92],"detail":[238,78,283,98]},
+    {"name":"display plinth","ws":[56,173,197,183],"detail":[59,168,179,184]},
+    {"name":"foreground paving","ws":[1,185,287,206],"detail":[27,179,273,207]}
+  ],
+  [
+    {"name":"left lift gondola","ws":[77,67,108,83],"detail":[76,69,108,85]},
+    {"name":"left lift tower base","ws":[53,96,73,143],"detail":[53,95,71,138]},
+    {"name":"central snowy peaks","ws":[88,111,178,151],"detail":[85,101,182,140]},
+    {"name":"slope below the lodge","ws":[0,174,106,191],"detail":[4,165,103,183]}
+  ],
+  [
+    {"name":"hut eave fringe","ws":[42,94,82,129],"detail":[50,96,87,128]},
+    {"name":"rear palm leaves","ws":[177,84,208,112],"detail":[175,83,206,116]},
+    {"name":"shopfront timber posts","ws":[96,120,125,156],"detail":[99,120,127,151]},
+    {"name":"outer pier leg","ws":[227,181,253,208],"detail":[229,175,251,203]},
+    {"name":"sea horizon","ws":[242,130,288,160],"detail":[235,129,288,157]}
+  ],
+  [
+    {"name":"left building upper window","ws":[0,28,45,81],"detail":[1,27,41,83]},
+    {"name":"gold ridge tiles","ws":[158,18,238,92],"detail":[147,31,229,96]},
+    {"name":"far roof behind gate","ws":[257,80,288,103],"detail":[256,86,283,107]},
+    {"name":"noodle counter panels","ws":[97,151,133,176],"detail":[104,150,140,172]},
+    {"name":"left street paving","ws":[1,182,107,207],"detail":[10,178,99,203]},
+    {"name":"right street paving","ws":[202,180,288,207],"detail":[196,175,285,209]}
+  ],
+  [
+    {"name":"left clock crown","ws":[24,91,65,121],"detail":[17,98,57,125]},
+    {"name":"left hanging fixture","ws":[0,111,23,162],"detail":[0,111,19,154]},
+    {"name":"bookshelf end moulding","ws":[248,66,285,117],"detail":[255,68,287,119]},
+    {"name":"fireplace plinth","ws":[99,171,185,184],"detail":[92,169,175,184]},
+    {"name":"oval rug border","ws":[13,180,268,201],"detail":[0,178,268,199]}
+  ],
+  [
+    {"name":"floating island tip","ws":[104,91,135,133],"detail":[103,106,134,147]},
+    {"name":"lower cavern stones","ws":[0,177,110,198],"detail":[2,175,110,194]}
+  ],
+  [
+    {"name":"upper drapery swags","ws":[0,0,68,74],"detail":[5,2,68,77]},
+    {"name":"portrait frame moulding","ws":[51,28,99,95],"detail":[51,36,99,96]},
+    {"name":"curved window cornice","ws":[188,65,235,93],"detail":[190,71,233,99]},
+    {"name":"stone tread nosings","ws":[47,147,96,175],"detail":[48,142,95,168]},
+    {"name":"carriage yard sky","ws":[236,88,286,122],"detail":[231,76,287,116]},
+    {"name":"polished hall floor","ws":[36,178,207,205],"detail":[50,168,199,200]}
+  ]
+]

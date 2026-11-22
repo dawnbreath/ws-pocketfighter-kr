@@ -393,6 +393,7 @@ def refine_scenery(
     displayed: np.ndarray,
     palettes: np.ndarray,
     packed: bytearray,
+    native_tiles: np.ndarray | None = None,
 ) -> None:
     """Paint local details without changing colours outside their bounds."""
     height, width = mapped.shape
@@ -450,6 +451,46 @@ def refine_scenery(
             for y, x, flip_y, flip_x in groups:
                 displayed[y, x] = indices[flip_y, flip_x]
 
+    if native_tiles is not None:
+        reuse_native_variants(mapped, displayed, palettes, packed, native_tiles, target, active)
+
+
+def reuse_native_variants(
+    mapped: np.ndarray,
+    displayed: np.ndarray,
+    palettes: np.ndarray,
+    packed: bytearray,
+    native_tiles: np.ndarray,
+    target: np.ndarray,
+    active: np.ndarray,
+) -> None:
+    """Select an existing colour variant of the same handheld drawing per cell."""
+    planes = np.frombuffer(packed, dtype="u1").reshape(-1, 8, 4, 1)
+    bits = np.unpackbits(planes, axis=-1)
+    patterns = (bits * np.array([1, 2, 4, 8])[:, None]).sum(axis=2).astype("u1")
+    # Freeze membership before editing the map; the candidates do not depend on
+    # traversal order. Different native sources may reuse a camera VRAM slot.
+    slots = mapped & 511
+    for y, x in np.argwhere(active.any(axis=(2, 3))):
+        entry = int(mapped[y, x])
+        allowed = np.unique(slots[native_tiles == native_tiles[y, x]])
+        candidates = patterns[
+            allowed - FIRST_TILE,
+            :: -1 if entry & 0x8000 else 1,
+            :: -1 if entry & 0x4000 else 1,
+        ]
+        colours = palettes[:, candidates]
+        current = palettes[(entry >> 9) & 3, displayed[y, x]]
+        goal = target[y, x]
+        cost = np.abs(colours - goal).sum(axis=(-3, -2, -1))
+        outside = ~active[y, x]
+        invalid = ((colours != current).any(axis=-1) & outside).any(axis=(-2, -1))
+        cost[invalid] = 1 << 30
+        row, index = np.unravel_index(cost.argmin(), cost.shape)
+        if cost[row, index] < np.abs(current - goal).sum():
+            mapped[y, x] = (entry & 0xF800) | (int(row) << 9) | int(allowed[index])
+            displayed[y, x] = candidates[index]
+
 
 def compile_stage(
     original: bytes,
@@ -458,6 +499,7 @@ def compile_stage(
     reference: Image.Image,
     figures: tuple[list[dict], dict[int, Image.Image]] | None = None,
     insets: list[dict] | None = None,
+    edges: list[dict] | None = None,
 ) -> tuple[int, np.ndarray, bytes, Image.Image]:
     address = 0x140000 + word(original, DESCRIPTORS + number * 2)
     desc = original[address : address + 38]
@@ -544,11 +586,15 @@ def compile_stage(
                 palettes[bank, slot] = np.rint(
                     np.average(samples, axis=0, weights=weights[mask])
                 )
-    if insets:
-        refine_scenery(
-            reference, tones, insets, figures[0] if figures else [],
-            mapped, displayed_indices, palettes, packed,
-        )
+    if insets or edges:
+        protected = list(figures[0]) if figures else []
+        for regions, native in ((insets, None), (edges, tile_ids)):
+            if regions:
+                refine_scenery(
+                    reference, tones, regions, protected,
+                    mapped, displayed_indices, palettes, packed, native,
+                )
+                protected.extend(regions)
         banks = ((mapped >> 9) & 15)[:, :, None, None]
     rendered = (palettes[banks, displayed_indices] * 17).astype("u1")
     # One table per effective brightness. The unmodified palette-zero port and
@@ -591,7 +637,8 @@ def install(rom, assemble, far):
     spectators = json.loads(MATERIALS.with_name("spectators.json").read_text())
     details = json.loads(MATERIALS.with_name("details.json").read_text())
     insets = json.loads(MATERIALS.with_name("scenery-insets.json").read_text())
-    if any(len(group) != len(stages) for group in (spectators, details, insets)):
+    edges = json.loads(MATERIALS.with_name("scenery-edges.json").read_text())
+    if any(len(group) != len(stages) for group in (spectators, details, insets, edges)):
         raise ValueError("expected scenery and spectator lists for each stage")
     for number, spec in enumerate(stages):
         figures = details[number] + spectators[number]
@@ -605,6 +652,7 @@ def install(rom, assemble, far):
             reference_image(sources[number], number),
             (figures, frames),
             insets[number],
+            edges[number],
         )
         address = (STAGE_BANK << 16) + number * BLOCK
         if rom.b[address : address + BLOCK] != b"\xff" * BLOCK:

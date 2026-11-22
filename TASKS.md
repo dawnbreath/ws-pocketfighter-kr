@@ -148,3 +148,5 @@ Update this table in the PR that changes a task’s state.
 | T80 | Saturn scenery details and bartender | Codex | Review candidate. 57 regions verified across eight stages, with all 32 bartender accents and all ten colours on each named bar guest visible in combat. Eight battle states restored. | codex/T80-stage-details | Physical hardware and exhaustive animation coverage remain open. See docs/stage-backgrounds.md. |
 
 | T81 | Additional Saturn stage scenery | Codex | Review candidate. 35 regions across eight stages, 32 paired emulator views and 17 restored states. Protected T80 scenery and guests match pixel for pixel. | codex/T81-stage-scenery | Hardware and exhaustive animation coverage remain open. See docs/stage-backgrounds.md. |
+
+| T82 | Upper and outer stage scenery | Codex | Review candidate. 38 additional regions, 32 paired views and 17 restored states. Earlier registered scenery and all pixels outside the new eligible regions match T81. | codex/T82-stage-edges | Physical hardware and exhaustive animation coverage remain open. See docs/stage-backgrounds.md. |
