@@ -128,3 +128,5 @@ Update this table in the PR that changes a task’s state.
 | T70 | Directional attacks across the roster | Codex | 31 drawings across 11 fighters, 163 native matches, 43 Zangief control screens and 44 restored states. Ten cold screens identical. | codex/T70-directional-attacks | See docs/roster-directional-attacks.md for Felicia timing and remaining move coverage. |
 
 | T71 | Directional attack and dash follow-throughs | Codex | Nine additional drawings across six fighters, 59 native matches and 22 restored states. The cold-run changes were 23 Ryu headband pixels. | codex/T71-battle-followthrough | See docs/directional-attack-recovery.md for battle comparisons and remaining coverage. |
+
+| T72 | Simultaneous attack colours across the roster | Codex | 31 drawings across twelve fighters, 223 native matches, 44 restored states and seven wrist controls. | codex/T72-simultaneous-attacks | See docs/simultaneous-attack-colours.md for the cold battle scanline, scene comparisons and remaining coverage. |
