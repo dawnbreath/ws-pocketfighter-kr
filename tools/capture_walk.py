@@ -71,6 +71,7 @@ def capture(args: argparse.Namespace) -> dict:
         "attack": ["a", "b"],
         "chain": ["a-b", "b-a"],
         "quarter-circle": ["a", "b"],
+        "simultaneous": ["neutral", "forward"],
     }.get(args.motion, ["left", "right"])
     requested = getattr(args, "directions", None)
     if requested is not None:
@@ -110,6 +111,7 @@ def capture(args: argparse.Namespace) -> dict:
                 "dash-repeat": "reload base; settle 180; repeated two-frame taps",
                 "walk": "reload base; settle 180; single continuous hold",
                 "idle": "reload base; settle 180; single no-input step",
+                "simultaneous": "reload base; hold both attacks together, optionally with right",
                 "quarter-circle": "reload base; down3, down-right3, right plus attack",
                 "chain": "reload base; approach right20; first attack4-release4; second attack hold",
                 "attack": "reload base; settle 240; single attack hold",
@@ -143,7 +145,10 @@ def capture(args: argparse.Namespace) -> dict:
                         "step",
                         {"count": r["settle_frames_after_load"], "unit": "frames"},
                     )
-                if args.motion == "quarter-circle":
+                if args.motion == "simultaneous":
+                    buttons = ["a", "b"] if direction == "neutral" else ["right", "a", "b"]
+                    events = [dict(buttons=buttons, press_frames=duration, after_frames=0)]
+                elif args.motion == "quarter-circle":
                     events = [
                         dict(buttons=["down"], press_frames=3, after_frames=0),
                         dict(buttons=["down", "right"], press_frames=3, after_frames=0),
@@ -330,7 +335,7 @@ if __name__ == "__main__":
     )
     p.add_argument(
         "--motion",
-        choices=["walk", "dash", "dash-repeat", "attack", "low-air", "chain", "quarter-circle", "idle"],
+        choices=["walk", "dash", "dash-repeat", "attack", "low-air", "chain", "quarter-circle", "simultaneous", "idle"],
         default="walk",
     )
     capture(p.parse_args())
