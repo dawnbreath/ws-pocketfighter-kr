@@ -1,0 +1,62 @@
+[
+  [
+    {"name":"left balcony","ws":[7,62,51,99],"background":[5,70,52,104]},
+    {"name":"upper right balcony","ws":[257,41,288,64],"background":[255,50,284,72]},
+    {"name":"lower right balcony","ws":[250,61,276,84],"background":[248,71,272,93]},
+    {"name":"door guard","ws":[0,136,32,178],"background":[1,140,32,177]},
+    {"name":"seated pair","ws":[51,147,88,171],"background":[51,148,88,170]},
+    {"name":"Cammy","row":1,"swatches":["EEC","DA6","A74","EDB","E87","C66","9C8","577","245","323"],"ws":[96,146,114,174],"background":[97,148,114,173]},
+    {"name":"behind counter","ws":[115,147,132,158],"background":[115,146,131,157]},
+    {"name":"E. Honda","row":2,"swatches":["669","CDB","ACA","EDA","789","8A9","235","C76","EA8","E56"],"ws":[160,144,190,178],"background":[158,146,188,177]},
+    {"name":"right booth","ws":[191,119,238,152],"background":[189,123,237,154]},
+    {"name":"cashier","ws":[250,151,271,171],"background":[249,152,269,170]},
+    {"name":"bartender","ws":[140,144,159,160],"frame":0}
+  ],
+  [
+    {"name":"left window","ws":[46,110,78,161],"background":[45,109,82,162]},
+    {"name":"window display","ws":[116,106,158,147],"background":[117,113,156,149]},
+    {"name":"window doll","ws":[161,127,196,163],"background":[160,130,194,164]},
+    {"name":"shop visitor","ws":[169,147,200,175],"background":[168,149,198,174]},
+    {"name":"archway visitor","ws":[202,143,227,174],"background":[200,145,226,173]},
+    {"name":"shopper","ws":[118,152,141,178],"frame":16},
+    {"name":"hydrant","ws":[38,156,51,174],"frame":80}
+  ],
+  [
+    {"name":"hut diners","ws":[204,159,230,181],"frame":3},
+    {"name":"lift passenger","ws":[119,53,135,72],"frame":8},
+    {"name":"left child","ws":[151,162,168,185],"frame":87},
+    {"name":"right child","ws":[170,166,184,185],"frame":88}
+  ],
+  [
+    {"name":"palm climber","ws":[223,85,249,119],"background":[219,88,244,118]},
+    {"name":"pier visitor","ws":[23,151,38,185],"background":[15,148,31,179]},
+    {"name":"hut Blanka","ws":[60,119,99,144],"frame":20},
+    {"name":"seated swimmer","ws":[196,115,222,138],"frame":34},
+    {"name":"hanging guest","ws":[163,150,177,181],"frame":29}
+  ],
+  [
+    {"name":"left diner","ws":[50,147,81,179],"background":[42,145,73,175]},
+    {"name":"parasol","ws":[0,149,36,181],"background":[11,147,47,176]},
+    {"name":"far right stall","ws":[246,134,272,158],"background":[263,133,281,155]},
+    {"name":"counter guest","ws":[124,145,146,166],"frame":32},
+    {"name":"long-haired diner","ws":[145,147,165,179],"frame":44},
+    {"name":"right diner","ws":[191,149,209,177],"frame":8}
+  ],
+  [
+    {"name":"furnace attendant","ws":[162,147,184,177],"background":[153,148,174,175]},
+    {"name":"swordsman","ws":[108,142,130,169],"frame":0},
+    {"name":"kneeling guest","ws":[184,157,210,177],"frame":17},
+    {"name":"alcove figure","ws":[62,125,87,150],"frame":29}
+  ],
+  [
+    {"name":"lantern","ws":[174,111,189,137],"background":[171,116,188,141]},
+    {"name":"cloaked visitor","ws":[125,123,150,147],"frame":12},
+    {"name":"resting animal","ws":[150,153,183,173],"frame":19}
+  ],
+  [
+    {"name":"portrait","ws":[73,50,94,79],"background":[74,55,94,82]},
+    {"name":"stairway guest","ws":[17,149,35,176],"background":[16,146,35,169]},
+    {"name":"procession","ws":[68,151,171,175],"frame":12},
+    {"name":"right guest","ws":[196,150,214,174],"frame":4}
+  ]
+]

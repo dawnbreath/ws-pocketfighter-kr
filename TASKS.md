@@ -142,3 +142,5 @@ Update this table in the PR that changes a task’s state.
 | T77 | Saturn-matched battle backgrounds | Codex | All eight WS stage descriptors colourized, 184,164 visible background pixels checked across eight native captures, eight battle states restored. | codex/T77-stage-backgrounds | See docs/stage-backgrounds.md for disc input, source alignment, hardware limits and regression coverage. |
 
 | T78 | Saturn stage palette refinement | Codex | All eight static maps improved against the registered Saturn references. Sixteen emulator pairs and eight restored combat states. | codex/T78-stage-palette-fit | Per-stage measurements in docs/stage-backgrounds.md. |
+
+| T79 | Saturn background spectators and left/right camera patterns | Codex | review candidate. Cammy/Honda and 43 visible registered regions verified in 24 native LCD captures across eight stages. Upper-right balcony checked in cartridge map. Six patches decoded and eight combat states restored. | codex/T79-stage-spectators | Physical hardware and appearance through every pose remain open. See docs/stage-backgrounds.md. |

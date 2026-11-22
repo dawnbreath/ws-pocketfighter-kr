@@ -1,4 +1,4 @@
-"""Check a T77 Mednafen battle snapshot against its paired 224x144 LCD capture."""
+"""Check a colour-patched Mednafen battle snapshot against its paired 224x144 LCD capture."""
 
 import argparse
 import json
@@ -8,7 +8,16 @@ import struct
 import numpy as np
 from PIL import Image
 
-from stage_backgrounds import BLOCK, FIRST_TILE, PALETTE_BYTES, STAGE_BANK, TILE_DATA
+from stage_backgrounds import (
+    BLOCK,
+    DESCRIPTORS,
+    FIRST_TILE,
+    PALETTE_BYTES,
+    STAGE_BANK,
+    stage_pattern_sources,
+    TILE_DATA,
+    word,
+)
 
 
 def field(snapshot: bytes, name: str) -> bytes:
@@ -41,7 +50,9 @@ def plane(ram: bytes, address: int, sx: int, sy: int) -> tuple:
     return rgb, index, cell
 
 
-def check(rom: bytes, snapshot: bytes, lcd: Image.Image) -> dict:
+def check(
+    rom: bytes, snapshot: bytes, lcd: Image.Image, original: bytes | None = None
+) -> dict:
     ram = field(snapshot, "RAM")
     stage = struct.unpack_from("<H", field(snapshot, "SRAM"), 0x3000)[0]
     if stage >= 8 or lcd.size != (224, 144):
@@ -93,11 +104,45 @@ def check(rom: bytes, snapshot: bytes, lcd: Image.Image) -> dict:
     matching = (rgb == np.asarray(lcd.convert("RGB"))).all(axis=2)
     fixed = visible & ((bg & 0x2000) != 0)
     live = visible & ((bg & 0x2000) == 0) & (((bg >> 9) & 15) < 4)
-    if not fixed.any() or not live.any() or not matching[fixed | live].all():
+    # Check the cartridge's map as well as the displayed pixels. Older
+    # releases use bank zero at the scrolling edges; T79 resolves both sides.
+    desc = 0x340000 + word(rom, 0x200000 + DESCRIPTORS + 2 * stage)
+    start = 0x3D0000 + word(rom, desc + 3)
+    tilemap = np.frombuffer(rom, "<u2", 26 * 64, start).reshape(26, 64)
+    left = (register("BGXScroll") + 32) % 256
+    top = register("BGYScroll")
+    expected = tilemap[(y + top)[:, None] // 8, (x + left)[None, :] // 8]
+    if not np.array_equal(bg[visible], expected[visible]):
+        raise ValueError("visible stage map differs from the cartridge at this scroll")
+    if not fixed.any() or not matching[fixed | live].all():
         raise ValueError(
             "LCD background differs from the captured map, tiles or palette"
         )
+    checked_streams = 0
+    if original is not None:
+        desc_offset = 0x140000 + word(original, DESCRIPTORS + 2 * stage)
+        descriptor = original[desc_offset : desc_offset + 38]
+        map_offset = 0x1D0000 + word(descriptor, 3)
+        native = np.frombuffer(original, "<u2", 26 * 64, map_offset).reshape(26, 64)[
+            :, :36
+        ]
+        sources = stage_pattern_sources(original, descriptor, native)
+        ids = native & 511
+        art = 0x1E0000 + word(descriptor, 8)
+        # Tiles straddling the viewport also participate in the native stream.
+        view = np.s_[top // 8 : (top + 151) // 8, left // 8 : (left + 231) // 8]
+        streamed = ids[view] >= word(descriptor, 27)
+        pairs = zip(ids[view][streamed].tolist(), sources[view][streamed].tolist())
+        for slot, source in set(pairs):
+            dest = 0x2000 + 16 * slot
+            offset = art + 16 * source
+            if ram[dest : dest + 16] != original[offset : offset + 16]:
+                raise ValueError(
+                    f"native camera slot {slot} disagrees with source {source}"
+                )
+        checked_streams = int(streamed.sum())
     return dict(
+        native_camera_cells=checked_streams,
         stage=stage,
         scroll=register("BGXScroll"),
         static_pixels=int(fixed.sum()),
@@ -110,8 +155,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("rom", "snapshot", "lcd"):
         parser.add_argument(name, type=Path)
+    parser.add_argument(
+        "--original", type=Path, help="also verify native camera transfer sources"
+    )
     args = parser.parse_args()
     with Image.open(args.lcd) as image:
         print(
-            json.dumps(check(args.rom.read_bytes(), args.snapshot.read_bytes(), image))
+            json.dumps(
+                check(
+                    args.rom.read_bytes(),
+                    args.snapshot.read_bytes(),
+                    image,
+                    args.original.read_bytes() if args.original else None,
+                )
+            )
         )

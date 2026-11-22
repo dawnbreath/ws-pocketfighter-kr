@@ -1,7 +1,7 @@
 """Build coloured static tiles from the cartridge's eight battle descriptors.
 
-Only the stage loader writes tile bank 1. Animated cells retain their original
-bank, pattern number and flips, so the game's animation commands still apply.
+Only the stage loader writes tile bank 1. Resolve the two camera-dependent
+source sets before packing coloured tiles for the handheld world map.
 """
 
 import json
@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 from paths import ROOT
-from saturn_stages import reference_image, stage_files
+from saturn_stages import reference_image, stage_actors, stage_files
 
 DESCRIPTORS = 0x148C50
 STAGE_BANK = 0x0E
@@ -119,8 +119,68 @@ def registered_colours(
     return np.clip(np.rint(rgb / 17), 0, 15).astype("u1")
 
 
+def spectator_colours(
+    reference: Image.Image,
+    frames: dict[int, Image.Image],
+    figures: list[dict],
+    tones: np.ndarray,
+    target: np.ndarray,
+) -> tuple[np.ndarray, dict[tuple[int, int], list[int]]]:
+    """Register each cameo independently of the scenery and its parallax."""
+    height, width = tones.shape
+    # Preserve the handheld's linework inside each local colour sample.
+    mono = Image.fromarray((tones * 36).astype("u1"))
+    detail = np.asarray(mono, dtype=float) - np.asarray(
+        mono.filter(ImageFilter.GaussianBlur(1.25))
+    )
+    importance = np.ones(tones.shape, dtype="u1")
+    fixed = {}
+    for figure in figures:
+        x, y, right, bottom = figure["ws"]
+        if not (0 <= x < right <= width and 0 <= y < bottom <= height):
+            raise ValueError(f"invalid WS bounds for {figure['name']}")
+        if "frame" in figure:
+            source = frames[figure["frame"]]
+        else:
+            box = [
+                v * scale
+                for v, scale in zip(
+                    figure["background"],
+                    (reference.width / width, reference.height / height) * 2,
+                )
+            ]
+            source = reference.crop(tuple(round(v) for v in box))
+        size = (right - x, bottom - y)
+        sample = np.asarray(source.resize(size, Image.Resampling.NEAREST), dtype=float)
+        weights = importance[y:bottom, x:right]
+        weights[sample[..., 3] > 0] = 12
+        if "swatches" in figure:
+            row = figure["row"]
+            for slot, colour in enumerate(figure["swatches"], 5):
+                fixed[row, slot] = rgb444(colour)
+            weights[sample[..., 3] > 0] = 40
+        alpha = sample[..., 3:] / 255
+        rgb = sample[..., :3] + 0.38 * detail[y:bottom, x:right, None]
+        if "frame" in figure:
+            # The ports redraw moving guests in different poses. Transfer their
+            # colours while keeping the WS drawing's own light/dark structure.
+            light = sample[..., :3] @ [0.299, 0.587, 0.114]
+            native = tones[y:bottom, x:right].astype(float) * 36
+            occupied = alpha[..., 0] > 0
+            if occupied.any():
+                shift = light[occupied].mean() - native[occupied].mean()
+                rgb = sample[..., :3] + 0.8 * (native + shift - light)[..., None]
+        old = target[y:bottom, x:right]
+        old[:] = np.rint(np.clip(rgb / 17, 0, 15) * alpha + old * (1 - alpha))
+    return importance, fixed
+
+
 def fit_palettes(
-    target: np.ndarray, primary: np.ndarray, initial: np.ndarray
+    target: np.ndarray,
+    primary: np.ndarray,
+    initial: np.ndarray,
+    weights: np.ndarray | None = None,
+    fixed: dict | None = None,
 ) -> np.ndarray:
     """Quantize reference colours by tile, respecting the per-cell palette latch."""
     tiles = target.reshape(-1, 8, 8, 3)
@@ -136,30 +196,42 @@ def fit_palettes(
         colours = np.pad(colours, ((0, 11 - len(colours)), (0, 0)), mode="edge")
         palettes.append([*row[::-1], row[3], *np.rint(colours / 17).astype(int)])
     palettes = np.array(palettes)
-    # Only the 11 free colours can move. Indices 1..4 are also available
-    # to a static tile but their values are owned by live animation slots.
+    # Keep the four base shades and their opaque zero alias. Static tiles can
+    # also use those colours; the other slots fit the stage and its spectators.
     rgb = np.indices((16, 16, 16)).reshape(3, -1).T
     keys = tiles.astype(int) @ [256, 16, 1]
+    fixed = fixed or {}
+    for (bank, slot), colour in fixed.items():
+        palettes[bank, slot] = colour
     previous_loss = None
     for _ in range(32):
         distances = ((rgb[:, None, None] - palettes[None, :, 1:]) ** 2 * [2, 3, 1]).sum(
             axis=-1
         )
         cost = distances.min(axis=-1)
-        tile_cost = cost[keys].sum(axis=(1, 2))
+        tile_cost = (
+            cost[keys] if weights is None else cost[keys] * weights[..., None]
+        ).sum(axis=(1, 2))
         groups = tile_cost.argmin(axis=1)
         loss = tile_cost.min(axis=1).sum()
         if loss == previous_loss:
             break
         previous_loss = loss
         for bank in range(len(palettes)):
-            counts = np.bincount(keys[groups == bank].ravel(), minlength=len(rgb))
+            mask = groups == bank
+            counts = np.bincount(
+                keys[mask].ravel(),
+                weights=None if weights is None else weights[mask].ravel(),
+                minlength=len(rgb),
+            )
             assigned = distances[:, bank].argmin(axis=1) + 1
             residual = counts * cost[:, bank]
             for slot in range(5, 16):
-                weights = counts * (assigned == slot)
-                if weights.any():
-                    palettes[bank, slot] = np.rint((weights @ rgb) / weights.sum())
+                if (bank, slot) in fixed:
+                    continue
+                mass = counts * (assigned == slot)
+                if mass.any():
+                    palettes[bank, slot] = np.rint((mass @ rgb) / mass.sum())
                 elif residual.any():
                     # Reuse a redundant slot for a frequently misrepresented colour.
                     worst = residual.argmax()
@@ -173,6 +245,7 @@ def pack_static_cells(
     palettes: np.ndarray,
     mapped: np.ndarray,
     displayed_indices: np.ndarray,
+    weights: np.ndarray | None = None,
 ) -> bytearray:
     """Select extra colour variants where they buy the greatest error reduction.
 
@@ -188,11 +261,23 @@ def pack_static_cells(
         targets = np.stack([r[3] for r in rows]).astype(int)
         variants = np.unique(np.stack([r[4] for r in rows]), axis=0)
         cost = np.zeros((len(variants), len(rows), 4), dtype="i4")
+        importance = (
+            1
+            if weights is None
+            else np.stack(
+                [
+                    weights[y, x][
+                        :: -1 if flip & 0x8000 else 1, :: -1 if flip & 0x4000 else 1
+                    ]
+                    for y, x, flip, _, _ in rows
+                ]
+            )[:, None, :, :, None]
+        )
         for i, pattern in enumerate(variants):
             colours = palettes[:, pattern]
-            cost[i] = (((colours[None] - targets[:, None]) ** 2) * [2, 3, 1]).sum(
-                axis=(2, 3, 4)
-            )
+            cost[i] = (
+                ((colours[None] - targets[:, None]) ** 2) * [2, 3, 1] * importance
+            ).sum(axis=(2, 3, 4))
         errors = cost.min(axis=2)
         first = int(errors.sum(axis=1).argmin())
         groups.append([rows, variants, cost, errors, [first], errors[first].copy()])
@@ -238,8 +323,40 @@ def pack_static_cells(
     return packed
 
 
+def stage_pattern_sources(
+    original: bytes, desc: bytes, entries: np.ndarray
+) -> np.ndarray:
+    """Resolve pattern slots shared by opposite edges of the 36-column world.
+
+    The camera dispatch at 4000:8949 uses three descriptor transfers for
+    each side. Only six columns at either edge reference streamed patterns.
+    Two identical VRAM indices may therefore denote different ROM drawings.
+    """
+    ids = (entries & 511).astype(int)
+    threshold = word(desc, 27)
+    sources = np.where(ids < threshold, ids, -1)
+    table = 0x140000 + word(desc, 35)
+    x = np.arange(entries.shape[1])
+    for slot in range(6):
+        dest, source, count = struct.unpack_from("<3H", original, table + 6 * slot)
+        if (dest | source | count) & 15:
+            raise ValueError("unaligned stage pattern transfer")
+        side = x < 6 if slot < 3 else x >= entries.shape[1] - 6
+        selected = side & (ids >= dest // 16) & (ids < (dest + count) // 16)
+        if np.any(sources[selected] >= 0):
+            raise ValueError("overlapping stage pattern sources")
+        sources[selected] = ids[selected] + (source - dest) // 16
+    if np.any(sources < 0):
+        raise ValueError("stage cell has no source on its side of the map")
+    return sources
+
+
 def compile_stage(
-    original: bytes, number: int, spec: dict, reference: Image.Image
+    original: bytes,
+    number: int,
+    spec: dict,
+    reference: Image.Image,
+    figures: tuple[list[dict], dict[int, Image.Image]] | None = None,
 ) -> tuple[int, np.ndarray, bytes, Image.Image]:
     address = 0x140000 + word(original, DESCRIPTORS + number * 2)
     desc = original[address : address + 38]
@@ -252,25 +369,13 @@ def compile_stage(
     offset = 0x1D0000 + word(desc, 3)
     tiles = 0x1E0000 + word(desc, 8)
     palette = 0x1E0000 + word(desc, 15)
-    static = word(desc, 27)
     width, height = word(desc, 30), word(desc, 32)
     entries = np.frombuffer(original, "<u2", height * 64, offset).reshape(height, 64)[
         :, :width
     ]
     words = np.frombuffer(original, "<u2", 4, palette)
-    tile_ids = entries & 511
-    # The alternate camera loads use source offsets distinct from their VRAM
-    # destinations. Use descriptor animation frames for fitting live cells.
-    art = bytearray(original[tiles : tiles + (int(tile_ids.max()) + 1) * 16])
-    animation_table = 0x140000 + word(desc, 35)
-    for row in (0, 1, 2, 3):
-        dest, source, count = struct.unpack_from(
-            "<3H", original, animation_table + row * 6
-        )
-        end = min(dest + count, len(art))
-        if end > dest:
-            art[dest:end] = original[tiles + source : tiles + source + end - dest]
-    raw = np.frombuffer(art, "u1")
+    tile_ids = stage_pattern_sources(original, desc, entries)
+    raw = np.frombuffer(original, "u1", (int(tile_ids.max()) + 1) * 16, tiles)
     bits = np.unpackbits(raw.reshape(-1, 8, 2), axis=2).reshape(-1, 8, 2, 8)
     cells = (bits[:, :, 0] + 2 * bits[:, :, 1])[tile_ids]
     cells = np.where((entries & 0x8000)[:, :, None, None], cells[:, :, ::-1], cells)
@@ -283,27 +388,14 @@ def compile_stage(
     level = np.clip(np.rint((tones.astype(float) - 1) * 0.6), 0, 3).astype(int)
     fallback = (ramps[classes, level] * 17).astype("u1")
     pixels = registered_colours(reference, spec["landmarks"], tones, fallback)
+    importance = np.ones(tones.shape, dtype="u1")
+    fixed = {}
+    if figures is not None:
+        records, frames = figures
+        importance, fixed = spectator_colours(reference, frames, records, tones, pixels)
+    weights = importance.reshape(height, 8, width, 8).transpose(0, 2, 1, 3)
     target = pixels.reshape(height, 8, width, 8, 3).transpose(0, 2, 1, 3, 4)
     primary = np.array([ramps[names.index(bank[0])] for bank in spec["banks"]])
-    animated = tile_ids >= static
-    if np.any(animated):
-        guide = primary.copy()
-        samples = cells[animated]
-        desired = target[animated].astype(int)
-        for _ in range(3):
-            difference = primary[:, ::-1][:, samples] - desired[None]
-            owners = (difference**2 * [2, 3, 1]).sum(axis=(2, 3, 4)).argmin(axis=0)
-            for bank, ramp in enumerate(primary):
-                for shade in range(4):
-                    values = desired[
-                        (owners == bank)[:, None, None] & (samples == shade)
-                    ]
-                    if len(values):
-                        # Retain a small material prior for rarely used shades.
-                        ramp[3 - shade] = np.rint(
-                            (values.sum(axis=0) + 32 * guide[bank, 3 - shade])
-                            / (len(values) + 32)
-                        )
     init_classes = classes.reshape(height, 8, width, 8).transpose(0, 2, 1, 3)[
         :, :, 4, 4
     ]
@@ -312,7 +404,11 @@ def compile_stage(
         for name in names
     ]
     palettes = fit_palettes(
-        target[~animated], primary, np.array(owner)[init_classes[~animated]]
+        target,
+        primary,
+        np.array(owner)[init_classes],
+        weights.reshape(-1, 8, 8),
+        fixed,
     )
     mapped = entries.copy()
     pending = {}
@@ -324,16 +420,8 @@ def compile_stage(
             (cell[None, :, :, None, :] - palettes[:, None, None]) ** 2 * [2, 3, 1],
             axis=-1,
         )
-        if tile_ids[y, x] >= static:
-            # Animated tiles keep the loader's live image. Choose a material row
-            # by the whole cell, constrained to its original four shade indices.
-            cols = palettes[:, cells[y, x]]
-            errors = ((cols - cell) ** 2 * [2, 3, 1]).sum(axis=(1, 2, 3))
-            pal = int(errors.argmin())
-            mapped[y, x] = (int(entries[y, x]) & ~0x1E00) | pal << 9
-            continue
         distances[..., 0] = 8192  # hardware index zero is transparent
-        pal = int(distances.min(axis=-1).sum(axis=(1, 2)).argmin())
+        pal = int((distances.min(axis=-1) * weights[y, x]).sum(axis=(1, 2)).argmin())
         indices = distances[pal].argmin(axis=-1)
         flip = int(entries[y, x]) & 0xC000
         if flip & 0x8000:
@@ -341,15 +429,20 @@ def compile_stage(
         if flip & 0x4000:
             cell, indices = cell[:, ::-1], indices[:, ::-1]
         pending.setdefault(int(tile_ids[y, x]), []).append((y, x, flip, cell, indices))
-    packed = pack_static_cells(pending, palettes, mapped, displayed_indices)
+    packed = pack_static_cells(pending, palettes, mapped, displayed_indices, weights)
     # Shared patterns can make a slot represent several originally distinct
     # colours. Refit those slots using the indices the packed map actually draws.
     banks = ((mapped >> 9) & 15)[:, :, None, None]
     for bank in range(4):
         for slot in range(5, 16):
-            samples = target[(banks == bank) & (displayed_indices == slot)]
+            if (bank, slot) in fixed:
+                continue
+            mask = (banks == bank) & (displayed_indices == slot)
+            samples = target[mask]
             if len(samples):
-                palettes[bank, slot] = np.rint(samples.mean(axis=0))
+                palettes[bank, slot] = np.rint(
+                    np.average(samples, axis=0, weights=weights[mask])
+                )
     rendered = (palettes[banks, displayed_indices] * 17).astype("u1")
     # One table per effective brightness. The unmodified palette-zero port and
     # shade LUT supply the brightness key, including the game's dim/flash modes.
@@ -388,9 +481,20 @@ def install(rom, assemble, far):
     if len(stages) != 8:
         raise ValueError("expected eight battle stages")
     sources = stage_files(reference_track())
+    spectators = json.loads(MATERIALS.with_name("spectators.json").read_text())
+    if len(spectators) != len(stages):
+        raise ValueError("expected a spectator list for each stage")
     for number, spec in enumerate(stages):
+        figures = spectators[number]
+        frames = stage_actors(
+            sources[number], {f["frame"] for f in figures if "frame" in f}
+        )
         offset, mapped, payload, _ = compile_stage(
-            rom.orig, number, spec, reference_image(sources[number], number)
+            rom.orig,
+            number,
+            spec,
+            reference_image(sources[number], number),
+            (figures, frames),
         )
         address = (STAGE_BANK << 16) + number * BLOCK
         if rom.b[address : address + BLOCK] != b"\xff" * BLOCK:

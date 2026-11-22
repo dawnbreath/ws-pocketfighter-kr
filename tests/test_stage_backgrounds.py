@@ -1,15 +1,19 @@
 """Portable stage graphics contracts, using synthetic material and pixel arrays."""
 
+import struct
 import unittest
 
 import numpy as np
 from PIL import Image
 
+from saturn_stages import stage_actors
 from stage_backgrounds import (
     encode_tile,
     fit_palettes,
     pack_static_cells,
     registered_colours,
+    spectator_colours,
+    stage_pattern_sources,
 )
 
 
@@ -42,6 +46,66 @@ class StageBackgroundTests(unittest.TestCase):
         np.testing.assert_array_equal(rows[:, :4], primary[:, ::-1])
         np.testing.assert_array_equal(rows[:, 4], primary[:, 3])
         self.assertTrue(np.any(np.all(rows[:, 5:] == [12, 0, 7], axis=2)))
+
+    def test_camera_edges_reusing_a_slot_have_distinct_source_patterns(self):
+        rom = bytearray(0x140000 + 36)
+        desc = bytearray(38)
+        struct.pack_into("<H", desc, 27, 12)
+        struct.pack_into("<3H", rom, 0x140000, 12 * 16, 18 * 16, 16)
+        struct.pack_into("<3H", rom, 0x140012, 12 * 16, 27 * 16, 16)
+        entries = np.full((1, 36), 8, dtype="<u2")
+        entries[0, [0, 35]] = [0x400C, 0x800C]
+        expected = entries.astype(int)
+        expected[0, [0, 35]] = [18, 27]
+        np.testing.assert_array_equal(
+            stage_pattern_sources(rom, desc, entries), expected
+        )
+        entries[0, 17] = 12
+        with self.assertRaisesRegex(ValueError, "no source"):
+            stage_pattern_sources(rom, desc, entries)
+
+    def test_actor_cells_are_column_major_and_zero_is_transparent(self):
+        layout = struct.pack(
+            ">HBBhhHHIII", 3, 2, 2, 0, 0, 2, 0, 0x60000000, 0x1A000000, 0x1A000080
+        )
+        art = bytes([0x11]) * 128 + bytes([0x22]) * 128
+        palette = struct.pack(">16H", 0, 31, 31 << 10, *([0] * 13))
+        chunks = [(0x106, art), (0x107, layout), (0x108, palette)]
+        data = struct.pack(">II", len(chunks), 0) + b"".join(
+            struct.pack(">II", key, len(block)) for key, block in chunks
+        )
+        data = data.ljust(2048, b"\0") + b"".join(
+            block.ljust(2048, b"\0") for _, block in chunks
+        )
+        frame = stage_actors(data, {0})[0]
+        self.assertEqual(frame.getpixel((0, 16)), (255, 0, 0, 255))
+        self.assertEqual(frame.getpixel((16, 0)), (0, 0, 255, 255))
+        self.assertEqual(frame.getpixel((0, 0))[3], 0)
+
+    def test_spectator_swatches_survive_a_dominant_background(self):
+        target = np.full((16, 16, 3), 7, dtype="u1")
+        image = Image.new("RGBA", (2, 2))
+        image.putpixel((0, 0), (34, 68, 153, 255))
+        figures = [
+            {
+                "name": "guest",
+                "frame": 0,
+                "ws": [2, 2, 4, 4],
+                "row": 2,
+                "swatches": ["249"],
+            }
+        ]
+        weights, fixed = spectator_colours(
+            image, {0: image}, figures, np.zeros((16, 16), "u1"), target
+        )
+        np.testing.assert_array_equal(target[2, 2], [2, 4, 9])
+        np.testing.assert_array_equal(target[3, 3], [7, 7, 7])
+        tiles = (
+            target.reshape(2, 8, 2, 8, 3).transpose(0, 2, 1, 3, 4).reshape(4, 8, 8, 3)
+        )
+        mass = weights.reshape(2, 8, 2, 8).transpose(0, 2, 1, 3).reshape(4, 8, 8)
+        rows = fit_palettes(tiles, np.zeros((4, 4, 3)), np.zeros(4), mass, fixed)
+        np.testing.assert_array_equal(rows[2, 5], [2, 4, 9])
 
     def test_reference_tint_keeps_native_contrast(self):
         tones = np.ones((16, 16), dtype="u1") * 3
