@@ -111,3 +111,45 @@ def reference_image(pac: bytes, stage: int) -> Image.Image:
                 back[:, :, 3] = 255
                 composite = Image.fromarray(back)
     return composite.crop((0, 128, 640, 512))
+
+
+def stage_actors(pac: bytes, frame_ids: set[int]) -> dict[int, Image.Image]:
+    """Decode the stage PAC's column-major 16x16 VDP1 sprite layouts."""
+    import struct
+
+    blocks = {c.identifier: pac[c.offset : c.offset + c.size] for c in parse(pac)[1]}
+    art, layouts = blocks[0x106], blocks[0x107]
+    colours = np.frombuffer(blocks[0x108], ">u2")
+    rgb = np.stack([((colours >> s) & 31) * 255 // 31 for s in (0, 5, 10)], -1)
+    rgb = rgb.astype("u1").reshape(-1, 16, 3)
+    frames = {}
+    for index in frame_ids:
+        if not 0 <= index < int.from_bytes(layouts[:2], "big") // 3:
+            raise ValueError(f"invalid stage actor frame {index}")
+        base, w, h, _, _, count, _ = struct.unpack_from(">HBBhhHH", layouts, index * 12)
+        start = base * 4
+        size = (w * h + 31) // 32 * 4
+        occupied = np.unpackbits(np.frombuffer(layouts, "u1", size, start))[: w * h]
+        slots = np.flatnonzero(occupied)
+        if len(slots) != count:
+            raise ValueError(f"invalid cell count in stage actor frame {index}")
+        cells = np.frombuffer(layouts, ">u4", count, start + size)
+        rgba = np.zeros((h * 16, w * 16, 4), "u1")
+        for slot, cell in zip(slots, cells):
+            entry = int(cell)
+            bank = ((entry >> 24) & 31) - 26
+            if not 0 <= bank < len(rgb):
+                raise ValueError(f"invalid actor palette {bank}")
+            data = np.frombuffer(art, "u1", 128, entry & 0x7FFFF)
+            pixels = np.stack((data >> 4, data & 15), -1).reshape(16, 16)
+            if entry & 0x40000000:
+                pixels = pixels[:, ::-1]
+            if entry & 0x80000000:
+                pixels = pixels[::-1]
+            x, y = divmod(int(slot), h)
+            tile = rgba[y * 16 : (y + 1) * 16, x * 16 : (x + 1) * 16]
+            tile[..., :3] = rgb[bank, pixels]
+            tile[..., 3] = (pixels != 0) * 255
+        image = Image.fromarray(rgba)
+        frames[index] = image.crop(image.getbbox())
+    return frames

@@ -55,3 +55,21 @@ The table measures weighted squared error against the same registered RGB444 tar
 Emucap captured stage entry and combat for each of the eight stages. Across the 16 paired LCDs, 345,623 visible static background pixels matched their respective decoded cartridges. Their error against the registered target fell from 1,171,226 to 984,555. All 16 pairs improved. Another 23,581 visible animation-slot pixels passed the LCD check. The 810 animated map cells and their colours at every brightness level matched the T77 cartridge. The HUD map, fighter palette rows and fighter tile mirror matched T77 in every pair. Five cold title/menu/story screenshots matched pixel for pixel. All eight T78 combat snapshots restored their LCD.
 
 Build with the command above. T78 SHA-256 is `27fcd00bc9064b28b4fa6b13649ef0502111c303194936900772709d385042c1`. The original and T77 IPS and xdelta patches reproduced this hash. The suite passed 107 tests. Actual hardware timing and side-by-side checks of every animation frame remain open.
+
+## T79 background spectators
+
+The previous whole-stage comparison missed small figures. In Dee Jay’s bar the Saturn scroll plane already contains Cammy and E. Honda. Local registration transfers the blond hair, cap and green costume of Cammy, and the light green and blue-violet stripes and belt of Honda. Build-time palette fitting reserves ten sampled RGB444 swatches for each of the two figures and weights the other registered guests when choosing tile variants. The 44 registrations cover groups, individual figures and associated display details across the eight stages. Separate Saturn actors use the stage PAC’s sprite pixels (0x106), sparse column-major layouts (0x107) and RGB555 rows (0x108). Their colour samples retain native WS shading.
+
+The WS stage camera uses six transfer descriptors per stage. The first three supply the left edge and the last three supply the right. The same native VRAM index can refer to entirely different people on opposite sides, and the T78 colour mirror could show the old drawing after a camera move. All 810 formerly streamed cells resolve to specific ROM patterns on the appropriate side of the world map. The stage builder now packs these patterns with the interior art into the existing bank-1 upload. The original game still performs its regular camera transfers. This revision changes colour data and stage maps in the cartridge and uses the T78 runtime hooks.
+
+Run the build above and use the scene checker with each paired capture:
+
+```sh
+python tools/check_stage_frame.py out.ws stage.mcs stage.png --original orig/pf.ws
+```
+
+At camera X-scroll 224, 0 and 32, 24 Mednafen LCD captures matched 551,006 exposed background pixels. For 1,020 visible occurrences of edge cells the live original 2bpp pattern bytes also matched the predicted left/right ROM source. Across 43 registered regions, 111 comparisons of mutually visible pixels improved absolute RGB error against the local Saturn samples compared with T78. The upper right balcony was above these gameplay viewports. Its 713 cartridge-map pixels were checked separately. The artist-authored registrations approximate poses that differ between ports.
+
+At stage entry, Cammy’s mean absolute RGB channel difference from the registered Saturn crop fell from 50.19 in T77 to 18.75 in T79 over 504 visible pixels. Honda’s fell from 48.38 to 14.83 over 996 pixels. Both figures displayed all ten fixed colours during entry and combat. All eight combat states restored, and the title, menu and three Korean story captures matched T78 pixel for pixel. The 16 entry/combat pairs had identical HUD maps and fighter palettes. Seven combat captures differed in fighter animation phase. In 32 subsequent frames per stage, all 488 fighter samples with matching native pattern buffers reproduced the same colour buffers as T78. The other 24 had no corresponding native pose within that window. Physical hardware was not tested.
+
+T79 SHA-256 is `73e4752c565d8277e2107e4234f60d2a9e050b99b85a42bc5cc638af5b63608f`. Both IPS and xdelta decoded to this hash from each of the original, T77 and T78 cartridges. The review bundle includes entry and right-camera bar states as well as one combat state per stage.
