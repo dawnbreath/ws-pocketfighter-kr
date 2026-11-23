@@ -157,3 +157,26 @@ The second layer in `data/stages/scenery-edges.json` registers 33 additional are
 The decoded cartridge maps have 31,739 changed pixels. All 377,991 pixels outside the eligible areas match T82, including all prior spectator and scenery rectangles. Each of the 33 regions improved against its registered Saturn sample. On the 101,241 eligible pixels the mean absolute RGB channel difference fell from 18.90 to 13.93 on the 0–255 scale. During visual review the mansion sky registration was narrowed to exclude the curved building silhouette and the boardwalk registration was restricted to its upper plank. The gallery shows eight examples at a common scale per row and matched ski-stage LCDs.
 
 Across 32 paired Mednafen views, the stage checker matched 760,110 exposed background pixels to the cartridge. All 43,582 changed LCD pixels were at coordinates that changed in the decoded stage maps. Of 90 region/view observations, 85 moved closer to Saturn and five tied. The HUD, fighter tile buffer and fighter palette rows matched T82 in 16 entry/combat pairs. Title, menu and three Korean story screenshots matched on cold boot. All 17 delivered states restored the recorded LCD. The 113 repository tests passed and all six original/T77/T82 IPS and xdelta patches decoded to SHA-256 `33228f64ef7e4c6f2311232b0565180b42b60e5e05be3efc3901987fe4c7b6f6`. These comparisons cover the recorded scenes on the emulator.
+
+## T84 beach elephant and stage fittings
+
+The blue head on the beach elephant came from sampling the sea behind it. The Saturn beach scroll plane contains the body and water. Its stage sprite layouts add the head, trunk and body accents separately. On the WS drawing the eye, upper edge and trunk best matched Saturn head frame 14 with body frame 13. Both are decoded from ST03.PAC at build time. The right-facing head occupies world coordinates (213, 133) through (243, 184).
+
+The scenery fit can now use a sprite's alpha channel in a later layer. At explicitly named scenery overlaps, the opaque elephant artwork takes precedence over earlier background samples. The seated swimmer and hanging guest retain their opaque pixels, including where their bounding boxes overlap the elephant. Three previously unallocated 32-byte stage tiles hold cell variants that would otherwise share pixels with the sea. This raises the beach upload from 14,208 to 14,304 bytes inside the existing bank. Stage-loading code, palette and brightness tables, and fighter tile allocations match T83.
+
+| Stage | Added regions | Examples | Changed map pixels |
+|---|---:|---|---:|
+| Bar | 3 | Checkerboard ceiling and counter rim | 1,944 |
+| Toy shop | 4 | Western roof mascot and arcade pier | 1,928 |
+| Ski slopes | 4 | Upper lift canopy and snow between the lodge and children | 4,652 |
+| Beach house | 5 | Elephant head, neck, back and legs, open sea and western pier post | 3,013 |
+| Chinatown | 3 | Shop footing, awning fringe and gate crossbeam | 1,206 |
+| Furnace hall | 3 | Clock cornice, cabinet sill and ceiling border | 2,692 |
+| Moonlit cavern | 4 | Left vault, moonlit wall, wagon rear and bridge stones | 3,347 |
+| Mansion | 4 | Upper window surround, outer cornice and floor by the curtain | 2,465 |
+
+All 30 regions improved against the registered Saturn pixels. Mean absolute RGB channel error on 40,467 eligible pixels went from 30.10 to 18.48 on the 0–255 scale. There were 21,247 changed pixels across the eight maps, including 362 in earlier beach rectangles where the elephant is in front. All 438,765 pixels outside the eligible mask matched T83. The bar's Cammy, Honda and bartender pixels matched exactly.
+
+The review state `elephant-right.mcs` exposes all 955 opaque pixels of the registered head sprite on the native LCD. `cave-lintel.mcs` captures frame 118 from the stage selector read. In the T82/T83 comparison six previously unobserved changed stone pixels are visible at world X 240 and 248 and Y 12–14. The rest of that upper-right stone was verified on the full cartridge map. Comparisons use Mednafen. Physical hardware and other animation poses remain unverified.
+
+The 32 paired intro, entry, combat and right-camera LCDs showed changes in all 30 registrations. The frame checker matched 766,636 exposed background pixels and 1,166 native camera cell occurrences. All 28,780 changed LCD pixels lay at changed cartridge-map coordinates. The exposed-head state reduced mean RGB error across all 955 head pixels from 76.00 to 23.69. HUD maps, fighter tile buffers and fighter palette rows matched in the 32 pairs. Five cold title, menu and Korean story screens matched exactly. The 19 packaged states restored, 114 repository tests passed, and all six IPS/xdelta paths from the Japanese original, T77 and T83 decoded to SHA-256 `f2bf3510c42beeb287e26f4bfccdf7e6db336f42de7e25496b29cf8aa57b4d34`.

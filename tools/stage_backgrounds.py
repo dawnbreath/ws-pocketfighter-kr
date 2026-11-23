@@ -21,6 +21,7 @@ BLOCK = 0x4000
 FIRST_TILE = 64
 PALETTE_BYTES = 16 * 128
 TILE_DATA = PALETTE_BYTES + 4
+MAX_STAGE_TILES = min(512 - FIRST_TILE, (BLOCK - TILE_DATA) // 32)
 MATERIALS = Path(ROOT) / "data/stages/saturn-materials.json"
 
 
@@ -287,7 +288,7 @@ def pack_static_cells(
     """
     from heapq import heappush, heappop
 
-    capacity = min(512 - FIRST_TILE, (BLOCK - TILE_DATA) // 32)
+    capacity = MAX_STAGE_TILES
     heap = []
     groups = []
     for rows in pending.values():
@@ -394,6 +395,7 @@ def refine_scenery(
     palettes: np.ndarray,
     packed: bytearray,
     native_tiles: np.ndarray | None = None,
+    frames: dict[int, Image.Image] | None = None,
 ) -> None:
     """Paint local details without changing colours outside their bounds."""
     height, width = mapped.shape
@@ -401,10 +403,18 @@ def refine_scenery(
     banks = (mapped >> 9) & 3
     original = palettes[banks[:, :, None, None], displayed]
     target = original.transpose(0, 2, 1, 3, 4).reshape(*tones.shape, 3).copy()
-    coverage, _ = spectator_colours(reference, {}, insets, tones, target)
+    frames = frames or {}
+    coverage, _ = spectator_colours(reference, frames, insets, tones, target)
+    has_actor = any("frame" in region for region in insets)
     for region in protected:
         x, y, right, bottom = region["ws"]
-        coverage[y:bottom, x:right] = 0
+        locked = coverage[y:bottom, x:right]
+        if has_actor and "frame" in region:
+            sprite = frames[region["frame"]].getchannel("A")
+            opaque = sprite.resize((right - x, bottom - y), Image.Resampling.NEAREST)
+            locked[np.asarray(opaque) > 0] = 0
+        else:
+            locked[:] = 0
     active = (coverage > 1).reshape(height, 8, width, 8).transpose(0, 2, 1, 3)
     target = target.reshape(height, 8, width, 8, 3).transpose(0, 2, 1, 3, 4)
     ids = mapped & 511
@@ -453,6 +463,46 @@ def refine_scenery(
 
     if native_tiles is not None:
         reuse_native_variants(mapped, displayed, palettes, packed, native_tiles, target, active)
+    if has_actor:
+        split_actor_tiles(mapped, displayed, palettes, packed, target, active)
+
+
+def split_actor_tiles(
+    mapped: np.ndarray, displayed: np.ndarray, palettes: np.ndarray,
+    packed: bytearray, target: np.ndarray, active: np.ndarray,
+) -> None:
+    """Spend remaining stage tile slots on individually shaded actor cells."""
+    slots = mapped & 511
+    counts = np.bincount(slots.ravel(), minlength=512)
+    free = [i for i in range(FIRST_TILE, FIRST_TILE + MAX_STAGE_TILES) if not counts[i]]
+    if not free:
+        return
+    candidates = []
+    for y, x in np.argwhere(active.any(axis=(2, 3)) & (counts[slots] > 1)):
+        entry = int(mapped[y, x])
+        current = palettes[(entry >> 9) & 3, displayed[y, x]]
+        goal = target[y, x]
+        inside = active[y, x]
+        lut = palettes[:, None, None, 1:, :]
+        errors = np.abs(lut - goal[:, :, None]).sum(axis=-1)
+        invalid = (~inside[..., None]) & (lut != current[:, :, None]).any(axis=-1)
+        errors[invalid] = 1 << 20
+        costs = errors.min(axis=-1).sum(axis=(1, 2))
+        row = int(costs.argmin())
+        gain = int(np.abs(current - goal).sum() - costs[row])
+        if gain > 0:
+            indices = errors[row].argmin(axis=-1) + 1
+            candidates.append((gain, y, x, row, indices))
+    candidates.sort(key=lambda item: -item[0])
+    for slot, (_, y, x, row, indices) in zip(free, candidates):
+        entry = int(mapped[y, x])
+        flip_y = -1 if entry & 0x8000 else 1
+        flip_x = -1 if entry & 0x4000 else 1
+        pattern = indices[::flip_y, ::flip_x]
+        start = (slot - FIRST_TILE) * 32
+        packed[start:start + 32] = encode_tile(pattern)
+        mapped[y, x] = (entry & 0xF800) | (row << 9) | slot
+        displayed[y, x] = indices
 
 
 def reuse_native_variants(
@@ -588,16 +638,23 @@ def compile_stage(
                 )
     if insets or edges:
         protected = list(figures[0]) if figures else []
-        # Later registrations can fill gaps while locking every earlier rectangle.
+        # Fit later registrations against the finished earlier layers.
         layers = {}
         for region in edges or ():
-            layers.setdefault(region.get("layer", 0), []).append(region)
-        passes = [(insets, None)] + [(layers[key], tile_ids) for key in sorted(layers)]
-        for regions, native in passes:
+            key = (region.get("layer", 0), tuple(region.get("occludes", ())))
+            layers.setdefault(key, []).append(region)
+        passes = [(insets, None, ())]
+        for key in sorted(layers, key=lambda item: item[0]):
+            passes.append((layers[key], tile_ids, key[1]))
+        for regions, native, occluded in passes:
             if regions:
+                # A Saturn actor may cover a previous scenery rectangle, but only
+                # its opaque pixels take part in this pass.
+                locked = [r for r in protected if r["name"] not in occluded]
                 refine_scenery(
-                    reference, tones, regions, protected,
+                    reference, tones, regions, locked,
                     mapped, displayed_indices, palettes, packed, native,
+                    figures[1] if figures else None,
                 )
                 protected.extend(regions)
         banks = ((mapped >> 9) & 15)[:, :, None, None]
@@ -648,7 +705,8 @@ def install(rom, assemble, far):
     for number, spec in enumerate(stages):
         figures = details[number] + spectators[number]
         frames = stage_actors(
-            sources[number], {f["frame"] for f in figures if "frame" in f}
+            sources[number],
+            {f["frame"] for f in figures + edges[number] if "frame" in f},
         )
         offset, mapped, payload, _ = compile_stage(
             rom.orig,
