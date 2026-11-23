@@ -185,7 +185,7 @@ def spectator_colours(
                 light.filter(ImageFilter.GaussianBlur(1.25))
             )
             contrast = 0.85 * detail[y:bottom, x:right] - 0.65 * relief
-            rgb = sample[..., :3] + contrast[..., None]
+            rgb = sample[..., :3] + figure.get("relief_scale", 1.0) * contrast[..., None]
             iy, ix = np.indices((bottom - y, right - x))
             edge = np.minimum.reduce(
                 [iy + 1, bottom - y - iy, ix + 1, right - x - ix]

@@ -194,3 +194,24 @@ The two ski children were each sampling a frame that contained both children. Th
 The ten sprites and their three surrounding scenery regions cover 6,962 eligible pixels. Across all eight maps, the 4,889 changed pixels fall within this area. Mean absolute RGB channel error against the registered Saturn samples fell from 37.08 to 20.71 on the 0–255 scale. Every region improved individually. The gallery places the extracted Saturn components at handheld scale for comparison. The paired LCD images use actual emulator output.
 
 Two independent builds produced SHA-256 `7b3605cce422d8822aa1d345a29297fbee2498397a36a8885206b85dc85ec62b`. The cavern uses two further 32-byte tiles and the mansion one. Each now uses 14,304 tile bytes within its existing stage bank. The code, font allocation and stage palette tables match T84. In 32 paired stage captures the checker verified 766,636 exposed background pixels and 1,166 native camera cell occurrences. All 13 regions appeared in gameplay. The 12,150 changed LCD pixels were confined to changed map coordinates. HUD maps, fighter pattern buffers and fighter palettes matched on every pair. Five cold title, menu and Korean story screens matched T84 exactly. The test suite passed 115 tests. All 19 supplied states restored and the IPS/xdelta paths from the original, T77 and T84 produced the same target. The four stage palette rows limit the colour match, particularly the yellow parka. Physical hardware remains untested.
+
+## T86 — Spectators in the Saturn background artwork
+
+Twenty close-ups use the figures and objects painted directly into the Saturn background. Seven further registrations pick out scenery such as the rock ledge beyond the ski lift, timbers below the hut stairs, the carved stone below the cavern skull and the mansion chandelier. The build now scales the existing luminance correction for each matched detail. A lower scale retains the Saturn shading where a face, coat or stone carving lines up with its handheld drawing. Other registrations use the existing default. The stage palettes and the tile upload sizes match T85.
+
+| Stage | Regions | Examples | Changed map pixels |
+|---|---:|---|---:|
+| Bar | 9 | Balcony faces, doorman, counter and booth patrons, cashier | 4,512 |
+| Toy shop | 4 | Centre display toy, window doll, visitor below the window and archway figure | 1,420 |
+| Ski slopes | 1 | Rock ledge beyond the right pylon | 177 |
+| Beach | 3 | Palm climber, west pier visitor and hut stair timbers | 1,052 |
+| Chinatown | 2 | Left diner and figure under the parasol | 637 |
+| Furnace hall | 2 | Guest beside the furnace and west wall sconce | 446 |
+| Moonlit cavern | 3 | Hanging lantern, skull pedestal carving and teeth of the stone arch | 2,107 |
+| Mansion | 3 | Portrait, guest on the stairs and gilded chandelier arms | 1,064 |
+
+Across 22,029 eligible pixels, mean absolute RGB channel error against the aligned Saturn samples fell from 29.46 to 15.43 on the 0–255 scale. Each of the 27 regions improved. The 11,415 changed map pixels all lie in those regions. Cammy, Honda and the bartender matched T85 throughout their rectangles.
+
+The 32 paired emulator captures showed changes in all 27 regions. The checker verified 766,636 exposed background pixels and 1,166 native camera cell occurrences. The 22,089 changed LCD pixels were confined to changed map coordinates. The HUD maps, fighter pattern buffers and fighter palette rows matched T85 in each pair, as did five cold title, menu and Korean story captures. Two additional same-input comparisons expose 697 of 713 pixels around the upper-right balcony couple and all 510 pixels around the west pier visitor. In these views, respective mean RGB errors fell from 36.34 to 19.45 and from 52.35 to 22.81.
+
+Two builds reproduced SHA-256 `51caa8e10776ba862c9c19e90bcef3d1ac60d9666515f746830d7d466a397164`. All 20 supplied states restored and the original, T77 and T85 IPS and xdelta patches decoded to these bytes. The test suite passed 116 tests. The palette still approximates the Saturn hues. Physical hardware remains untested.

@@ -146,6 +146,18 @@ class StageBackgroundTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invalid colour accent"):
             spectator_colours(blue, {0: red}, records, tones, target)
 
+    def test_registered_detail_can_retain_saturn_shading(self):
+        source = Image.new("RGBA", (8, 8), (85, 102, 119, 255))
+        tones = np.zeros((8, 8), dtype="u1")
+        tones[4, 4] = 7
+        region = {"name": "coat", "ws": [0, 0, 8, 8], "detail": [0, 0, 8, 8]}
+        default = np.zeros((8, 8, 3), dtype="u1")
+        matched = default.copy()
+        spectator_colours(source, {}, [region], tones, default)
+        spectator_colours(source, {}, [{**region, "relief_scale": 0}], tones, matched)
+        np.testing.assert_array_equal(matched[4, 4], [5, 6, 7])
+        self.assertTrue((default[4, 4] > matched[4, 4]).all())
+
     def test_scenery_fit_preserves_flipped_shared_tiles_and_protected_pixels(self):
         mapped = np.array([[0x2040, 0x6040, 0x2041]], dtype="<u2")
         displayed = np.ones((1, 3, 8, 8), dtype="u1")
