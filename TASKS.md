@@ -156,3 +156,5 @@ Update this table in the PR that changes a task’s state.
 | T84 | Beach elephant and Saturn stage fittings | Codex | Review candidate. Restored the elephant head from the Saturn actor layer. Thirty regions across eight stages, 32 paired views and 19 delivered states. | codex/T84-stage-fittings | Hardware and exhaustive pose coverage remain open. See docs/stage-backgrounds.md. |
 
 | T85 | Ski children, carriage wheels and mansion procession | Codex | Ten sprites and three surrounding areas fitted within the existing stage banks. All 13 regions visible in 32 paired captures. | codex/T85-stage-actors | See docs/stage-backgrounds.md for the Saturn frames, byte budget and review coverage. |
+
+| T86 | Background spectators and carved scenery | Codex | 27 regions across eight stages. All appeared in 32 paired captures. Two additional states expose the bar balcony and west pier. | codex/T86-stage-spectators | See docs/stage-backgrounds.md for coverage and colour comparisons. Hardware remains untested. |

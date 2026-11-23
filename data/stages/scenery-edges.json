@@ -11,7 +11,16 @@
     {"name":"wall bay beside bar","ws":[73,91,110,146],"detail":[70,94,111,147],"layer":1},
     {"name":"checkerboard ceiling over balcony","ws":[237,0,288,40],"detail":[233,0,288,42],"layer":2},
     {"name":"bar counter rim","ws":[85,156,190,165],"detail":[85,154,188,166],"layer":2},
-    {"name":"left balcony floor beam","ws":[1,85,56,102],"detail":[1,89,57,108],"layer":2}
+    {"name":"left balcony floor beam","ws":[1,85,56,102],"detail":[1,89,57,108],"layer":2},
+    {"name":"west balcony faces","ws":[7,62,51,99],"detail":[10,72,52,103],"occludes":["left balcony","left wall lantern","left wall plaque","left balcony floor beam"],"layer":5,"relief_scale":0.15},
+    {"name":"upper balcony couple","ws":[257,41,288,64],"detail":[253,49,285,73],"occludes":["upper right balcony","balcony support post"],"layer":5,"relief_scale":0.15},
+    {"name":"lower balcony coat","ws":[250,61,276,84],"detail":[248,71,272,91],"occludes":["lower right balcony","balcony support post"],"layer":5,"relief_scale":0.15},
+    {"name":"doorman uniform","ws":[0,136,32,178],"detail":[1,139,32,176],"occludes":["door guard","left doorway surround"],"layer":5,"relief_scale":0.15},
+    {"name":"seated pair jackets","ws":[51,147,88,171],"detail":[51,148,88,170],"occludes":["seated pair","bar counter rim"],"layer":5,"relief_scale":0.15},
+    {"name":"figure behind taps","ws":[115,147,132,158],"detail":[115,146,131,156],"occludes":["behind counter","bartop taps","bar counter rim"],"layer":5,"relief_scale":0.15},
+    {"name":"booth patrons and table","ws":[191,119,238,152],"detail":[189,123,237,154],"occludes":["right booth","right brass speaker","booth legs"],"layer":5,"relief_scale":0.15},
+    {"name":"cashier at till","ws":[250,151,271,171],"detail":[249,151,269,169],"occludes":["cashier"],"layer":5,"relief_scale":0.15},
+    {"name":"wood panel beside register","ws":[267,125,288,172],"detail":[266,127,287,167],"layer":6,"relief_scale":0.3}
   ],
   [
     {"name":"fascia below billboard","ws":[112,85,208,103],"detail":[100,93,210,110]},
@@ -26,7 +35,11 @@
     {"name":"mascot on western roof","ws":[0,64,48,97],"detail":[2,68,54,100],"layer":2},
     {"name":"billboard west side frame","ws":[48,49,82,101],"detail":[49,50,83,101],"layer":2},
     {"name":"shop window cornice","ws":[154,103,204,122],"detail":[149,102,199,125],"layer":2},
-    {"name":"left arcade pier","ws":[34,115,57,154],"detail":[35,120,57,155],"layer":2}
+    {"name":"left arcade pier","ws":[34,115,57,154],"detail":[35,120,57,155],"layer":2},
+    {"name":"centre display toy","ws":[116,106,158,147],"detail":[114,112,157,148],"occludes":["window display","shop window cornice"],"layer":5,"relief_scale":0.15},
+    {"name":"doll in the shop window","ws":[161,127,196,163],"detail":[160,130,194,164],"occludes":["window doll","window shelf toys"],"layer":5,"relief_scale":0.15},
+    {"name":"visitor below window","ws":[169,147,200,175],"detail":[168,148,198,173],"occludes":["shop visitor","display plinth"],"layer":5,"relief_scale":0.15},
+    {"name":"figure under shop arch","ws":[202,143,227,174],"detail":[200,144,226,172],"occludes":["archway visitor"],"layer":5,"relief_scale":0.15}
   ],
   [
     {"name":"left lift gondola","ws":[77,67,108,83],"detail":[76,69,108,85]},
@@ -44,7 +57,8 @@
     {"name":"snow between lodge and children","ws":[104,151,149,185],"detail":[104,134,144,176],"layer":2},
     {"name":"snow behind the two parkas","ws":[150,159,186,186],"detail":[150,153,186,180],"layer":4,"occludes":["left child","right child"]},
     {"name":"red parka","frame":85,"ws":[154,161,165,185],"crop":[0,0,22,39],"layer":4,"occludes":["left child","right child"],"native_weight":0.3},
-    {"name":"yellow parka","frame":86,"ws":[169,166,182,184],"crop":[34,8,63,39],"layer":4,"occludes":["left child","right child"],"native_weight":0.3}
+    {"name":"yellow parka","frame":86,"ws":[169,166,182,184],"crop":[34,8,63,39],"layer":4,"occludes":["left child","right child"],"native_weight":0.3},
+    {"name":"rock ledge beyond right pylon","ws":[263,91,288,115],"detail":[258,89,285,113],"layer":6,"relief_scale":0.3}
   ],
   [
     {"name":"hut eave fringe","ws":[42,94,82,129],"detail":[50,96,87,128]},
@@ -60,7 +74,10 @@
     {"name":"right-hand open sea","ws":[254,98,288,131],"detail":[246,98,285,127],"layer":2},
     {"name":"elephant neck and foreleg","ws":[179,139,218,183],"detail":[171,135,207,178],"layer":2},
     {"name":"elephant back and legs","ws":[160,132,213,183],"frame":13,"layer":3,"occludes":["elephant forehead","palm fruit","outer pier leg","pier board ends","elephant neck and foreleg"]},
-    {"name":"elephant head and trunk","ws":[213,133,244,185],"frame":14,"layer":3,"occludes":["elephant forehead","palm fruit","outer pier leg","pier board ends","elephant neck and foreleg"]}
+    {"name":"elephant head and trunk","ws":[213,133,244,185],"frame":14,"layer":3,"occludes":["elephant forehead","palm fruit","outer pier leg","pier board ends","elephant neck and foreleg"]},
+    {"name":"climber under palm leaves","ws":[223,85,249,119],"detail":[219,88,244,118],"occludes":["palm climber","palm fruit"],"layer":5,"relief_scale":0.15},
+    {"name":"visitor on western pier","ws":[23,151,38,185],"detail":[17,147,31,178],"occludes":["pier visitor","pier crossbeam","pier supports"],"layer":5,"relief_scale":0.15},
+    {"name":"timbers at foot of hut stair","ws":[43,162,72,189],"detail":[47,158,78,181],"layer":6,"relief_scale":0.3}
   ],
   [
     {"name":"left building upper window","ws":[0,28,45,81],"detail":[1,27,41,83]},
@@ -75,7 +92,9 @@
     {"name":"rooftops behind food stalls","ws":[78,77,150,101],"detail":[78,77,150,101],"layer":1},
     {"name":"stone base under left shop","ws":[34,163,95,181],"detail":[34,160,91,177],"layer":2},
     {"name":"stall awning fringe","ws":[110,129,158,148],"detail":[103,132,149,149],"layer":2},
-    {"name":"underside of gate crossbeam","ws":[154,90,229,115],"detail":[149,94,220,118],"layer":2}
+    {"name":"underside of gate crossbeam","ws":[154,90,229,115],"detail":[149,94,220,118],"layer":2},
+    {"name":"left diner coat","ws":[50,147,81,179],"detail":[42,146,73,176],"occludes":["left diner","stone base under left shop"],"layer":5,"relief_scale":0.15},
+    {"name":"figure below the parasol","ws":[0,149,36,181],"detail":[11,147,47,176],"occludes":["parasol","stone base under left shop"],"layer":5,"relief_scale":0.15}
   ],
   [
     {"name":"left clock crown","ws":[24,91,65,121],"detail":[17,98,57,125]},
@@ -89,7 +108,9 @@
     {"name":"rug below furnace","ws":[0,184,288,208],"detail":[0,183,288,208],"layer":1},
     {"name":"right ceiling panel border","ws":[232,0,286,66],"detail":[228,0,286,68],"layer":2},
     {"name":"left cornice above clock","ws":[0,62,88,92],"detail":[1,61,90,93],"layer":2},
-    {"name":"lower cabinet sill","ws":[58,150,95,174],"detail":[56,148,96,172],"layer":2}
+    {"name":"lower cabinet sill","ws":[58,150,95,174],"detail":[56,148,96,172],"layer":2},
+    {"name":"guest beside furnace","ws":[162,147,184,177],"detail":[152,148,175,175],"occludes":["furnace attendant","furnace mouth","fireplace plinth"],"layer":5,"relief_scale":0.15},
+    {"name":"west wall sconce","ws":[11,116,32,146],"detail":[5,120,24,146],"layer":6,"relief_scale":0.3}
   ],
   [
     {"name":"floating island tip","ws":[104,91,135,133],"detail":[103,106,134,147]},
@@ -104,7 +125,10 @@
     {"name":"stones under distant bridge","ws":[109,152,149,178],"detail":[109,153,147,177],"layer":2},
     {"name":"carriage wheel well","ws":[203,132,262,172],"detail":[199,131,258,169],"occludes":["wagon body","carriage wheel"],"layer":4},
     {"name":"large carriage wheel","frame":24,"ws":[228,134,261,170],"crop":[105,0,176,73],"layer":4,"occludes":["wagon body","carriage wheel"],"native_weight":0.3},
-    {"name":"small carriage wheel","frame":24,"ws":[206,144,228,169],"crop":[45,24,95,72],"layer":4,"occludes":["wagon body","carriage wheel"],"native_weight":0.3}
+    {"name":"small carriage wheel","frame":24,"ws":[206,144,228,169],"crop":[45,24,95,72],"layer":4,"occludes":["wagon body","carriage wheel"],"native_weight":0.3},
+    {"name":"hanging lantern glass","ws":[174,111,189,137],"detail":[171,116,188,141],"occludes":["lantern","carriage turret","hanging lamp bracket"],"layer":5,"relief_scale":0.15},
+    {"name":"carved stone below glowing skull","ws":[10,96,58,132],"detail":[6,99,57,135],"layer":6,"relief_scale":0.3},
+    {"name":"teeth of stone arch","ws":[57,116,100,154],"detail":[58,118,98,161],"layer":6,"relief_scale":0.3,"occludes":["left rock arch"]}
   ],
   [
     {"name":"upper drapery swags","ws":[0,0,68,74],"detail":[5,2,68,77]},
@@ -127,6 +151,9 @@
     {"name":"middle marching guest","frame":22,"ws":[95,155,112,178],"crop":[0,3,33,44],"layer":4,"occludes":["procession","stair carpet","stone tread nosings","polished hall floor","red sofa","stained glass"],"native_weight":0.3},
     {"name":"right marching guest","frame":22,"ws":[136,155,153,178],"crop":[0,3,33,44],"flip_x":true,"layer":4,"occludes":["procession","stair carpet","stone tread nosings","polished hall floor","red sofa","stained glass"],"native_weight":0.3},
     {"name":"short skeleton","frame":6,"ws":[116,155,131,173],"crop":[56,13,85,43],"layer":4,"occludes":["procession","stair carpet","stone tread nosings","polished hall floor","red sofa","stained glass"],"native_weight":0.3},
-    {"name":"tall skeleton","frame":7,"ws":[158,148,174,173],"crop":[148,0,182,43],"layer":4,"occludes":["procession","stair carpet","stone tread nosings","polished hall floor","red sofa","stained glass"],"native_weight":0.3}
+    {"name":"tall skeleton","frame":7,"ws":[158,148,174,173],"crop":[148,0,182,43],"layer":4,"occludes":["procession","stair carpet","stone tread nosings","polished hall floor","red sofa","stained glass"],"native_weight":0.3},
+    {"name":"portrait face and dress","ws":[73,50,94,79],"detail":[74,56,94,83],"occludes":["portrait","portrait frame moulding"],"layer":5,"relief_scale":0.15},
+    {"name":"guest on mansion steps","ws":[17,149,35,176],"detail":[16,145,35,170],"occludes":["stairway guest","curtain folds"],"layer":5,"relief_scale":0.15},
+    {"name":"gilded chandelier arms","ws":[111,58,149,83],"detail":[110,63,148,85],"layer":6,"relief_scale":0.3,"occludes":["chandelier"]}
   ]
 ]
