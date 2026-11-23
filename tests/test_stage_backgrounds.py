@@ -158,6 +158,30 @@ class StageBackgroundTests(unittest.TestCase):
         self.assertEqual(packed[:32], encode_tile(displayed[0, 0]))
         self.assertEqual(packed[32:], encode_tile(displayed[0, 2]))
 
+    def test_actor_splits_a_flipped_shared_tile_behind_a_transparent_guest(self):
+        mapped = np.array([[0x6040, 0x2040]], dtype="<u2")
+        displayed = np.ones((1, 2, 8, 8), dtype="u1")
+        packed = bytearray(encode_tile(displayed[0, 0]))
+        palettes = np.zeros((4, 16, 3), dtype="u1")
+        palettes[:, 2] = [15, 0, 0]
+        actor = Image.new("RGBA", (8, 8))
+        for x in (1, 2):
+            actor.putpixel((x, 3), (255, 0, 0, 255))
+        guest = Image.new("RGBA", (8, 8))
+        guest.putpixel((2, 3), (0, 0, 0, 255))
+        region = {"name": "actor", "frame": 1, "ws": [0, 0, 8, 8]}
+        protected = [{"name": "guest", "frame": 2, "ws": region["ws"]}]
+        refine_scenery(
+            actor, np.zeros((8, 16), dtype="u1"), [region], protected, mapped,
+            displayed, palettes, packed, np.array([[7, 7]]), {1: actor, 2: guest},
+        )
+        self.assertEqual(mapped.tolist(), [[0x6041, 0x2040]])
+        expected = np.ones((8, 8), dtype="u1")
+        expected[3, 1] = 2
+        np.testing.assert_array_equal(displayed[0, 0], expected)
+        np.testing.assert_array_equal(displayed[0, 1], 1)
+        self.assertEqual(packed[32:], encode_tile(expected[:, ::-1]))
+
     def test_variant_reuse_respects_native_source_flip_and_protected_pixels(self):
         patterns = np.ones((3, 8, 8), dtype="u1")
         patterns[1, 1, 2] = 2

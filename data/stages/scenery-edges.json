@@ -8,7 +8,10 @@
     {"name":"roof opening above bar","ws":[92,0,166,53],"detail":[82,0,157,60],"layer":1},
     {"name":"overhead balcony panels","ws":[177,0,238,47],"detail":[174,0,232,59],"layer":1},
     {"name":"left doorway surround","ws":[0,126,45,177],"detail":[0,125,43,179],"layer":1},
-    {"name":"wall bay beside bar","ws":[73,91,110,146],"detail":[70,94,111,147],"layer":1}
+    {"name":"wall bay beside bar","ws":[73,91,110,146],"detail":[70,94,111,147],"layer":1},
+    {"name":"checkerboard ceiling over balcony","ws":[237,0,288,40],"detail":[233,0,288,42],"layer":2},
+    {"name":"bar counter rim","ws":[85,156,190,165],"detail":[85,154,188,166],"layer":2},
+    {"name":"left balcony floor beam","ws":[1,85,56,102],"detail":[1,89,57,108],"layer":2}
   ],
   [
     {"name":"fascia below billboard","ws":[112,85,208,103],"detail":[100,93,210,110]},
@@ -19,7 +22,11 @@
     {"name":"night sky west of billboard","ws":[0,0,71,62],"detail":[0,0,74,64],"layer":1},
     {"name":"night sky east of billboard","ws":[224,0,288,64],"detail":[225,0,288,68],"layer":1},
     {"name":"sky above billboard","ws":[72,0,224,22],"detail":[74,0,226,20],"layer":1},
-    {"name":"east arcade stone arch","ws":[228,105,288,167],"detail":[224,106,288,167],"layer":1}
+    {"name":"east arcade stone arch","ws":[228,105,288,167],"detail":[224,106,288,167],"layer":1},
+    {"name":"mascot on western roof","ws":[0,64,48,97],"detail":[2,68,54,100],"layer":2},
+    {"name":"billboard west side frame","ws":[48,49,82,101],"detail":[49,50,83,101],"layer":2},
+    {"name":"shop window cornice","ws":[154,103,204,122],"detail":[149,102,199,125],"layer":2},
+    {"name":"left arcade pier","ws":[34,115,57,154],"detail":[35,120,57,155],"layer":2}
   ],
   [
     {"name":"left lift gondola","ws":[77,67,108,83],"detail":[76,69,108,85]},
@@ -30,7 +37,11 @@
     {"name":"west mountain skyline","ws":[0,100,53,141],"detail":[0,96,55,133],"layer":1},
     {"name":"snowfield below lift","ws":[102,186,286,208],"detail":[103,182,286,208],"layer":1},
     {"name":"snow dome above igloo","ws":[181,122,237,155],"detail":[180,117,237,153],"layer":1},
-    {"name":"sky between lift towers","ws":[86,84,208,111],"detail":[84,82,206,106],"layer":1}
+    {"name":"sky between lift towers","ws":[86,84,208,111],"detail":[84,82,206,106],"layer":1},
+    {"name":"upper lift canopy","ws":[176,0,281,31],"detail":[172,5,283,37],"layer":2},
+    {"name":"blue sky bands west of lift","ws":[0,59,50,97],"detail":[0,56,50,96],"layer":2},
+    {"name":"snow at left course edge","ws":[0,191,101,208],"detail":[0,183,98,205],"layer":2},
+    {"name":"snow between lodge and children","ws":[104,151,149,185],"detail":[104,134,144,176],"layer":2}
   ],
   [
     {"name":"hut eave fringe","ws":[42,94,82,129],"detail":[50,96,87,128]},
@@ -41,7 +52,12 @@
     {"name":"sky above beach hut","ws":[45,0,150,75],"detail":[57,0,150,67],"layer":1},
     {"name":"sky beyond palms","ws":[184,0,288,81],"detail":[183,0,288,78],"layer":1},
     {"name":"front boardwalk","ws":[61,184,176,195],"detail":[63,181,178,192],"layer":1},
-    {"name":"western sea band","ws":[0,103,42,140],"detail":[0,104,45,137],"layer":1}
+    {"name":"western sea band","ws":[0,103,42,140],"detail":[0,104,45,137],"layer":1},
+    {"name":"pier post at far left","ws":[0,154,21,206],"detail":[4,147,23,197],"layer":2},
+    {"name":"right-hand open sea","ws":[254,98,288,131],"detail":[246,98,285,127],"layer":2},
+    {"name":"elephant neck and foreleg","ws":[179,139,218,183],"detail":[171,135,207,178],"layer":2},
+    {"name":"elephant back and legs","ws":[160,132,213,183],"frame":13,"layer":3,"occludes":["elephant forehead","palm fruit","outer pier leg","pier board ends","elephant neck and foreleg"]},
+    {"name":"elephant head and trunk","ws":[213,133,244,185],"frame":14,"layer":3,"occludes":["elephant forehead","palm fruit","outer pier leg","pier board ends","elephant neck and foreleg"]}
   ],
   [
     {"name":"left building upper window","ws":[0,28,45,81],"detail":[1,27,41,83]},
@@ -53,7 +69,10 @@
     {"name":"cloudbank west of gate","ws":[86,0,158,91],"detail":[85,0,158,90],"layer":1},
     {"name":"sky east of gate cap","ws":[244,0,288,50],"detail":[246,0,288,48],"layer":1},
     {"name":"stone paving below counter","ws":[83,175,228,207],"detail":[84,171,227,205],"layer":1},
-    {"name":"rooftops behind food stalls","ws":[78,77,150,101],"detail":[78,77,150,101],"layer":1}
+    {"name":"rooftops behind food stalls","ws":[78,77,150,101],"detail":[78,77,150,101],"layer":1},
+    {"name":"stone base under left shop","ws":[34,163,95,181],"detail":[34,160,91,177],"layer":2},
+    {"name":"stall awning fringe","ws":[110,129,158,148],"detail":[103,132,149,149],"layer":2},
+    {"name":"underside of gate crossbeam","ws":[154,90,229,115],"detail":[149,94,220,118],"layer":2}
   ],
   [
     {"name":"left clock crown","ws":[24,91,65,121],"detail":[17,98,57,125]},
@@ -64,7 +83,10 @@
     {"name":"painted ceiling above flue","ws":[0,0,231,35],"detail":[0,0,233,32],"layer":1},
     {"name":"open hall west of flue","ws":[88,51,139,143],"detail":[85,54,139,142],"layer":1},
     {"name":"open hall east of flue","ws":[162,61,198,146],"detail":[163,61,195,145],"layer":1},
-    {"name":"rug below furnace","ws":[0,184,288,208],"detail":[0,183,288,208],"layer":1}
+    {"name":"rug below furnace","ws":[0,184,288,208],"detail":[0,183,288,208],"layer":1},
+    {"name":"right ceiling panel border","ws":[232,0,286,66],"detail":[228,0,286,68],"layer":2},
+    {"name":"left cornice above clock","ws":[0,62,88,92],"detail":[1,61,90,93],"layer":2},
+    {"name":"lower cabinet sill","ws":[58,150,95,174],"detail":[56,148,96,172],"layer":2}
   ],
   [
     {"name":"floating island tip","ws":[104,91,135,133],"detail":[103,106,134,147]},
@@ -72,7 +94,11 @@
     {"name":"moonlit cavern ceiling","ws":[90,0,225,39],"detail":[90,0,225,41],"layer":1},
     {"name":"moonlit gorge below castle","ws":[98,112,172,152],"detail":[97,118,174,153],"layer":1},
     {"name":"cavern paving beside carriage","ws":[179,177,288,208],"detail":[175,173,288,208],"layer":1},
-    {"name":"stone lintel above skull","ws":[235,0,288,26],"detail":[234,0,288,29],"layer":1}
+    {"name":"stone lintel above skull","ws":[235,0,288,26],"detail":[234,0,288,29],"layer":1},
+    {"name":"left cave vault","ws":[0,0,50,34],"detail":[0,0,51,33],"layer":2},
+    {"name":"moonlit edge of cavern wall","ws":[144,39,230,65],"detail":[151,46,227,78],"layer":2},
+    {"name":"wagon rear panel","ws":[264,124,288,176],"detail":[261,120,288,173],"layer":2},
+    {"name":"stones under distant bridge","ws":[109,152,149,178],"detail":[109,153,147,177],"layer":2}
   ],
   [
     {"name":"upper drapery swags","ws":[0,0,68,74],"detail":[5,2,68,77]},
@@ -84,6 +110,10 @@
     {"name":"hall wall below portrait","ws":[56,88,104,117],"detail":[57,91,105,119],"layer":1},
     {"name":"curved wall beside chandelier","ws":[99,0,146,47],"detail":[101,0,146,44],"layer":1},
     {"name":"sky behind mansion","ws":[259,75,288,91],"detail":[260,75,288,91],"layer":1},
-    {"name":"green floor beside courtyard","ws":[208,174,288,208],"detail":[206,171,288,208],"layer":1}
+    {"name":"green floor beside courtyard","ws":[208,174,288,208],"detail":[206,171,288,208],"layer":1},
+    {"name":"outer curved cornice","ws":[247,0,288,71],"detail":[245,0,288,71],"layer":2},
+    {"name":"green floor below drape","ws":[0,177,36,208],"detail":[3,169,39,198],"layer":2},
+    {"name":"outer arch support","ws":[192,95,232,113],"detail":[190,92,231,113],"layer":2},
+    {"name":"upper arched window surround","ws":[151,0,193,18],"detail":[149,0,192,20],"layer":2}
   ]
 ]
