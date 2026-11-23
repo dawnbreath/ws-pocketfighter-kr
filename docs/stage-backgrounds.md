@@ -180,3 +180,17 @@ All 30 regions improved against the registered Saturn pixels. Mean absolute RGB 
 The review state `elephant-right.mcs` exposes all 955 opaque pixels of the registered head sprite on the native LCD. `cave-lintel.mcs` captures frame 118 from the stage selector read. In the T82/T83 comparison six previously unobserved changed stone pixels are visible at world X 240 and 248 and Y 12–14. The rest of that upper-right stone was verified on the full cartridge map. Comparisons use Mednafen. Physical hardware and other animation poses remain unverified.
 
 The 32 paired intro, entry, combat and right-camera LCDs showed changes in all 30 registrations. The frame checker matched 766,636 exposed background pixels and 1,166 native camera cell occurrences. All 28,780 changed LCD pixels lay at changed cartridge-map coordinates. The exposed-head state reduced mean RGB error across all 955 head pixels from 76.00 to 23.69. HUD maps, fighter tile buffers and fighter palette rows matched in the 32 pairs. Five cold title, menu and Korean story screens matched exactly. The 19 packaged states restored, 114 repository tests passed, and all six IPS/xdelta paths from the Japanese original, T77 and T83 decoded to SHA-256 `f2bf3510c42beeb287e26f4bfccdf7e6db336f42de7e25496b29cf8aa57b4d34`.
+
+## T85 — Individual stage sprites
+
+The two ski children were each sampling a frame that contained both children. The moonlit carriage had separate wheel sprites, and the mansion's marching group contained three costumed children and two skeletons. The courtyard horse also had its own sprite. The build now crops each component before scaling. It mirrors the third marching child and uses the same transformed alpha mask when protecting already-painted pixels. These matched poses retain 30% of the portable luminance adjustment. The adjustment for other poses still defaults to 80%.
+
+| Stage | Saturn source frames | Changed map pixels |
+|---|---|---:|
+| Ski slopes | ST02 frames 85 and 86, one parka per crop | 774 |
+| Moonlit cavern | ST06 frame 24, large and small wheels | 1,608 |
+| Mansion | ST07 frames 22, 6 and 7 for the procession, frame 63 for the horse | 2,507 |
+
+The ten sprites and their three surrounding scenery regions cover 6,962 eligible pixels. Across all eight maps, the 4,889 changed pixels fall within this area. Mean absolute RGB channel error against the registered Saturn samples fell from 37.08 to 20.71 on the 0–255 scale. Every region improved individually. The gallery places the extracted Saturn components at handheld scale for comparison. The paired LCD images use actual emulator output.
+
+Two independent builds produced SHA-256 `7b3605cce422d8822aa1d345a29297fbee2498397a36a8885206b85dc85ec62b`. The cavern uses two further 32-byte tiles and the mansion one. Each now uses 14,304 tile bytes within its existing stage bank. The code, font allocation and stage palette tables match T84. In 32 paired stage captures the checker verified 766,636 exposed background pixels and 1,166 native camera cell occurrences. All 13 regions appeared in gameplay. The 12,150 changed LCD pixels were confined to changed map coordinates. HUD maps, fighter pattern buffers and fighter palettes matched on every pair. Five cold title, menu and Korean story screens matched T84 exactly. The test suite passed 115 tests. All 19 supplied states restored and the IPS/xdelta paths from the original, T77 and T84 produced the same target. The four stage palette rows limit the colour match, particularly the yellow parka. Physical hardware remains untested.

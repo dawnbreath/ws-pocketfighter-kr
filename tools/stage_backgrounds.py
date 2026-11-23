@@ -120,6 +120,19 @@ def registered_colours(
     return np.clip(np.rint(rgb / 17), 0, 15).astype("u1")
 
 
+def actor_sample(figure: dict, frames: dict[int, Image.Image]) -> Image.Image:
+    """Select one pose or component from a decoded Saturn stage layout."""
+    image = frames[figure["frame"]]
+    if "crop" in figure:
+        x, y, right, bottom = figure["crop"]
+        if not (0 <= x < right <= image.width and 0 <= y < bottom <= image.height):
+            raise ValueError(f"invalid actor crop for {figure['name']}")
+        image = image.crop((x, y, right, bottom))
+    if figure.get("flip_x"):
+        image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+    return image
+
+
 def spectator_colours(
     reference: Image.Image,
     frames: dict[int, Image.Image],
@@ -142,7 +155,7 @@ def spectator_colours(
             raise ValueError(f"invalid WS bounds for {figure['name']}")
         is_prop = "detail" in figure
         if "frame" in figure:
-            source = frames[figure["frame"]]
+            source = actor_sample(figure, frames)
         else:
             box = [
                 v * scale
@@ -186,7 +199,8 @@ def spectator_colours(
             occupied = alpha[..., 0] > 0
             if occupied.any():
                 shift = light[occupied].mean() - native[occupied].mean()
-                rgb = sample[..., :3] + 0.8 * (native + shift - light)[..., None]
+                native_weight = figure.get("native_weight", 0.8)
+                rgb = sample[..., :3] + native_weight * (native + shift - light)[..., None]
         if "background" in figure and "swatches" in figure:
             # Retain identifying colours in the sampled guest even when nearby
             # scenery competes for the same per-tile palette.
@@ -410,7 +424,7 @@ def refine_scenery(
         x, y, right, bottom = region["ws"]
         locked = coverage[y:bottom, x:right]
         if has_actor and "frame" in region:
-            sprite = frames[region["frame"]].getchannel("A")
+            sprite = actor_sample(region, frames).getchannel("A")
             opaque = sprite.resize((right - x, bottom - y), Image.Resampling.NEAREST)
             locked[np.asarray(opaque) > 0] = 0
         else:

@@ -41,7 +41,10 @@
     {"name":"upper lift canopy","ws":[176,0,281,31],"detail":[172,5,283,37],"layer":2},
     {"name":"blue sky bands west of lift","ws":[0,59,50,97],"detail":[0,56,50,96],"layer":2},
     {"name":"snow at left course edge","ws":[0,191,101,208],"detail":[0,183,98,205],"layer":2},
-    {"name":"snow between lodge and children","ws":[104,151,149,185],"detail":[104,134,144,176],"layer":2}
+    {"name":"snow between lodge and children","ws":[104,151,149,185],"detail":[104,134,144,176],"layer":2},
+    {"name":"snow behind the two parkas","ws":[150,159,186,186],"detail":[150,153,186,180],"layer":4,"occludes":["left child","right child"]},
+    {"name":"red parka","frame":85,"ws":[154,161,165,185],"crop":[0,0,22,39],"layer":4,"occludes":["left child","right child"],"native_weight":0.3},
+    {"name":"yellow parka","frame":86,"ws":[169,166,182,184],"crop":[34,8,63,39],"layer":4,"occludes":["left child","right child"],"native_weight":0.3}
   ],
   [
     {"name":"hut eave fringe","ws":[42,94,82,129],"detail":[50,96,87,128]},
@@ -98,7 +101,10 @@
     {"name":"left cave vault","ws":[0,0,50,34],"detail":[0,0,51,33],"layer":2},
     {"name":"moonlit edge of cavern wall","ws":[144,39,230,65],"detail":[151,46,227,78],"layer":2},
     {"name":"wagon rear panel","ws":[264,124,288,176],"detail":[261,120,288,173],"layer":2},
-    {"name":"stones under distant bridge","ws":[109,152,149,178],"detail":[109,153,147,177],"layer":2}
+    {"name":"stones under distant bridge","ws":[109,152,149,178],"detail":[109,153,147,177],"layer":2},
+    {"name":"carriage wheel well","ws":[203,132,262,172],"detail":[199,131,258,169],"occludes":["wagon body","carriage wheel"],"layer":4},
+    {"name":"large carriage wheel","frame":24,"ws":[228,134,261,170],"crop":[105,0,176,73],"layer":4,"occludes":["wagon body","carriage wheel"],"native_weight":0.3},
+    {"name":"small carriage wheel","frame":24,"ws":[206,144,228,169],"crop":[45,24,95,72],"layer":4,"occludes":["wagon body","carriage wheel"],"native_weight":0.3}
   ],
   [
     {"name":"upper drapery swags","ws":[0,0,68,74],"detail":[5,2,68,77]},
@@ -114,6 +120,13 @@
     {"name":"outer curved cornice","ws":[247,0,288,71],"detail":[245,0,288,71],"layer":2},
     {"name":"green floor below drape","ws":[0,177,36,208],"detail":[3,169,39,198],"layer":2},
     {"name":"outer arch support","ws":[192,95,232,113],"detail":[190,92,231,113],"layer":2},
-    {"name":"upper arched window surround","ws":[151,0,193,18],"detail":[149,0,192,20],"layer":2}
+    {"name":"upper arched window surround","ws":[151,0,193,18],"detail":[149,0,192,20],"layer":2},
+    {"name":"skeletal horse","frame":63,"ws":[249,140,279,170],"layer":4,"occludes":["courtyard carriage"],"native_weight":0.3},
+    {"name":"floor beside the procession","ws":[65,151,174,182],"detail":[65,147,174,176],"occludes":["procession","stair carpet","stone tread nosings","polished hall floor","red sofa","stained glass"],"layer":4},
+    {"name":"left marching guest","frame":22,"ws":[71,155,88,180],"crop":[0,3,33,44],"layer":4,"occludes":["procession","stair carpet","stone tread nosings","polished hall floor","red sofa","stained glass"],"native_weight":0.3},
+    {"name":"middle marching guest","frame":22,"ws":[95,155,112,178],"crop":[0,3,33,44],"layer":4,"occludes":["procession","stair carpet","stone tread nosings","polished hall floor","red sofa","stained glass"],"native_weight":0.3},
+    {"name":"right marching guest","frame":22,"ws":[136,155,153,178],"crop":[0,3,33,44],"flip_x":true,"layer":4,"occludes":["procession","stair carpet","stone tread nosings","polished hall floor","red sofa","stained glass"],"native_weight":0.3},
+    {"name":"short skeleton","frame":6,"ws":[116,155,131,173],"crop":[56,13,85,43],"layer":4,"occludes":["procession","stair carpet","stone tread nosings","polished hall floor","red sofa","stained glass"],"native_weight":0.3},
+    {"name":"tall skeleton","frame":7,"ws":[158,148,174,173],"crop":[148,0,182,43],"layer":4,"occludes":["procession","stair carpet","stone tread nosings","polished hall floor","red sofa","stained glass"],"native_weight":0.3}
   ]
 ]

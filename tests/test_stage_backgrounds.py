@@ -8,6 +8,7 @@ from PIL import Image
 
 from saturn_stages import stage_actors
 from stage_backgrounds import (
+    actor_sample,
     encode_tile,
     fit_palettes,
     pack_static_cells,
@@ -83,6 +84,16 @@ class StageBackgroundTests(unittest.TestCase):
         self.assertEqual(frame.getpixel((0, 16)), (255, 0, 0, 255))
         self.assertEqual(frame.getpixel((16, 0)), (0, 0, 255, 255))
         self.assertEqual(frame.getpixel((0, 0))[3], 0)
+
+    def test_actor_component_crop_preserves_alpha_when_mirrored(self):
+        frame = Image.new("RGBA", (4, 1))
+        pixels = [(10, 0, 0, 255), (20, 0, 0, 0), (30, 0, 0, 255), (40, 0, 0, 255)]
+        frame.putdata(pixels)
+        figure = {"name": "paired guests", "frame": 3, "crop": [1, 0, 3, 1], "flip_x": True}
+        result = actor_sample(figure, {3: frame})
+        np.testing.assert_array_equal(np.asarray(result)[0], [pixels[2], pixels[1]])
+        with self.assertRaisesRegex(ValueError, "paired guests"):
+            actor_sample({**figure, "crop": [1, 0, 5, 1]}, {3: frame})
 
     def test_spectator_swatches_survive_a_dominant_background(self):
         target = np.full((16, 16, 3), 7, dtype="u1")
